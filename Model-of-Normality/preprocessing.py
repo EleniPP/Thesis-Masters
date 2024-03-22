@@ -4,37 +4,30 @@ from scipy.io.wavfile import read
 import numpy as np
 import wave
 import random
+import librosa
+
 
 
 def extract_zip():
     with zipfile.ZipFile("C:/Users/eleni/Data/303_P.zip", 'r') as zip_ref:
         zip_ref.extractall("C:/Users/eleni/Data/303_P")
 
-def read_audio():
-    ifile = wave.open("C:/Users/eleni/Data/303_P/303_AUDIO.wav")
-    samples = ifile.getnframes()
-    audio = ifile.readframes(samples)
 
-    # Convert buffer to float32 using NumPy                                                                                 
-    audio_as_np_int16 = np.frombuffer(audio, dtype=np.int16)
-    audio = audio_as_np_int16.astype(np.float32)
+def preprocessing(audio):
+    # Add noise and pertrube
+    alpha = random.uniform(0.01, 0.1)
+    random_index = np.random.randint(0, audio.size)
+    random_x = audio[random_index]
+    perturbed_audio = audio - alpha * random_x
 
-    # Normalise float32 array so that values are between -1.0 and +1.0                                                      
-    # max_int16 = 2**15
-    # audio_normalised = audio / max_int16
-    return audio
-  
-# TODO try librosa
-audio = read_audio()
-print(audio.size) 
+    # Pitch augmentation
+    semitones = np.random.uniform(-2, 2)  # Random number in the range [-2, 2] for pitch 
+    shifted_audio = librosa.effects.pitch_shift(perturbed_audio, sr=sr, n_steps=semitones)
+    return shifted_audio
 
-alpha = random.uniform(0.01, 0.1)
-random_index = np.random.randint(0, audio.size)
-random_x = audio[random_index]
+# Read file
+file = "C:/Users/eleni/Data/303_P/303_AUDIO.wav"
+audio, sr = librosa.load(file, sr=None) 
 
-perturbed_signal = audio - alpha * random_x
-print(perturbed_signal)
-# with open(file, newline='') as csvfile:
-#     spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-#     for row in spamreader:
-#         print(', '.join(row))
+preprocessed_audio = preprocessing(audio)
+print(preprocessed_audio)
