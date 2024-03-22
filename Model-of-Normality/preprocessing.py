@@ -27,7 +27,7 @@ def preprocessing(audio):
 
 # Read file
 file = "C:/Users/eleni/Data/303_P/303_AUDIO.wav"
+visual = "C:/Users/eleni/Data/303_P/303_CLNF_AUs.txt"
 audio, sr = librosa.load(file, sr=None) 
 
 preprocessed_audio = preprocessing(audio)
-print(preprocessed_audio)
