@@ -8,6 +8,7 @@ import librosa
 from scipy.spatial.distance import euclidean
 from fastdtw import fastdtw
 from dtaidistance import dtw
+import csv
 
 def extract_zip():
     with zipfile.ZipFile("C:/Users/eleni/Data/303_P.zip", 'r') as zip_ref:
@@ -37,14 +38,19 @@ f = open(file_visual, "r")
 next(f)
 file_visual = f.readlines()
 # convert list of strings into 2D numpy array
-visual_np = [np.fromstring(s, dtype=float, sep=', ') for s in file_visual]
+visual_np = [np.fromstring(s, dtype=np.float32, sep=', ') for s in file_visual]
 visual = np.vstack(visual_np)
 
 np.save('C:/Users/eleni/Data/visual.npy', visual)
 
-preprocessed_audio = preprocessing(audio)
+# preprocessed_audio = preprocessing(audio)
+labels_list=[]
+with open('C:/Users/eleni/Data/train_split.csv', newline='') as csvfile:
+    spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+    next(csvfile)
+    for row in spamreader:
+        labels_list.append(row[1])
 
-print(preprocessed_audio.size)
-print(visual.size)
-
+labels = np.array(labels_list).astype(np.float32)
+np.save('C:/Users/eleni/Data/labels.npy', labels)
 # aligned_segments = align_and_dividing(preprocessed_audio, visual)

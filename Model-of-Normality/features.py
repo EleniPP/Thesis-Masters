@@ -1,63 +1,63 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+# to kratame alla exei error
 
 visual = np.load('C:/Users/eleni/Data/visual.npy')
-tvisual = torch.from_numpy(visual)
+labels = np.load('C:/Users/eleni/Data/labels.npy')
+filtered_visual = visual[:, 4:]
+tvisual = torch.from_numpy(filtered_visual)
+tlabels = torch.from_numpy(labels)
 
 input_data = tvisual.unsqueeze(1)  # Add channel dimension
 
-# Define the CNN model
-class CNN(nn.Module):
-    def __init__(self, input_size, num_classes):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=256, kernel_size=7)
-        self.conv2 = nn.Conv1d(in_channels=256, out_channels=256, kernel_size=7)
-        self.pool = nn.MaxPool1d(kernel_size=2)
-        self.dropout = nn.Dropout(p=0.05)
+class AU1DCNN(nn.Module):
+    def __init__(self, num_features):
+        super(AU1DCNN, self).__init__()
+        # First set of layers
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=256, kernel_size=7, padding=3)
+        self.conv2 = nn.Conv1d(in_channels=256, out_channels=256, kernel_size=7, padding=3)
+        self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.dropout1 = nn.Dropout(p=0.05)
         
-        self.conv3 = nn.Conv1d(in_channels=256, out_channels=512, kernel_size=7)
-        self.conv4 = nn.Conv1d(in_channels=512, out_channels=512, kernel_size=7)
+        # Second set of layers
+        self.conv3 = nn.Conv1d(in_channels=256, out_channels=512, kernel_size=7, padding=3)
+        self.conv4 = nn.Conv1d(in_channels=512, out_channels=512, kernel_size=7, padding=3)
+        self.pool2 = nn.MaxPool1d(kernel_size=2, stride=2)
+        self.dropout2 = nn.Dropout(p=0.05)
         
-        self.fc = nn.Linear(512, num_classes)
+        self.flatten = nn.Flatten()
 
     def forward(self, x):
-        x = torch.relu(self.conv1(x))
-        x = torch.relu(self.conv2(x))
-        x = self.pool(x)
-        x = self.dropout(x)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = self.pool1(x)
+        x = self.dropout1(x)
         
-        x = torch.relu(self.conv3(x))
-        x = torch.relu(self.conv4(x))
-        x = self.pool(x)
-        x = self.dropout(x)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = self.pool2(x)
+        x = self.dropout2(x)
         
-        # Flatten the output before passing it to fully connected layers
-        x = x.view(x.size(0), -1)
+        # If you intend to use it for classification or other purposes, you might flatten the output here
+        # and pass it to a fully connected layer (not included in your specifications).
+        x = self.flatten(x)
         
-        # Fully connected layer
-        x = self.fc(x)
-        
+        # Returning x directly for now as it contains the features after the last dropout layer
         return x
-
+    
 # Example usage:
 # Assuming input size is 20 (features extracted from AUs) and number of classes is 10
-model = CNN(input_size=20, num_classes=10)
+model = AU1DCNN(num_features=1)
 print(model)
-
-# Define the loss function and optimizer
-criterion = nn.BCELoss()
-optimizer = torch.optim.Adam(model.parameters())
 
 # Train the model (example: assuming binary classification)
 
-#TODO Replace 'labels' with MY LABELS
-labels = torch.randint(0, 2, (input_data.shape[0],), dtype=torch.float32)
-num_epochs = 10
-for epoch in range(num_epochs):
-    optimizer.zero_grad()
-    outputs = model(input_data)
-    loss = criterion(outputs.squeeze(), labels)
-    loss.backward()
-    optimizer.step()
-    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}')
+with torch.no_grad():
+    model.eval()
+    features = model(input_data)
+    # loss = criterion(outputs.squeeze(), tlabels)
+
+print(features)
