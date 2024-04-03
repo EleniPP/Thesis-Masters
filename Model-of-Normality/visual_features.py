@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pickle
 
 # to kratame alla exei error
 
@@ -12,6 +13,7 @@ tvisual = torch.from_numpy(filtered_visual)
 tlabels = torch.from_numpy(labels)
 
 input_data = tvisual.unsqueeze(1)  # Add channel dimension
+
 
 class AU1DCNN(nn.Module):
     def __init__(self, num_features):
@@ -29,6 +31,8 @@ class AU1DCNN(nn.Module):
         self.dropout2 = nn.Dropout(p=0.05)
         
         self.flatten = nn.Flatten()
+        # Initialize weights
+        self._initialize_weights()
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -48,6 +52,12 @@ class AU1DCNN(nn.Module):
         # Returning x directly for now as it contains the features after the last dropout layer
         return x
     
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv1d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 # Example usage:
 # Assuming input size is 20 (features extracted from AUs) and number of classes is 10
 model = AU1DCNN(num_features=1)
@@ -59,5 +69,9 @@ with torch.no_grad():
     model.eval()
     features = model(input_data)
     # loss = criterion(outputs.squeeze(), tlabels)
+
+# Save a tensor
+with open('C:/Users/eleni/Data/visual_features.pkl', 'wb') as f:
+    pickle.dump(features, f)
 
 print(features)
