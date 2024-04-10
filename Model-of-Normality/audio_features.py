@@ -18,7 +18,7 @@ model_urls = {
 
 log_mel_seg = np.load('C:/Users/eleni/Data/log_mel.npy')
 # log_mel_segments is numpy array
-
+print(log_mel_seg.shape)
 # Load the VGGish model
 # vggish_model = hub.load("https://tfhub.dev/google/vggish/1")
 
@@ -104,16 +104,7 @@ class ModifiedAlexNet(nn.Module):
         #print('features',x.shape)
         x=torch.flatten(x, start_dim=2)#a1,a2,a3......al{a of dim c} 
         x=torch.sum(x, dim=2)#a1*alpha1+a2*alpha2+.......+al*alphal
-        #print(x.shape)
         x=self.classifier(x)
-        #print('classifier',x)
-        #x=self.softmax(x)
-        #print('softmax',x)
-        #x = self.avgpool(x)
-        #print('avgpool',x.shape)
-        #x = torch.flatten(x, 1)
-        #print('flatten',x.shape)
-        #x = self.classifier(x)
         return x
    
 def modifiedAlexNet(pretrained=False, progress=True, **kwargs):
@@ -148,69 +139,34 @@ def get_3d_spec(Sxx_in, moments=None):
     stacked = [arr.reshape((h, w, 1)) for arr in (base, delta, delta2)]
     return np.concatenate(stacked, axis=2)
 
-# EXTACT THE MFCC FEATURE USING LIBROSA
-
-spector=get_3d_spec(log_mel_seg)
-npimg = np.transpose(spector,(2,0,1))
-input_tensor=torch.tensor(npimg)
-input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
-
 original_model=alexnet(pretrained=True)
 original_dict = original_model.state_dict()
 modifiedAlexNet=modifiedAlexNet(pretrained=False)
 modified_model_dict = modifiedAlexNet.state_dict()
 pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in modified_model_dict}
-modifiedAlexNet.to('cuda')
 
+results = []
+log_mel_spec_3d = np.array([get_3d_spec(segment) for segment in log_mel_seg])
+for segment in log_mel_spec_3d:
+    npimg = np.transpose(segment,(2,0,1))
+    input_tensor=torch.tensor(npimg, dtype=torch.float)
 
-x=get_3d_spec(log_mel_seg)
-npimg = np.transpose(x,(2,0,1))
-input_tensor=torch.tensor(npimg)
+    input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
+    # if torch.cuda.is_available():
+        # input_batch = input_batch.to('cuda')
+        # modifiedAlexNet.to('cuda')
+    with torch.no_grad():
+        output = modifiedAlexNet(input_batch)
+        results.append(output)
 
-input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
-if torch.cuda.is_available():
-    input_batch = input_batch.to('cuda')
-    modifiedAlexNet.to('cuda')
-with torch.no_grad():
-    output = modifiedAlexNet(input_batch)
-    #output.squeeze().shape
-    #output=torch.flatten(output, start_dim=2)
-    #print(output.shape)
-    #output=torch.sum(output, dim=2)
-    print(output)
+features = torch.cat(results, dim=0)
+print('Results:')
+print(features.shape) #torch.Size([282, 4])
+print(features)
 
-# ----------------------------Not segmented leg-mel/ Doesnt work-----------------------
-# spectrogram_input = np.expand_dims(log_mel, axis=[0, -1]).astype(np.float32)
-
-# # Use VGGish to extract embeddings
-# features = vggish_model(spectrogram_input)
-# print(type(features))
-# # Save a tensor
-# with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as fl:
-#     pickle.dump(features, fl)
-
-# -------------------------Segmented log-mel/ Doesnt work-------------------------------
-# all_features = []
-
-# # Iterate over each log-mel spectrogram segment
-# for segment in log_mel_segments:
-#     # Ensure the segment is correctly shaped for VGGish input
-#     # VGGish expects: [batch_size, num_frames, num_bands, num_channels]
-#     spectrogram_input = np.expand_dims(segment, axis=0)  # Add batch dimension
-#     spectrogram_input = np.expand_dims(spectrogram_input, axis=-1)  # Add channel dimension
-#     spectrogram_input = spectrogram_input.astype(np.float32)
-
-#     # Use VGGish to extract embeddings for the current segment
-#     features = vggish_model(spectrogram_input)
-#     all_features.append(features)
-
-# # Optionally, convert all_features to a numpy array for convenience if needed
-# all_features_array = np.array(all_features)
-
-# # Save the extracted features for all segments
-# with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as fl:
-#     pickle.dump(all_features_array, fl)
-
+# Save a tensor
+with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
+    pickle.dump(features, f)
 
 # -----------------------------------The simple one-------------------------------------------------------------
 # class AudioFeatureExtractor(nn.Module):

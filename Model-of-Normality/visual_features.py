@@ -6,15 +6,15 @@ import pickle
 
 # to kratame alla exei error
 
-visual = np.load('C:/Users/eleni/Data/visual.npy')
+visual = np.load('C:/Users/eleni/Data/aggr_visual.npy')
 labels = np.load('C:/Users/eleni/Data/labels.npy')
-filtered_visual = visual[:, 4:]
+filtered_visual = visual[:, 4:].astype(np.float32)
 tvisual = torch.from_numpy(filtered_visual)
 tlabels = torch.from_numpy(labels)
 
 input_data = tvisual.unsqueeze(1)  # Add channel dimension
 
-
+print(type(input_data[0][0]))
 class AU1DCNN(nn.Module):
     def __init__(self, num_features):
         super(AU1DCNN, self).__init__()
@@ -59,7 +59,6 @@ class AU1DCNN(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 # Example usage:
-# Assuming input size is 20 (features extracted from AUs) and number of classes is 10
 model = AU1DCNN(num_features=1)
 print(model)
 
@@ -71,7 +70,7 @@ with torch.no_grad():
     # loss = criterion(outputs.squeeze(), tlabels)
 
 # Save a tensor
-with open('C:/Users/eleni/Data/visual_features.pkl', 'wb') as f:
+with open('C:/Users/eleni/Data/visual_features2.pkl', 'wb') as f:
     pickle.dump(features, f)
 
 print(features)

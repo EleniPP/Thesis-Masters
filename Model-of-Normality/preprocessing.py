@@ -95,11 +95,14 @@ audio, sr = librosa.load(file, sr=None)
 
 # Segment the audio
 audio_segments = segment_audio(audio, sr)
+print(audio_segments.shape)
+
+# Audio preprocessing
 preprocessed_audio_segments = preprocessing(audio_segments,sr)
 np.save('C:/Users/eleni/Data/audio_segments.npy', preprocessed_audio_segments)
 
 
-# , errors='ignore'
+# Visual preprocessing
 f = open(file_visual, "r")
 # skip first line (title)
 next(f)
@@ -108,10 +111,30 @@ file_visual = f.readlines()
 visual_np = [np.fromstring(s, dtype=np.float32, sep=', ') for s in file_visual]
 visual = np.vstack(visual_np)
 
+# Aligning audio and visual features
+visual_frame_rate = 30  # Frames per second, adjust according to your data
+audio_segment_duration = 3.5  # Duration of each audio segment in seconds
+visual_frames_per_segment = int(visual_frame_rate * audio_segment_duration)
+# Initialize an array to hold the aggregated visual features for each audio segment
+aggregated_visual_features = np.zeros((282, 24))  # 282 segments, 2560 features per visual frame
+
+for segment_index in range(282):
+    # Calculate the start and end frame indices for the visual data corresponding to this audio segment
+    start_frame = segment_index * visual_frames_per_segment
+    end_frame = start_frame + visual_frames_per_segment
+    
+    # Ensure the end_frame does not exceed the total number of frames
+    end_frame = min(end_frame, visual.shape[0])
+
+    # Aggregate visual features within this segment by calculating the mean
+    aggregated_visual_features[segment_index, :] = visual[start_frame:end_frame].mean(axis=0)
+
 np.save('C:/Users/eleni/Data/visual.npy', visual)
+print('Shape of affregated')
+print(aggregated_visual_features.shape)
+np.save('C:/Users/eleni/Data/aggr_visual.npy', aggregated_visual_features)
 
-
-
+# Labels save
 labels_list=[]
 with open('C:/Users/eleni/Data/train_split.csv', newline='') as csvfile:
     spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -122,6 +145,7 @@ with open('C:/Users/eleni/Data/train_split.csv', newline='') as csvfile:
 labels = np.array(labels_list).astype(np.float32)
 np.save('C:/Users/eleni/Data/labels.npy', labels)
 
+# Creating log mel from segmented audio
 log_mel_segments, hop_length = calculate_melspec_for_segments(preprocessed_audio_segments, sr)
 
 np.save('C:/Users/eleni/Data/log_mel.npy', log_mel_segments)
@@ -129,6 +153,7 @@ np.save('C:/Users/eleni/Data/log_mel.npy', log_mel_segments)
 segment_index = 15  # Index of the segment you want to visualize
 log_mel_S = log_mel_segments[segment_index]
 
+# Plot log mel specs
 plt.figure(figsize=(10, 4))
 librosa.display.specshow(log_mel_S, sr=sr, hop_length=hop_length, x_axis='time', y_axis='mel')
 plt.colorbar(format='%+2.0f dB')
