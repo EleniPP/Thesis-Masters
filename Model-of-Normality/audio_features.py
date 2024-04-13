@@ -165,8 +165,8 @@ print(features.shape) #torch.Size([282, 4])
 print(features)
 
 # Save a tensor
-with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
-    pickle.dump(features, f)
+# with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
+#     pickle.dump(features, f)
 
 # -----------------------------------The simple one-------------------------------------------------------------
 # class AudioFeatureExtractor(nn.Module):

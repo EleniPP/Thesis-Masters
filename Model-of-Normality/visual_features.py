@@ -7,10 +7,9 @@ import pickle
 # to kratame alla exei error
 
 visual = np.load('C:/Users/eleni/Data/aggr_visual.npy')
-labels = np.load('C:/Users/eleni/Data/labels.npy')
 filtered_visual = visual[:, 4:].astype(np.float32)
 tvisual = torch.from_numpy(filtered_visual)
-tlabels = torch.from_numpy(labels)
+
 
 input_data = tvisual.unsqueeze(1)  # Add channel dimension
 
@@ -58,6 +57,7 @@ class AU1DCNN(nn.Module):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+                    
 # Example usage:
 model = AU1DCNN(num_features=1)
 print(model)
