@@ -16,8 +16,6 @@ with open('C:/Users/eleni/Data/visual_features2.pkl', 'rb') as f:
 labels = np.load('C:/Users/eleni/Data/labels.npy')
 tlabels = torch.from_numpy(labels)
 
-print(tlabels.shape)
-
 multimodal = torch.cat((audio_features, visual_features), dim=1)
 
 class DepressionPredictor(nn.Module):
@@ -43,3 +41,22 @@ model = DepressionPredictor()
 
 # Define the optimizer
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
+
+# Define the binary cross entropy loss
+criterion = nn.BCELoss()
+
+def train_model(model, features, label, optimizer, criterion, epochs=10):
+    model.train()
+    for epoch in range(epochs):
+        optimizer.zero_grad()
+        outputs = model(features)  # Output per segment
+        # Average the outputs to get a single prediction for the patient
+        prediction = outputs.mean()  # Taking the mean across all segment outputs
+        loss = criterion(prediction, label)  # Compare the average output to the single label
+        loss.backward()
+        optimizer.step()
+        print(f'Epoch {epoch+1}, Loss: {loss.item()}')
+
+
+# Train the model
+train_model(model, multimodal, tlabels[0], optimizer, criterion)
