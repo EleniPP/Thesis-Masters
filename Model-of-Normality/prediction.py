@@ -18,45 +18,64 @@ tlabels = torch.from_numpy(labels)
 
 multimodal = torch.cat((audio_features, visual_features), dim=1)
 
-class DepressionPredictor(nn.Module):
+class ProbabilisticSegmentPredictor(nn.Module):
     def __init__(self):
-        super(DepressionPredictor, self).__init__()
+        super(ProbabilisticSegmentPredictor, self).__init__()
         # Input features are the concatenated features of size 2564 (4 audio + 2560 visual)
-        self.classifier = nn.Sequential(
+        self.features = nn.Sequential(
             nn.Linear(2564, 2048),
             nn.ReLU(),
             nn.Dropout(0.5),  # Assuming some dropout for regularization
             nn.Linear(2048, 512),
             nn.ReLU(),
             nn.Dropout(0.5),  # Dropout to prevent overfitting
-            nn.Linear(512, 1)
         )
+        self.mean = nn.Linear(512, 1)  # Output mean score for each segment
+        self.log_variance = nn.Linear(512, 1)  # Output log variance for each segment
 
     def forward(self, x):
-        x = self.classifier(x)
-        return torch.sigmoid(x)  # Apply sigmoid activation function to output layer
+        # x shape: [282, 2564] - features for each segment
+        num_segments, num_features = x.shape
+        # batch_size, num_segments, num_features = x.shape // batch_size = 1
+        x = x.view(-1, num_features)  # Flatten segments into the batch dimension
+        x = self.features(x)
+        mean = self.mean(x)
+        log_variance = self.log_variance(x)
+        mean = mean.view(1, num_segments)  # Reshape to get means per patient per segment
+        log_variance = log_variance.view(1, num_segments)  # Reshape for variances per patient per segment
+        
+        # Calculate probability for each segment using the sigmoid function for the mean
+        probability = torch.sigmoid(mean)
 
+        return probability, log_variance
 # Instantiate the model
-model = DepressionPredictor()
+model = ProbabilisticSegmentPredictor()
 
-# Define the optimizer
+# Optimizer
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-# Define the binary cross entropy loss
-criterion = nn.BCELoss()
+def custom_loss(probabilities, log_variance, labels):
+    # Assume binary cross-entropy for probability with log variance as an uncertainty measure
+    # This is a placeholder for a more sophisticated uncertainty-aware loss
+    bce_loss = nn.BCELoss(reduction='none')
+    variance = torch.exp(log_variance)  # Convert log variance to variance
+    loss = bce_loss(probabilities, labels)  # Compute BCE loss per segment
+    weighted_loss = torch.mean(loss / variance) + torch.mean(log_variance)  # Weight loss by inverse variance
+    return weighted_loss
 
-def train_model(model, features, label, optimizer, criterion, epochs=10):
+# Define the binary cross entropy loss
+# criterion = nn.BCELoss(reduction='none')  # 'none' keeps the loss per item (segment)
+def train_model(model, features, labels, optimizer, criterion, epochs=10):
     model.train()
     for epoch in range(epochs):
         optimizer.zero_grad()
-        outputs = model(features)  # Output per segment
-        # Average the outputs to get a single prediction for the patient
-        prediction = outputs.mean()  # Taking the mean across all segment outputs
-        loss = criterion(prediction, label)  # Compare the average output to the single label
+        probabilities, log_variance = model(features)
+        loss = criterion(probabilities, log_variance, labels)
         loss.backward()
         optimizer.step()
         print(f'Epoch {epoch+1}, Loss: {loss.item()}')
 
-
+print(multimodal.shape[0])
+labels = torch.full((1, 282), tlabels[0])
 # Train the model
-train_model(model, multimodal, tlabels[0], optimizer, criterion)
+train_model(model, multimodal, labels, optimizer, custom_loss)
