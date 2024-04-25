@@ -18,64 +18,67 @@ tlabels = torch.from_numpy(labels)
 
 multimodal = torch.cat((audio_features, visual_features), dim=1)
 
-class ProbabilisticSegmentPredictor(nn.Module):
+class DepressionPredictor(nn.Module):
     def __init__(self):
-        super(ProbabilisticSegmentPredictor, self).__init__()
+        super(DepressionPredictor, self).__init__()
         # Input features are the concatenated features of size 2564 (4 audio + 2560 visual)
-        self.features = nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Linear(2564, 2048),
             nn.ReLU(),
             nn.Dropout(0.5),  # Assuming some dropout for regularization
             nn.Linear(2048, 512),
             nn.ReLU(),
             nn.Dropout(0.5),  # Dropout to prevent overfitting
+            nn.Linear(512, 2) #2 for softmax and 1 for sigmoid
         )
-        self.mean = nn.Linear(512, 1)  # Output mean score for each segment
-        self.log_variance = nn.Linear(512, 1)  # Output log variance for each segment
 
     def forward(self, x):
-        # x shape: [282, 2564] - features for each segment
-        num_segments, num_features = x.shape
-        # batch_size, num_segments, num_features = x.shape // batch_size = 1
-        x = x.view(-1, num_features)  # Flatten segments into the batch dimension
-        x = self.features(x)
-        mean = self.mean(x)
-        log_variance = self.log_variance(x)
-        mean = mean.view(1, num_segments)  # Reshape to get means per patient per segment
-        log_variance = log_variance.view(1, num_segments)  # Reshape for variances per patient per segment
-        
-        # Calculate probability for each segment using the sigmoid function for the mean
-        probability = torch.sigmoid(mean)
-
-        return probability, log_variance
+        x = self.classifier(x)
+        x = x.view(-1, 282, 2)  # Reshape to [batch_size, segments, classes]
+        return x  # Return logits for calibration and softmax application externally
+    
 # Instantiate the model
-model = ProbabilisticSegmentPredictor()
+model = DepressionPredictor()
 
-# Optimizer
+# Define the optimizer
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-def custom_loss(probabilities, log_variance, labels):
-    # Assume binary cross-entropy for probability with log variance as an uncertainty measure
-    # This is a placeholder for a more sophisticated uncertainty-aware loss
-    bce_loss = nn.BCELoss(reduction='none')
-    variance = torch.exp(log_variance)  # Convert log variance to variance
-    loss = bce_loss(probabilities, labels)  # Compute BCE loss per segment
-    weighted_loss = torch.mean(loss / variance) + torch.mean(log_variance)  # Weight loss by inverse variance
-    return weighted_loss
+class TemperatureScaler(nn.Module):
+    def __init__(self, model):
+        super(TemperatureScaler, self).__init__()
+        self.model = model
+        self.temperature = nn.Parameter(torch.ones(1))
 
-# Define the binary cross entropy loss
-# criterion = nn.BCELoss(reduction='none')  # 'none' keeps the loss per item (segment)
+    def forward(self, x):
+        logits = self.model(x)
+        return logits / self.temperature  # Scale logits by temperature Zi/T instead of Zi
+
+    def calibrate(self, logits, labels):
+        # Define the calibration criterion: Negative Log Likelihood
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.LBFGS([self.temperature], lr=0.01, max_iter=50)
+
+        def closure():
+            optimizer.zero_grad()
+            loss = criterion(logits / self.temperature, labels)
+            loss.backward()
+            return loss
+
+        optimizer.step(closure)
+
 def train_model(model, features, labels, optimizer, criterion, epochs=10):
     model.train()
     for epoch in range(epochs):
         optimizer.zero_grad()
-        probabilities, log_variance = model(features)
-        loss = criterion(probabilities, log_variance, labels)
+        outputs = model(features)  # Outputs are now probabilities for two classes for each segment
+        loss = criterion(outputs.view(-1, 2), labels.view(-1))  # Reshape appropriately if needed
         loss.backward()
         optimizer.step()
         print(f'Epoch {epoch+1}, Loss: {loss.item()}')
 
-print(multimodal.shape[0])
-labels = torch.full((1, 282), tlabels[0])
-# Train the model
-train_model(model, multimodal, labels, optimizer, custom_loss)
+
+labels = torch.full((1, 282), tlabels[0], dtype=torch.long)  # label should be 0 or 1, fill labels with 282 spots of 1 or 0
+# Calibrate the model
+temperature_model = TemperatureScaler(model)
+train_model(temperature_model.model, multimodal, labels, optimizer, nn.CrossEntropyLoss())
+
