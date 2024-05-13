@@ -95,4 +95,4 @@ train_model(temperature_model.model, multimodal, labels, optimizer, nn.CrossEntr
 
 # # Inference
 # new_data_features = ...  # Load or prepare new data
-# probabilities = predict_with_model(temperature_model, new_data_features)
+# probabilities = predict_with_model(temperature_model, new_data_features) 
