@@ -72,7 +72,6 @@ def entropy(probabilities):
     return -(probabilities * torch.log(probabilities)).sum(dim=-1)
 
 def compute_jacobian(inputs, model):
-    """ Computes the Jacobian of the entropy of the model output w.r.t inputs. """
     outputs = model(inputs)  # Get logits from the model
     probabilities = torch.softmax(outputs, dim=-1)  # Apply softmax to get probabilities
     entropies = entropy(probabilities)  # Compute entropy for each segment
@@ -91,7 +90,6 @@ def compute_jacobian(inputs, model):
 
 
 def saliency_from_jacobian(jacobian):
-    """ Calculate saliency from the Jacobian matrix of entropy. """
     # Calculate the product of the transpose of the Jacobian and the Jacobian
     jtj = torch.bmm(jacobian.transpose(2, 1), jacobian)
     # Calculate the determinant of the resulting matrix
@@ -115,7 +113,7 @@ def normalize_saliency(saliency_values):
     normalized_saliency = (saliency_values - min_val) / (max_val - min_val)
     return normalized_saliency
 
-def train_model(model, features, labels, optimizer, criterion, epochs=10):
+def train_model(model, features, labels, optimizer, criterion, epochs=1):
     model.train()
     # probabilities_list = []
     # entropy_history = []
@@ -131,14 +129,27 @@ def train_model(model, features, labels, optimizer, criterion, epochs=10):
         # Compute Jacobian of entropy with respect to inputs
         jacobian_matrix = compute_jacobian(features.requires_grad_(), model)
       
+        print(jacobian_matrix)
 
         # Calculate saliency from Jacobian
         saliency = saliency_from_jacobian(jacobian_matrix)
         normalized_saliency = normalize_saliency(saliency)
-        # Plot saliency map for each epoch (optional)
-        plot_saliency_map(normalized_saliency, title=f'Saliency Map - Epoch {epoch+1}')
 
+         # Debug prints to verify dimensions and values
         print(f'Epoch {epoch+1}, Loss: {loss.item()}')
+        print(f'Logits shape: {outputs.shape}')
+        print(f'Probabilities shape: {probabilities.shape}')
+        print(f'Entropy shape: {entropy(probabilities).shape}')
+        print(f'Jacobian matrix shape: {jacobian_matrix.shape}')
+        print(f'Saliency shape: {saliency.shape}')
+        print(f'Normalized Saliency shape: {normalized_saliency.shape}')
+        print('NORMALIZED SALIENCY')
+        print( saliency)
+
+        # Plot saliency map for each epoch (optional)
+        # plot_saliency_map(normalized_saliency, title=f'Saliency Map - Epoch {epoch+1}')
+
+        # print(f'Epoch {epoch+1}, Loss: {loss.item()}')
 
     # return probabilities_list
     
