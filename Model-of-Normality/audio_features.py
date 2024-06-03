@@ -14,13 +14,12 @@ model_urls = {
     'alexnet': 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth',
 }
 
-
-
-log_mel_seg = np.load('C:/Users/eleni/Data/log_mel.npy')
-# log_mel_segments is numpy array
-print(log_mel_seg.shape)
-# Load the VGGish model
-# vggish_model = hub.load("https://tfhub.dev/google/vggish/1")
+log_mel_seg = np.load('C:/Users/eleni/Data/log_mel.npy', allow_pickle=True)
+# log_mel_segments is numpy array of numpy array
+# print(log_mel_seg[0].shape) #(282,64,351) 
+# print(log_mel_seg[1].shape) #(195,64,351)
+# # Load the VGGish model
+# # vggish_model = hub.load("https://tfhub.dev/google/vggish/1")
 
 N_CHANNELS = 3
 
@@ -145,28 +144,36 @@ modifiedAlexNet=modifiedAlexNet(pretrained=False)
 modified_model_dict = modifiedAlexNet.state_dict()
 pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in modified_model_dict}
 
-results = []
-log_mel_spec_3d = np.array([get_3d_spec(segment) for segment in log_mel_seg])
-for segment in log_mel_spec_3d:
-    npimg = np.transpose(segment,(2,0,1))
-    input_tensor=torch.tensor(npimg, dtype=torch.float)
 
-    input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
-    # if torch.cuda.is_available():
-        # input_batch = input_batch.to('cuda')
-        # modifiedAlexNet.to('cuda')
-    with torch.no_grad():
-        output = modifiedAlexNet(input_batch)
-        results.append(output)
+# Resultssssssss
+patient_features = []
+for log_mel in log_mel_seg:
+    results = []
+    log_mel_spec_3d = np.array([get_3d_spec(segment) for segment in log_mel])
+    for segment in log_mel_spec_3d:
+        npimg = np.transpose(segment,(2,0,1))
+        input_tensor=torch.tensor(npimg, dtype=torch.float)
 
-features = torch.cat(results, dim=0)
+        input_batch = input_tensor.unsqueeze(0) # create a mini-batch as expected by the model
+        # if torch.cuda.is_available():
+            # input_batch = input_batch.to('cuda')
+            # modifiedAlexNet.to('cuda')
+        with torch.no_grad():
+            output = modifiedAlexNet(input_batch)
+            results.append(output)
+    features = torch.cat(results, dim=0)
+    patient_features.append(features.numpy())
+# Convert list of numpy arrays to a numpy array with dtype=object
+feature_patients = np.array(patient_features, dtype=object)
+# feature_patients = torch.stack(patient_features)
 print('Results:')
-print(features.shape) #torch.Size([282, 4])
-print(features)
+print(feature_patients[0].shape) #torch.Size([282, 4])
+print(feature_patients[1].shape)
 
-# Save a tensor
+np.save('C:/Users/eleni/Data/audio_features.npy', feature_patients)
+# # Save a tensor
 # with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
-#     pickle.dump(features, f)
+#     pickle.dump(feature_patients, f)
 
 # -----------------------------------The simple one-------------------------------------------------------------
 # class AudioFeatureExtractor(nn.Module):

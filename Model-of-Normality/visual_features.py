@@ -4,16 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pickle
 
-# to kratame alla exei error
 
-visual = np.load('C:/Users/eleni/Data/aggr_visual.npy')
-filtered_visual = visual[:, 4:].astype(np.float32)
-tvisual = torch.from_numpy(filtered_visual)
+visuals = np.load('C:/Users/eleni/Data/aggr_visual.npy', allow_pickle=True)
+# print(visuals.shape) #(2, 282, 24)
 
-
-input_data = tvisual.unsqueeze(1)  # Add channel dimension
-
-print(type(input_data[0][0]))
+# print(type(input_data[0][0]))
 class AU1DCNN(nn.Module):
     def __init__(self, num_features):
         super(AU1DCNN, self).__init__()
@@ -64,13 +59,24 @@ print(model)
 
 # Train the model (example: assuming binary classification)
 
-with torch.no_grad():
-    model.eval()
-    features = model(input_data)
-    # loss = criterion(outputs.squeeze(), tlabels)
+all_features = []
+for visual in visuals:
+    filtered_visual = visual[:, 4:].astype(np.float32)
+    tvisual = torch.from_numpy(filtered_visual)
 
-# Save a tensor
-with open('C:/Users/eleni/Data/visual_features2.pkl', 'wb') as f:
-    pickle.dump(features, f)
+    input_data = tvisual.unsqueeze(1)  # Add channel dimension
+    print(type(input_data))
+    with torch.no_grad():
+        model.eval()
+        features = model(input_data)
+        all_features.append(features.numpy())
 
-print(features)
+# Convert list of numpy arrays to a single numpy array with dtype=object
+all_features_np = np.array(all_features, dtype=object)
+
+np.save('C:/Users/eleni/Data/visual_features.npy', all_features_np)
+# # Save a tensor
+# with open('C:/Users/eleni/Data/visual_features2.pkl', 'wb') as f:
+#     pickle.dump(features, f)
+
+# print(features)
