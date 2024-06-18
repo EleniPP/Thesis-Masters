@@ -2,42 +2,54 @@
 import pysftp
 import os
 
-filename = '336_P.zip'
+directory = r"V:\staff-umbrella\EleniSalient\312_P"
+print("Directory contents:")
+for filename in os.listdir(directory):
+    print(filename)
 
-# localpath = os.path.join("C:", "Users", "eleni","Downloads")
-localpath = r'C:\Users\eleni\Downloads'
-# Components of the path
-drive = "V:"
-folder1 = "staff-umbrella"
-folder2 = "EleniSalient"
+file_path = r"V:\staff-umbrella\EleniSalient\312_P\312_CLNF_pose.txt"
 
-localFile = os.path.join(localpath,filename)
-# Construct the path
-# remotepath = os.path.join(drive, folder1, folder2)
-remotedirectory = "/{}/{}/{}".format(drive.replace(":", ""), folder1, folder2)
-
-# cnopts = pysftp.CnOpts(knownhosts=os.path.join(remotepath, "keyfile"))
-cnopts = pysftp.CnOpts()
-cnopts.hostkeys = None
-
-# SFTP server details
-host = 'sftp.tudelft.nl'
-user = 'elenipapadopou'
-password = 'Aggeliki6980173069!'
-
-with pysftp.Connection(host=host, username=user, password=password, cnopts=cnopts) as sftp:
-    sftp.put(localFile, os.path.join(remotedirectory, filename)) 
-    # sftp.chdir(remotepath)  # Change to the remote directory
-    # sftp.put(localFile)  # Upload file, retains original filename
-    # sftp.put(localFile, remotepath)
-
-    # Example to download a file from the SFTP server, adjust 'fileOnServer' and 'locationOnPC'
-    # fileOnServer = 'path/to/remote/file'
-    # locationOnPC = 'path/to/local/directory'
-    # sftp.get(fileOnServer, locationOnPC)
+# Open the file for reading
+with open(file_path, "r") as file:
+    content = file.read()
 
 
+# filename = '336_P.zip'
 
+# # localpath = os.path.join("C:", "Users", "eleni","Downloads")
+# localpath = r'C:\Users\eleni\Downloads'
+# # Components of the path
+# drive = "V:"
+# folder1 = "staff-umbrella"
+# folder2 = "EleniSalient"
+
+# localFile = os.path.join(localpath,filename)
+# # Construct the path
+# # remotepath = os.path.join(drive, folder1, folder2)
+# remotedirectory = "/{}/{}/{}".format(drive.replace(":", ""), folder1, folder2)
+
+# # cnopts = pysftp.CnOpts(knownhosts=os.path.join(remotepath, "keyfile"))
+# cnopts = pysftp.CnOpts()
+# cnopts.hostkeys = None
+
+# # SFTP server details
+# host = 'sftp.tudelft.nl'
+# user = 'elenipapadopou'
+# password = 'Aggeliki6980173069!'
+
+# with pysftp.Connection(host=host, username=user, password=password, cnopts=cnopts) as sftp:
+#     sftp.put(localFile, os.path.join(remotedirectory, filename)) 
+#     # sftp.chdir(remotepath)  # Change to the remote directory
+#     # sftp.put(localFile)  # Upload file, retains original filename
+#     # sftp.put(localFile, remotepath)
+
+#     # Example to download a file from the SFTP server, adjust 'fileOnServer' and 'locationOnPC'
+#     # fileOnServer = 'path/to/remote/file'
+#     # locationOnPC = 'path/to/local/directory'
+#     # sftp.get(fileOnServer, locationOnPC)
+
+
+# ----------------------------------------------------------------------------------------------------------------
 
 # import os
 # import requests
