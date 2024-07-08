@@ -14,7 +14,8 @@ model_urls = {
     'alexnet': 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth',
 }
 
-log_mel_seg = np.load('C:/Users/eleni/Data/log_mel.npy', allow_pickle=True)
+log_mel_seg = np.load('V:/staff-umbrella/EleniSalient/Data/log_mel.npy', allow_pickle=True)
+print(log_mel_seg.shape)
 # log_mel_segments is numpy array of numpy array
 # print(log_mel_seg[0].shape) #(282,64,351) 
 # print(log_mel_seg[1].shape) #(195,64,351)
@@ -166,11 +167,11 @@ for log_mel in log_mel_seg:
 # Convert list of numpy arrays to a numpy array with dtype=object
 feature_patients = np.array(patient_features, dtype=object)
 # feature_patients = torch.stack(patient_features)
-print('Results:')
-print(feature_patients[0].shape) #torch.Size([282, 4])
-print(feature_patients[1].shape)
+# print('Results:')
+# print(feature_patients[0].shape) #torch.Size([282, 4])
+# print(feature_patients[1].shape)
 
-np.save('C:/Users/eleni/Data/audio_features.npy', feature_patients)
+np.save('V:/staff-umbrella/EleniSalient/Data/audio_features.npy', feature_patients)
 # # Save a tensor
 # with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
 #     pickle.dump(feature_patients, f)

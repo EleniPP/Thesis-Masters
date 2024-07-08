@@ -24,7 +24,10 @@ def download_zip_files(url,directory):
     soup = BeautifulSoup(response.text, 'html.parser')
     zip_files = [url + link.get('href') for link in soup.find_all('a') if link.get('href').endswith('.zip')]
 
-    for zip_url in zip_files:
+    # Filter to only download zip files from 419_P.zip onwards
+    filtered_zip_files = [zf for zf in zip_files if '467_P.zip' <= os.path.basename(zf) <= '492_P.zip']
+
+    for zip_url in filtered_zip_files:
         file_name = os.path.basename(zip_url)
         print(f"Downloading {file_name}...")
 
@@ -36,6 +39,7 @@ def download_zip_files(url,directory):
 
 def upload_to_directory(file_name, file_data, directory):
     """
+    
     Save the file data to a specified directory.
 
     Args:

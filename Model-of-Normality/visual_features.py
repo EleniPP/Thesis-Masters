@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import pickle
 
 
-visuals = np.load('C:/Users/eleni/Data/aggr_visual.npy', allow_pickle=True)
+visuals = np.load('V:/staff-umbrella/EleniSalient/Data/aggr_visual.npy', allow_pickle=True)
 # print(visuals.shape) #(2, 282, 24)
 
 # print(type(input_data[0][0]))
@@ -65,7 +65,6 @@ for visual in visuals:
     tvisual = torch.from_numpy(filtered_visual)
 
     input_data = tvisual.unsqueeze(1)  # Add channel dimension
-    print(type(input_data))
     with torch.no_grad():
         model.eval()
         features = model(input_data)
@@ -74,7 +73,7 @@ for visual in visuals:
 # Convert list of numpy arrays to a single numpy array with dtype=object
 all_features_np = np.array(all_features, dtype=object)
 
-np.save('C:/Users/eleni/Data/visual_features.npy', all_features_np)
+np.save('V:/staff-umbrella/EleniSalient/Data/visual_features.npy', all_features_np)
 # # Save a tensor
 # with open('C:/Users/eleni/Data/visual_features2.pkl', 'wb') as f:
 #     pickle.dump(features, f)
