@@ -102,7 +102,7 @@ def get_labels(split):
         next(csvfile)
         row_count = 0
         for row in spamreader:
-            if (row_count >= max_row) and (split == "test"):
+            if (row_count >= max_row) and (split == "1"):
                 break
             labels_list.append(row[1])
             patients_list.append(row[0])
