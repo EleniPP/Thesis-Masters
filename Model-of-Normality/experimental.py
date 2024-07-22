@@ -18,14 +18,13 @@ import torch.optim.lr_scheduler as lr_scheduler
 import csv
 from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, roc_curve
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-
+from temperature_scaling import ModelWithTemperature
 
 # Load the audio tensor
 audio_features = np.load('D:/Data/audio_features.npy', allow_pickle=True)
 
 # Load the visual tensor
 visual_features = np.load('D:/Data/visual_features.npy', allow_pickle=True)
-print(visual_features.shape)
 # Load the labels
 # labels = np.load('V:/staff-umbrella/EleniSalient/Data/labels.npy')
 with open('D:/Data/labels.json', 'r') as file:
@@ -37,9 +36,11 @@ del labels_dict['492']
 # print(temp_labels)
 # numbers = list(labels_dict.keys())
 numbers = [int(key) for key in labels_dict.keys()]
+print(numbers[99])
+print(numbers[117])
+
 labels = list(labels_dict.values())
 tlabels = torch.tensor(labels)
-
 # Convert audio and visual features to torch tensors
 audio_features = [torch.from_numpy(a) for a in audio_features]
 visual_features = [torch.from_numpy(v) for v in visual_features]
@@ -82,6 +83,21 @@ for tensor in multimodal_features:
     normalized_tensor = (tensor - mean) / (std + 1e-5)
     normalized_multimodal.append(normalized_tensor)
 
+# Identify and remove NaN entries
+cleaned_multimodal_features = []
+cleaned_labels = []
+for i, (features, label) in enumerate(zip(normalized_multimodal, labels)):
+    if not torch.isnan(features).any() and not torch.isinf(features).any():
+        cleaned_multimodal_features.append(features)
+        cleaned_labels.append(label)
+    else:
+        print(f"Removed entry with NaN/Inf values at index {i}")
+
+# Re-assign the cleaned data
+normalized_multimodal = cleaned_multimodal_features
+tlabels = torch.tensor(cleaned_labels)
+
+
 def get_split(split):
     base_path = "D:/Data/"
     extension = "_split.csv"
@@ -96,6 +112,9 @@ def get_split(split):
         for row in spamreader:
             if (row_count >= max_row) and (split == "test"):
                 break
+            if row[0] == '402' or row[0] == '420':
+                row_count += 1
+                continue
             patients_list.append(row[0])
             row_count += 1
     patients_array = np.array(patients_list).astype(np.int32)
@@ -136,24 +155,24 @@ def evaluate_model(model, dataloader, criterion):
             total += valid_mask.sum().item()
     # Combine predictions and labels from all batches
     all_predictions = np.array(all_predictions,dtype=object)
-    print(all_predictions.shape)
-    print(all_predictions[0].shape)
-    print(all_predictions[0][0].shape)
-    print(all_predictions[0][0][0])
+    # print(all_predictions.shape)
+    # print(all_predictions[0].shape)
+    # print(all_predictions[0][0].shape)
+    # print(all_predictions[0][0][0])
     all_labels = np.array(all_labels,dtype=object)
-    print(all_labels.shape)
-    print(all_labels[0].shape)
-    print(all_labels[0][0].shape)
-    print(all_labels[0][0][0])
+    # print(all_labels.shape)
+    # print(all_labels[0].shape)
+    # print(all_labels[0][0].shape)
+    # print(all_labels[0][0][0])
 
     # Calculate overall accuracy
     accuracy = correct / total if total > 0 else 0
-    precision = precision_score(all_labels, all_predictions)
-    recall = recall_score(all_labels, all_predictions)
-    f1 = f1_score(all_labels, all_predictions)
-    auc = roc_auc_score(all_labels, all_predictions)
+    # precision = precision_score(all_labels, all_predictions)
+    # recall = recall_score(all_labels, all_predictions)
+    # f1 = f1_score(all_labels, all_predictions)
+    # auc = roc_auc_score(all_labels, all_predictions)
 
-    return test_loss / len(dataloader),accuracy,precision, recall, f1, auc, all_predictions, all_labels
+    return test_loss / len(dataloader),accuracy, all_predictions, all_labels
 
 def validate_model(model, dataloader, criterion):
     model.eval()  # Set the model to evaluation mode
@@ -211,41 +230,129 @@ class DepressionPredictor1(nn.Module):
 # possibleTODO - batch size change?
     def forward(self, x):
         x = self.classifier(x)
+        if torch.isnan(x).any() or torch.isinf(x).any():
+            print("Found nan or inf in model output")
         _, num_segments, _ = x.shape
         x = x.view(-1, num_segments, 2)  # Reshape to [batch_size, segments, classes]
         # x = softmax(x, dim=-1)
         return x  # Return logits for calibration and softmax application externally
     
-# class DepressionPredictor(nn.Module):
-#     def __init__(self):
-#         super(DepressionPredictor, self).__init__()
-#         self.lstm = nn.LSTM(input_size=2564, hidden_size=256, num_layers=2, batch_first=True, bidirectional=True)
-#         self.classifier = nn.Sequential(
-#             nn.Linear(256 * 2, 128),
-#             nn.ReLU(),
-#             nn.Dropout(0.5),
-#             nn.Linear(128, 2)
-#         )
-#         # self.lstm = nn.LSTM(input_size=2564, hidden_size=512, num_layers=2, batch_first=True, bidirectional=True)
-#         # self.classifier = nn.Sequential(
-#         #     nn.Linear(512 * 2, 256),  # *2 for bidirectional
-#         #     nn.ReLU(),
-#         #     nn.Dropout(0.5),
-#         #     nn.Linear(256, 128),
-#         #     nn.ReLU(),
-#         #     nn.Dropout(0.5),
-#         #     nn.Linear(128, 2)
-#         # )
+class DepressionPredictor(nn.Module):
+    def __init__(self):
+        super(DepressionPredictor, self).__init__()
+        self.lstm = nn.LSTM(input_size=2564, hidden_size=256, num_layers=2, batch_first=True, bidirectional=True)
+        self.classifier = nn.Sequential(
+            nn.Linear(256 * 2, 128),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(128, 2)
+        )
+        # self.lstm = nn.LSTM(input_size=2564, hidden_size=512, num_layers=2, batch_first=True, bidirectional=True)
+        # self.classifier = nn.Sequential(
+        #     nn.Linear(512 * 2, 256),  # *2 for bidirectional
+        #     nn.ReLU(),
+        #     nn.Dropout(0.5),
+        #     nn.Linear(256, 128),
+        #     nn.ReLU(),
+        #     nn.Dropout(0.5),
+        #     nn.Linear(128, 2)
+        # )
 
-#     def forward(self, x):
-#         # x shape: [batch_size, num_segments, 2564]
-#         lstm_out, _ = self.lstm(x)  # lstm_out shape: [batch_size, num_segments, 512 * 2]
-#         # Pass each segment through the classifier
-#         out = self.classifier(lstm_out)  # out shape: [batch_size, num_segments, 2]
-#         return out  # Logits for each segment
+    def forward(self, x):
+        # x shape: [batch_size, num_segments, 2564]
+        lstm_out, _ = self.lstm(x)  # lstm_out shape: [batch_size, num_segments, 512 * 2]
+        # Pass each segment through the classifier
+        out = self.classifier(lstm_out)  # out shape: [batch_size, num_segments, 2]
+        return out  # Logits for each segment
     
-
 class TemperatureScaler(nn.Module):
+    def __init__(self, model):
+        super(TemperatureScaler, self).__init__()
+        self.model = model
+        self.temperature = nn.Parameter(torch.ones(1) * 1.0)  # Initialize with a value, e.g., 1.5
+
+    def forward(self, x):
+        logits = self.model(x)
+        if (logits > 1e6).any() or (logits < -1e6).any():
+            print("Logits out of range before scaling")
+        scaled_logits = self.temperature_scale(logits)
+        return scaled_logits
+
+    def temperature_scale(self, logits):
+        # Scale the logits with the learned temperature parameter        
+        # Clamp the temperature to avoid extreme values
+        temperature = torch.clamp(self.temperature, min=0.1) + 1e-5
+        print(f"Temperature value: {temperature.item()}")
+        return logits / temperature
+
+    def calibrate(self, validation_loader, criterion):
+        # Ensure the model is in evaluation mode
+        self.model.eval()
+
+        logits_list = []
+        labels_list = []
+
+        with torch.no_grad():
+            for features, labels in validation_loader:
+                logits = self.model(features)
+                logits = logits.view(-1, logits.size(-1))  # Flatten the logits
+                labels = labels.view(-1)  # Flatten the labels
+
+                valid_mask = labels != -100  # Mask for valid labels
+                logits = logits[valid_mask]
+                labels = labels[valid_mask]
+
+                logits_list.append(logits)
+                labels_list.append(labels)
+
+        # Concatenate all logits and labels
+        logits = torch.cat(logits_list)
+        labels = torch.cat(labels_list)
+
+        # Optimize the temperature parameter
+        optimizer = torch.optim.LBFGS([self.temperature], lr=0.001, max_iter=50)
+
+        def eval():
+            optimizer.zero_grad()
+            scaled_logits = self.temperature_scale(logits) #i have nan
+            # loss = criterion(self.temperature_scale(logits), labels)
+            loss = criterion(scaled_logits, labels) #i have nan
+            loss.backward() #i have nan
+            return loss
+
+        optimizer.step(eval)
+
+        return self
+    
+# Function to evaluate the calibrated model
+def evaluate_calibrated_model(model, dataloader, criterion):
+    model.eval()
+    total_loss = 0
+    all_labels = []
+    all_probs = []
+    
+    with torch.no_grad():
+        for features, labels in dataloader:
+            logits = model(features)            
+            logits_flat = logits.reshape(-1, logits.size(-1))  # Flatten the logits using reshape
+            labels_flat = labels.reshape(-1)  # Flatten the labels using reshape
+
+            loss = criterion(logits_flat, labels_flat)
+            # loss = criterion(logits.view(-1, 2), labels.view(-1))
+            total_loss += loss.item()
+            print(logits[0])
+            print(1/0)
+            probs = torch.softmax(logits, dim=1)[:, 1]  # Probability of class 1
+            all_labels.extend(labels_flat.cpu().numpy())
+            all_probs.extend(probs.cpu().numpy())
+    
+    avg_loss = total_loss / len(dataloader)
+    all_labels = np.array(all_labels)
+    all_probs = np.array(all_probs)
+    
+    return avg_loss, all_labels, all_probs
+
+class TemperatureScaler1(nn.Module):
     def __init__(self, model):
         super(TemperatureScaler, self).__init__()
         self.model = model
@@ -344,7 +451,7 @@ def train_model(model, dataloader, optimizer, criterion,epochs=5):
 
 # Use the temp labels since we only have 2 patients
 
-labels = [torch.full((features.shape[0],), tlabels[i], dtype=torch.long) for i, features in enumerate(multimodal_features)]
+labels = [torch.full((features.shape[0],), tlabels[i], dtype=torch.long) for i, features in enumerate(normalized_multimodal)]
 # Instantiate the model
 model = DepressionPredictor1()
 
@@ -360,9 +467,13 @@ temperature_model = TemperatureScaler(model)
 train_split = get_split('train')
 test_split = get_split('test')
 val_split = get_split('dev')
-
+del numbers[117]
+del numbers[99]
 # Create a dictionary mapping patient numbers to their corresponding index
 patient_to_index = {patient_num: idx for idx, patient_num in enumerate(numbers)}
+for i, features in enumerate(normalized_multimodal):
+    if torch.isnan(features).any():
+        print(f"NaN values in normalized_multimodal before dataloaders at index {i}")
 
 # Filter the features and labels for each split
 train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
@@ -378,16 +489,30 @@ train_loader = DataLoader(train_dataset, batch_size=32,collate_fn=collate_fn, sh
 val_loader = DataLoader(val_dataset, batch_size=32,collate_fn=collate_fn, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=32,collate_fn=collate_fn,shuffle=False)
 # dataset = DepressionDataset(normalized_multimodal, labels)
+
+for input, label in train_loader:
+    if torch.isnan(input).any() or torch.isinf(input).any():
+        print("Found nan or inf in input data")
+    if torch.isnan(label).any() or torch.isinf(label).any():
+        print("Found nan or inf in labels")
+
 criterion = nn.CrossEntropyLoss(ignore_index=-100)
 
 # train_loader = DataLoader(dataset, batch_size=32, collate_fn=collate_fn, shuffle=True)
-probability_distribution = train_model(temperature_model.model, train_loader, optimizer, criterion)
+probability_distribution = train_model(model, train_loader, optimizer, criterion)
 
-# Evaluate the model on the test set
-test_loss,accuracy, test_precision, test_recall, test_f1, test_auc, test_predictions, test_labels = evaluate_model(model, test_loader, criterion)
+# temperature_model.calibrate(val_loader, criterion)
+# test_loss, test_labels, test_probs = evaluate_calibrated_model(temperature_model, test_loader, criterion)
+# print(f'Test Loss: {test_loss}')
+# # Evaluate the model on the test set
+test_loss,accuracy, test_predictions, test_labels = evaluate_model(model, test_loader, criterion)
 print(f'Test Loss: {test_loss}')
 print(f'Accuracy: {accuracy}')
-print(f'Test Precision: {test_precision:.4f}')
-print(f'Test Recall: {test_recall:.4f}')
-print(f'Test F1 Score: {test_f1:.4f}')
-print(f'Test AUC: {test_auc:.4f}')
+# print(f'Test Precision: {test_precision:.4f}')
+# print(f'Test Recall: {test_recall:.4f}')
+# print(f'Test F1 Score: {test_f1:.4f}')
+# print(f'Test AUC: {test_auc:.4f}')
+
+# Try calibration model from github
+scaled_model = ModelWithTemperature(model)
+scaled_model.set_temperature(val_loader)
