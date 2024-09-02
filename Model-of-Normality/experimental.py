@@ -19,6 +19,7 @@ import csv
 from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, roc_curve
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from temperature_scaling import ModelWithTemperature
+from sklearn.model_selection import KFold
 
 # Load the audio tensor
 audio_features = np.load('D:/Data/audio_features1.npy', allow_pickle=True)
@@ -188,18 +189,25 @@ def collate_fn(batch):
 class DepressionPredictor1(nn.Module):
     def __init__(self):
         super(DepressionPredictor1, self).__init__()
+        # Completely simplified:
         self.classifier = nn.Sequential(
-            # nn.Linear(3072, 2048),
-            nn.Linear(3072, 1024),
+            nn.Linear(3072, 512),
             nn.ReLU(),
-            nn.Dropout(0.6),  # Assuming some dropout for regularization
-            # nn.Linear(2048, 512),
-            nn.Linear(1024, 256),
-            nn.ReLU(),
-            nn.Dropout(0.6),  # Dropout to prevent overfitting
-            # nn.Linear(512, 2) #2 for softmax and 1 for sigmoid
-            nn.Linear(256, 2)
+            nn.Dropout(0.5),
+            nn.Linear(512, 2)
         )
+        # self.classifier = nn.Sequential(
+        #     # nn.Linear(3072, 2048),
+        #     nn.Linear(3072, 512),
+        #     nn.ReLU(),
+        #     nn.Dropout(0.5),  # Assuming some dropout for regularization
+        #     # nn.Linear(2048, 512),
+        #     nn.Linear(512, 128),
+        #     nn.ReLU(),
+        #     nn.Dropout(0.5),  # Dropout to prevent overfitting
+        #     # nn.Linear(512, 2) #2 for softmax and 1 for sigmoid
+        #     nn.Linear(128, 2)
+        # )
 # possibleTODO - batch size change?
     def forward(self, x):
         x = self.classifier(x)
@@ -241,6 +249,10 @@ def normalize_saliency(saliency_values):
     return normalized_saliency
 
 def train_model(model, dataloader, optimizer, criterion,epochs=10):
+    # Early stopping
+    early_stopping_patience = 5  # Number of epochs with no improvement after which training will be stopped
+    best_val_loss = float('inf')
+    patience_counter = 0
     model.train()
     all_probabilities = []
     train_losses = []
@@ -280,6 +292,17 @@ def train_model(model, dataloader, optimizer, criterion,epochs=10):
         # store probabilities across all epochs
         all_probabilities.append(epoch_probabilities) 
         val_loss = validate_model(model, val_loader, criterion)
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+            # Save model if it's the best one yet
+            torch.save(model.state_dict(), 'best_model.pth')
+        else:
+            patience_counter += 1
+    
+        if patience_counter >= early_stopping_patience:
+            print("Early stopping triggered")
+            break
         # print(f'Epoch {epoch+1}, Loss: {total_loss}')
         train_losses.append(total_loss/len(dataloader))
         val_losses.append(val_loss)
@@ -299,10 +322,11 @@ def train_model(model, dataloader, optimizer, criterion,epochs=10):
 model = DepressionPredictor1()
 
 # Define the optimizer
+# optimizer = optim.Adam(model.parameters(), lr=2e-5, weight_decay=2e-4)
 optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
 # 5e-3
 # Define the learning rate scheduler
-scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5, verbose=True)
+scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
 # Calibrate the model
 
 # Get splits
@@ -337,11 +361,11 @@ train_dataset = DepressionDataset(train_multimodal, train_labels)
 val_dataset = DepressionDataset(val_multimodal, val_labels)
 test_dataset = DepressionDataset(test_multimodal, test_labels)
 
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
 # Do i need to shuffle the validation set as well?
-val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
 # Leave the test alone
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
 criterion = nn.CrossEntropyLoss(ignore_index=-100)
 
