@@ -14,7 +14,7 @@ model_urls = {
     'alexnet': 'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth',
 }
 
-log_mel_seg = np.load('C:/Users/eleni/Data/log_mel.npy', allow_pickle=True)
+log_mel_seg = np.load('D:/Data/log_mel.npy', allow_pickle=True)
 print(log_mel_seg.shape)
 # log_mel_segments is numpy array of numpy array
 # print(log_mel_seg[0].shape) #(282,64,351) 
@@ -75,7 +75,7 @@ def alexnet(pretrained=False, progress=True, **kwargs):
      
 
 class ModifiedAlexNet(nn.Module):
-    def __init__(self, num_classes=4):
+    def __init__(self, num_classes=512):
         super(ModifiedAlexNet, self).__init__()
         self.num_classes=num_classes
         self.features = nn.Sequential(
@@ -171,7 +171,7 @@ feature_patients = np.array(patient_features, dtype=object)
 # print(feature_patients[0].shape) #torch.Size([282, 4])
 # print(feature_patients[1].shape)
 
-np.save('C:/Users/eleni/Data/audio_features.npy', feature_patients)
+np.save('D:/Data/audio_features1.npy', feature_patients)
 # # Save a tensor
 # with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
 #     pickle.dump(feature_patients, f)
