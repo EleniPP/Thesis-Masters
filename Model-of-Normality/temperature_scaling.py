@@ -56,12 +56,14 @@ class ModelWithTemperature(nn.Module):
                 logits_list.append(logits)
                 labels_list.append(label)
 
-            # Pad sequences to the same length
-            max_len = max([logit.size(1) for logit in logits_list])
-            logits_padded = [F.pad(logit, (0, 0, 0, max_len - logit.size(1))) for logit in logits_list]
-            labels_padded = [F.pad(label, (0, max_len - label.size(1)), value=-100) for label in labels_list]
-            logits = torch.cat(logits_padded)
-            labels = torch.cat(labels_padded)
+            # SKIP padding for now i think its not needed
+            # # Pad sequences to the same length
+            # max_len = max([logit.size(1) for logit in logits_list])
+            # logits_padded = [F.pad(logit, (0, 0, 0, max_len - logit.size(1))) for logit in logits_list]
+            # # labels_padded = [F.pad(label, (0, max_len - label.size(1)), value=-100) for label in labels_list]
+            # labels_padded = [F.pad(label, (0, max_len - label.size(-1)), value=-100) if label.dim() > 1 else F.pad(label, (0, max_len - label.size(0)), value=-100) for label in labels_list]
+            logits = torch.cat(logits_list)
+            labels = torch.cat(labels_list)
 
         # Flatten the logits and labels for the loss calculation
         logits_flat = logits.view(-1, logits.size(-1))  # [batch_size * num_segments, num_classes]

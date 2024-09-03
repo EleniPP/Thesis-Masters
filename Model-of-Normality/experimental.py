@@ -125,7 +125,7 @@ def evaluate_model(model, dataloader, criterion):
             # labels_flat = labels_flat[valid_mask]
             # outputs_flat = outputs_flat[valid_mask]
             loss = criterion(outputs, labels)
-            # loss = criterion(outputs.view(-1, 2), labels.view(-1))
+            # loss = xon(outputs.view(-1, 2), labels.view(-1))
             test_loss += loss.item()
             
             # Store predictions and labels for further evaluation (e.g., accuracy, precision, recall)
@@ -248,6 +248,48 @@ def normalize_saliency(saliency_values):
     normalized_saliency = (saliency_values - min_val) / (max_val - min_val)
     return normalized_saliency
 
+def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
+    model.train()
+    train_losses = []
+
+    for epoch in range(epochs):
+        total_loss = 0
+        for i, (features, labels) in enumerate(dataloader):
+            optimizer.zero_grad()
+
+            # DEBUG: Ensure features do not contain NaN or Inf
+            if torch.isnan(features).any() or torch.isinf(features).any():
+                continue
+
+            outputs = model(features)  # Outputs are logits for two classes
+            loss = criterion(outputs, labels)
+            loss.backward()
+
+            # Apply gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer.step()
+
+            total_loss += loss.item()
+
+        # Logging the average training loss for this epoch
+        avg_train_loss = total_loss / len(dataloader)
+        train_losses.append(avg_train_loss)
+        print(f'Epoch {epoch+1}, Training Loss: {avg_train_loss:.4f}')
+
+    # Save the final trained model
+    torch.save(model.state_dict(), 'final_model.pth')
+    print("Final model saved as 'final_model.pth'")
+
+    # Optionally, plot the training losses
+    plt.plot(range(1, epochs + 1), train_losses, label='Training Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Over Epochs')
+    plt.legend()
+    plt.show()
+
+    return model
+
 def train_model(model, dataloader, optimizer, criterion,epochs=10):
     # Early stopping
     early_stopping_patience = 5  # Number of epochs with no improvement after which training will be stopped
@@ -267,16 +309,6 @@ def train_model(model, dataloader, optimizer, criterion,epochs=10):
                 continue
 
             outputs = model(features)  # Outputs are now probabilities for two classes for each segment
-# ----------------------------Previous version -------------------------------------
-            # # Flatten labels and outputs to apply loss
-            # labels_flat = labels.view(-1)
-            # outputs_flat = outputs.view(-1, 2)
-
-            # # Filter out the ignore_index labels and corresponding outputs
-            # valid_mask = labels_flat != -100
-            # labels_flat = labels_flat[valid_mask]
-            # outputs_flat = outputs_flat[valid_mask]
-# -----------------------------------------------------------------------------------
             probabilities = softmax(outputs, dim=-1) #i NEED TO CHECK WHERE THE SOFTMAX GOES HERE OR IN THE TEMPERATURE SCALER
             # loss = criterion(outputs.view(-1, 2), labels[i].view(-1))  # Reshape appropriately if needed
             loss = criterion(outputs,labels)
@@ -292,6 +324,7 @@ def train_model(model, dataloader, optimizer, criterion,epochs=10):
         # store probabilities across all epochs
         all_probabilities.append(epoch_probabilities) 
         val_loss = validate_model(model, val_loader, criterion)
+        # Early stopping
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
@@ -367,19 +400,103 @@ val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
 # Leave the test alone
 test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
-criterion = nn.CrossEntropyLoss(ignore_index=-100)
+# criterion = nn.CrossEntropyLoss(ignore_index=-100)
 
-probability_distribution = train_model(model, train_loader, optimizer, criterion)
+# probability_distribution = train_model(model, train_loader, optimizer, criterion)
 
-# # Evaluate the model on the test set
-# test_loss,accuracy, test_predictions, test_labels = evaluate_model(model, test_loader, criterion)
-# print(f'Test Loss: {test_loss}')
-# print(f'Accuracy: {accuracy}')
-# print(f'Test Precision: {test_precision:.4f}')
-# print(f'Test Recall: {test_recall:.4f}')
-# print(f'Test F1 Score: {test_f1:.4f}')
-# print(f'Test AUC: {test_auc:.4f}')
 
+# -----------CROSS VALIDATION-------------------------------------
+# # Number of folds for cross-validation
+# n_splits = 5 #for the debugging of the temperature scaling
+
+# # Initialize KFold
+# kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+# # Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
+# # and labels respectively
+# features = train_multimodal  # Use your multimodal features directly
+# labels = train_labels  # Use your labels directly
+
+# # Store results for each fold
+# fold_results = []
+
+# # Cross-Validation Loop
+# for fold, (train_index, val_index) in enumerate(kf.split(features)):
+#     print(f"Fold {fold + 1}/{n_splits}")
+    
+#     # Split data into training and validation based on indices
+#     train_features, val_features = features[train_index], features[val_index]
+#     train_labels, val_labels = labels[train_index], labels[val_index]
+    
+#     # Create DataLoaders for this fold
+#     train_dataset = DepressionDataset(train_features, train_labels)
+#     val_dataset = DepressionDataset(val_features, val_labels)
+    
+#     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+#     val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+    
+#     # Initialize a new model for this fold
+#     model = DepressionPredictor1()
+    
+#     # Define the optimizer and learning rate scheduler
+#     optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+#     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
+    
+#     # Define the loss function
+#     criterion = nn.CrossEntropyLoss(ignore_index=-100)
+    
+#     # Train the model for this fold
+#     probability_distribution = train_model(model, train_loader, optimizer, criterion)
+    
+#     # Evaluate on the validation set
+#     val_loss, accuracy, _, _ = evaluate_model(model, val_loader, criterion)
+    
+#     # Store results for this fold
+#     fold_results.append({
+#         'fold': fold + 1,
+#         'val_loss': val_loss,
+#         'accuracy': accuracy
+#     })
+    
+#     print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
+#     print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
+
+# # Calculate average validation loss and accuracy across all folds
+# avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
+# avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
+
+# print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
+# print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
+
+
+# # Final training of the model in the whole training set
+# # Assuming you have your full training data in train_loader
+# final_model = DepressionPredictor1()  # Initialize your model architecture
+
+# # Define optimizer and criterion
+# optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
+# criterion = nn.CrossEntropyLoss()
+
+# # Train the model on the full dataset
+# final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
+
+
+# Load the saved model
+model = DepressionPredictor1()  # Initialize your model architecture
+model.load_state_dict(torch.load('final_model.pth'))
+model.eval()  # Set the model to evaluation mode
+print("Model loaded and ready for calibration")
 # Try calibration model from github
 scaled_model = ModelWithTemperature(model)
 scaled_model.set_temperature(val_loader)
+
+scaled_model.eval()
+all_probs = []
+with torch.no_grad():   
+    for inputs, _ in train_loader:
+        logits = scaled_model(inputs)  # Scaled logits
+        probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
+        all_probs.append(probs)
+
+# Combine probabilities from all batches
+all_probs = torch.cat(all_probs, dim=0)
