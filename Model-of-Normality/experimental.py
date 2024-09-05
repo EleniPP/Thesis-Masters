@@ -75,14 +75,19 @@ tlabels = torch.tensor(cleaned_labels)
 def flatten(multimodal_features, labels):
     flattened_features = []
     flattened_labels = []
-    for i, (features, label) in enumerate(zip(normalized_multimodal, labels)):
+    num_seg_per_patient = []
+    for i, (features, label) in enumerate(zip(multimodal_features, labels)):
+        cnt = 0
         for segment in features:
+            cnt += 1
             flattened_features.append(segment)
             flattened_labels.append(label)
+        num_seg_per_patient.append(cnt)
     # Convert flattened lists to tensors
     flattened_features = torch.stack(flattened_features)
     flattened_labels = torch.tensor(flattened_labels)
-    return flattened_features,flattened_labels
+    segment_per_patient = torch.tensor(num_seg_per_patient)
+    return flattened_features,flattened_labels,segment_per_patient
 
 def get_split(split):
     base_path = "D:/Data/"
@@ -168,7 +173,7 @@ def filter_by_patient_numbers(features, labels, patient_numbers):
     filtered_labels = [labels[idx] for idx in indices]
     return filtered_features, filtered_labels
 
-class DepressionDataset(Dataset):
+class DepressionDatasetCross(Dataset):
     def __init__(self, data, labels):
         self.data = data
         self.labels = labels
@@ -178,6 +183,18 @@ class DepressionDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.data[idx], self.labels[idx]
+    
+class DepressionDataset(Dataset):
+    def __init__(self, data, labels, patient_numbers):
+        self.data = data
+        self.labels = labels
+        self.patient_numbers = patient_numbers
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, idx):
+        return self.data[idx], self.labels[idx], self.patient_numbers[idx]
 
 # Function to collate and pad sequences within a batch
 def collate_fn(batch):
@@ -218,20 +235,6 @@ class DepressionPredictor1(nn.Module):
         return x  # Return logits for calibration and softmax application externally
     
 
-def entropy(probabilities):
-    return -(probabilities * torch.log(probabilities)).sum(dim=-1)
-
-
-def plot_saliency_map(saliency_values, title='Saliency Map'):
-    plt.figure(figsize=(10, 5))
-    plt.plot(saliency_values, label='Saliency')
-    plt.xlabel('Segment')
-    plt.ylabel('Normalized Saliency')
-    plt.title(title)
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
 def plot_losses(train_losses,val_losses):
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, label='Training Loss')
@@ -242,11 +245,6 @@ def plot_losses(train_losses,val_losses):
     plt.legend()
     plt.show()
 
-def normalize_saliency(saliency_values):
-    max_val = torch.max(saliency_values)
-    min_val = torch.min(saliency_values)
-    normalized_saliency = (saliency_values - min_val) / (max_val - min_val)
-    return normalized_saliency
 
 def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
     model.train()
@@ -254,9 +252,8 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
 
     for epoch in range(epochs):
         total_loss = 0
-        for i, (features, labels) in enumerate(dataloader):
+        for i, (features, labels,_) in enumerate(dataloader):
             optimizer.zero_grad()
-
             # DEBUG: Ensure features do not contain NaN or Inf
             if torch.isnan(features).any() or torch.isinf(features).any():
                 continue
@@ -270,15 +267,14 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
             optimizer.step()
 
             total_loss += loss.item()
-
         # Logging the average training loss for this epoch
         avg_train_loss = total_loss / len(dataloader)
         train_losses.append(avg_train_loss)
         print(f'Epoch {epoch+1}, Training Loss: {avg_train_loss:.4f}')
 
     # Save the final trained model
-    torch.save(model.state_dict(), 'final_model.pth')
-    print("Final model saved as 'final_model.pth'")
+    torch.save(model.state_dict(), 'final_model1.pth')
+    print("Final model saved as 'final_model1.pth'")
 
     # Optionally, plot the training losses
     plt.plot(range(1, epochs + 1), train_losses, label='Training Loss')
@@ -290,7 +286,7 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
 
     return model
 
-def train_model(model, dataloader, optimizer, criterion,epochs=10):
+def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=10):
     # Early stopping
     early_stopping_patience = 5  # Number of epochs with no improvement after which training will be stopped
     best_val_loss = float('inf')
@@ -323,13 +319,14 @@ def train_model(model, dataloader, optimizer, criterion,epochs=10):
             epoch_probabilities.append(probabilities.detach())
         # store probabilities across all epochs
         all_probabilities.append(epoch_probabilities) 
+        # TODO: me poio val kano edo validate? poios val_loader einai aftos?
         val_loss = validate_model(model, val_loader, criterion)
         # Early stopping
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
             # Save model if it's the best one yet
-            torch.save(model.state_dict(), 'best_model.pth')
+            torch.save(model.state_dict(), 'best_model1.pth')
         else:
             patience_counter += 1
     
@@ -366,6 +363,8 @@ scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, p
 train_split = get_split('train')
 test_split = get_split('test')
 val_split = get_split('dev')
+train_split = train_split[:-1] #because i didnt put the 491 in the labels_dict and in the data
+
 del numbers[117]
 del numbers[99]
 # Create a dictionary mapping patient numbers to their corresponding index
@@ -376,114 +375,117 @@ for i, features in enumerate(normalized_multimodal):
 
 # Filter the features and labels for each split
 train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
-train_multimodal,train_labels = flatten(train_multimodal,train_labels)
-print(train_multimodal.shape)
-print(train_multimodal[0].shape)
+train_multimodal,train_labels,segments_per_patient_train = flatten(train_multimodal,train_labels)
+
+# array that has the patient number for each segment in the train multimnodal
+segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+
 
 val_multimodal, val_labels = filter_by_patient_numbers(normalized_multimodal, labels, val_split)
-val_multimodal,val_labels = flatten(val_multimodal,val_labels)
+val_multimodal,val_labels,segments_per_patient_val = flatten(val_multimodal,val_labels)
+segments_patients_val = [num for count, num in zip(segments_per_patient_val, val_split) for _ in range(count)]
 print(val_multimodal.shape)
 print(val_multimodal[0].shape)
 # Leave the test alone for now :)
 test_multimodal, test_labels = filter_by_patient_numbers(normalized_multimodal, labels, test_split)
-test_multimodal,test_labels = flatten(test_multimodal,test_labels)
+test_multimodal,test_labels,segments_per_patient_test = flatten(test_multimodal,test_labels)
+segments_patients_test = [num for count, num in zip(segments_per_patient_test, test_split) for _ in range(count)]
 print(test_multimodal.shape)
 print(test_multimodal[0].shape)
 # Create training, validation, and test datasets and dataloaders
-train_dataset = DepressionDataset(train_multimodal, train_labels)
-val_dataset = DepressionDataset(val_multimodal, val_labels)
-test_dataset = DepressionDataset(test_multimodal, test_labels)
+train_dataset = DepressionDataset(train_multimodal, train_labels,segments_patients_train)
+val_dataset = DepressionDataset(val_multimodal, val_labels,segments_patients_val)
+test_dataset = DepressionDataset(test_multimodal, test_labels,segments_patients_test)
 
 train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
 # Do i need to shuffle the validation set as well?
 val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
 # Leave the test alone
 test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
-
 # criterion = nn.CrossEntropyLoss(ignore_index=-100)
 
-# probability_distribution = train_model(model, train_loader, optimizer, criterion)
+# probability_distribution = train_model(model, train_loader,val_loader, optimizer, criterion)
 
 
 # -----------CROSS VALIDATION-------------------------------------
-# # Number of folds for cross-validation
-# n_splits = 5 #for the debugging of the temperature scaling
+# Number of folds for cross-validation
+n_splits = 5 #for the debugging of the temperature scaling
 
-# # Initialize KFold
-# kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+# Initialize KFold
+kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-# # Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
-# # and labels respectively
-# features = train_multimodal  # Use your multimodal features directly
-# labels = train_labels  # Use your labels directly
+# Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
+# and labels respectively
+features = train_multimodal  # Use your multimodal features directly
+labels = train_labels  # Use your labels directly
 
-# # Store results for each fold
-# fold_results = []
+# Store results for each fold
+fold_results = []
 
-# # Cross-Validation Loop
-# for fold, (train_index, val_index) in enumerate(kf.split(features)):
-#     print(f"Fold {fold + 1}/{n_splits}")
+# Cross-Validation Loop
+for fold, (train_index, val_index) in enumerate(kf.split(features)):
+    print(f"Fold {fold + 1}/{n_splits}")
     
-#     # Split data into training and validation based on indices
-#     train_features, val_features = features[train_index], features[val_index]
-#     train_labels, val_labels = labels[train_index], labels[val_index]
+    # Split data into training and validation based on indices
+    train_features, val_features = features[train_index], features[val_index]
+    train_labels, val_labels = labels[train_index], labels[val_index]
     
-#     # Create DataLoaders for this fold
-#     train_dataset = DepressionDataset(train_features, train_labels)
-#     val_dataset = DepressionDataset(val_features, val_labels)
+    # Create DataLoaders for this fold
+    train_dataset = DepressionDatasetCross(train_features, train_labels)
+    val_dataset = DepressionDatasetCross(val_features, val_labels)
     
-#     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-#     val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+    training_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
     
-#     # Initialize a new model for this fold
-#     model = DepressionPredictor1()
+    # Initialize a new model for this fold
+    model = DepressionPredictor1()
     
-#     # Define the optimizer and learning rate scheduler
-#     optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
-#     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
+    # Define the optimizer and learning rate scheduler
+    optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
     
-#     # Define the loss function
-#     criterion = nn.CrossEntropyLoss(ignore_index=-100)
+    # Define the loss function
+    criterion = nn.CrossEntropyLoss(ignore_index=-100)
     
-#     # Train the model for this fold
-#     probability_distribution = train_model(model, train_loader, optimizer, criterion)
+    # Train the model for this fold
+    probability_distribution = train_model(model, training_loader,valid_loader, optimizer, criterion)
     
-#     # Evaluate on the validation set
-#     val_loss, accuracy, _, _ = evaluate_model(model, val_loader, criterion)
+    # Evaluate on the validation set
+    val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
     
-#     # Store results for this fold
-#     fold_results.append({
-#         'fold': fold + 1,
-#         'val_loss': val_loss,
-#         'accuracy': accuracy
-#     })
+    # Store results for this fold
+    fold_results.append({
+        'fold': fold + 1,
+        'val_loss': val_loss,
+        'accuracy': accuracy
+    })
     
-#     print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
-#     print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
+    print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
+    print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
 
-# # Calculate average validation loss and accuracy across all folds
-# avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
-# avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
+# Calculate average validation loss and accuracy across all folds
+avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
+avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
 
-# print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
-# print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
+print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
+print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
 
 
-# # Final training of the model in the whole training set
-# # Assuming you have your full training data in train_loader
-# final_model = DepressionPredictor1()  # Initialize your model architecture
+# Final training of the model in the whole training set
+# Assuming you have your full training data in train_loader
+final_model = DepressionPredictor1()  # Initialize your model architecture
 
-# # Define optimizer and criterion
-# optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
-# criterion = nn.CrossEntropyLoss()
+# Define optimizer and criterion
+optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
+criterion = nn.CrossEntropyLoss()
 
-# # Train the model on the full dataset
-# final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
+# Train the model on the full dataset
+final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
 
 
 # Load the saved model
 model = DepressionPredictor1()  # Initialize your model architecture
-model.load_state_dict(torch.load('final_model.pth'))
+model.load_state_dict(torch.load('final_model1.pth'))
 model.eval()  # Set the model to evaluation mode
 print("Model loaded and ready for calibration")
 # Try calibration model from github
@@ -492,11 +494,21 @@ scaled_model.set_temperature(val_loader)
 
 scaled_model.eval()
 all_probs = []
+all_patient_numbers = []
 with torch.no_grad():   
-    for inputs, _ in train_loader:
+    for inputs, _ , patient_numbers in train_loader:
         logits = scaled_model(inputs)  # Scaled logits
         probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
         all_probs.append(probs)
-
+        # Save patient numbers from the current batch
+        all_patient_numbers.extend(patient_numbers.tolist())
 # Combine probabilities from all batches
 all_probs = torch.cat(all_probs, dim=0)
+# Convert patient numbers list to a tensor
+all_patient_numbers = torch.tensor(all_patient_numbers)
+print(all_probs)
+print(all_probs.shape) 
+print(all_patient_numbers.shape)
+torch.save(all_probs, 'probability_distributions.pth')
+torch.save(all_patient_numbers, 'all_patient_numbers.pth')
+print(all_patient_numbers.shape)  
