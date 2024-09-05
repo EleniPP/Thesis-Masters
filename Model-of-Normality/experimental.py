@@ -1,26 +1,20 @@
 import torch
 import pickle
+from collections import Counter
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from torch.nn.functional import softmax
 import matplotlib.pyplot as plt
 import json
-from pprint import pprint
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import torch.nn.functional as F
-from sklearn.model_selection import train_test_split
-import zarr
 import torch.optim.lr_scheduler as lr_scheduler
 import csv
-from sklearn.metrics import confusion_matrix, classification_report, roc_auc_score, roc_curve
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from temperature_scaling import ModelWithTemperature
 from sklearn.model_selection import KFold
-
+from sklearn.metrics import classification_report
 # Load the audio tensor
 audio_features = np.load('D:/Data/audio_features1.npy', allow_pickle=True)
 
@@ -151,6 +145,7 @@ def evaluate_model(model, dataloader, criterion):
     all_labels = np.array(all_labels,dtype=object)
     # Calculate overall accuracy
     accuracy = correct / total if total > 0 else 0
+    print(classification_report(labels, predicted))
     # precision = precision_score(all_labels, all_predictions)
     # recall = recall_score(all_labels, all_predictions)
     # f1 = f1_score(all_labels, all_predictions)
@@ -381,6 +376,10 @@ for i, features in enumerate(normalized_multimodal):
 train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
 train_multimodal,train_labels,segments_per_patient_train,segments_order_train = flatten(train_multimodal,train_labels)
 
+#Check inbalance
+unique, counts = np.unique(train_labels, return_counts=True)
+class_distribution = dict(zip(unique, counts))
+print(class_distribution)
 # array that has the patient number for each segment in the train multimnodal
 segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
 
@@ -412,67 +411,76 @@ test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
 
 # -----------CROSS VALIDATION-------------------------------------
-# # Number of folds for cross-validation
-# n_splits = 5 #for the debugging of the temperature scaling
+# Number of folds for cross-validation
+n_splits = 5 #for the debugging of the temperature scaling
 
-# # Initialize KFold
-# kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+# Initialize KFold
+kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-# # Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
-# # and labels respectively
-# features = train_multimodal  # Use your multimodal features directly
-# labels = train_labels  # Use your labels directly
+# Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
+# and labels respectively
+features = train_multimodal  # Use your multimodal features directly
+labels = train_labels  # Use your labels directly
 
-# # Store results for each fold
-# fold_results = []
+# Store results for each fold
+fold_results = []
 
-# # Cross-Validation Loop
-# for fold, (train_index, val_index) in enumerate(kf.split(features)):
-#     print(f"Fold {fold + 1}/{n_splits}")
+# Cross-Validation Loop
+for fold, (train_index, val_index) in enumerate(kf.split(features)):
+    print(f"Fold {fold + 1}/{n_splits}")
     
-#     # Split data into training and validation based on indices
-#     train_features, val_features = features[train_index], features[val_index]
-#     train_labels, val_labels = labels[train_index], labels[val_index]
-    
-#     # Create DataLoaders for this fold
-#     train_dataset = DepressionDatasetCross(train_features, train_labels)
-#     val_dataset = DepressionDatasetCross(val_features, val_labels)
-    
-#     training_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-#     valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
-    
-#     # Initialize a new model for this fold
-#     model = DepressionPredictor1()
-    
-#     # Define the optimizer and learning rate scheduler
-#     optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
-#     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
-    
-#     # Define the loss function
-#     criterion = nn.CrossEntropyLoss(ignore_index=-100)
-    
-#     # Train the model for this fold
-#     probability_distribution = train_model(model, training_loader,valid_loader, optimizer, criterion)
-    
-#     # Evaluate on the validation set
-#     val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
-    
-#     # Store results for this fold
-#     fold_results.append({
-#         'fold': fold + 1,
-#         'val_loss': val_loss,
-#         'accuracy': accuracy
-#     })
-    
-#     print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
-#     print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
+    # Split data into training and validation based on indices
+    train_features, val_features = features[train_index], features[val_index]
+    train_labels, val_labels = labels[train_index], labels[val_index]
 
-# # Calculate average validation loss and accuracy across all folds
-# avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
-# avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
 
-# print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
-# print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
+    # Assuming y contains your labels (for the entire dataset)
+    unique, counts = np.unique(train_labels, return_counts=True)
+    class_distribution = dict(zip(unique, counts))
+    print(class_distribution)
+    
+    unique, counts = np.unique(val_labels, return_counts=True)
+    class_distribution = dict(zip(unique, counts))
+    print(class_distribution)
+    # Create DataLoaders for this fold
+    train_dataset = DepressionDatasetCross(train_features, train_labels)
+    val_dataset = DepressionDatasetCross(val_features, val_labels)
+    
+    training_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+    
+    # Initialize a new model for this fold
+    model = DepressionPredictor1()
+    
+    # Define the optimizer and learning rate scheduler
+    optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
+    
+    # Define the loss function
+    criterion = nn.CrossEntropyLoss(ignore_index=-100,weight=torch.tensor([1.38, 3.66]))
+    
+    # Train the model for this fold
+    probability_distribution = train_model(model, training_loader,valid_loader, optimizer, criterion)
+    
+    # Evaluate on the validation set
+    val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
+    
+    # Store results for this fold
+    fold_results.append({
+        'fold': fold + 1,
+        'val_loss': val_loss,
+        'accuracy': accuracy
+    })
+    
+    print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
+    print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
+
+# Calculate average validation loss and accuracy across all folds
+avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
+avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
+
+print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
+print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
 
 
 # # Final training of the model in the whole training set
@@ -487,34 +495,34 @@ test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 # final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
 
 
-# Load the saved model
-model = DepressionPredictor1()  # Initialize your model architecture
-model.load_state_dict(torch.load('final_model1.pth'))
-model.eval()  # Set the model to evaluation mode
-print("Model loaded and ready for calibration")
-# Try calibration model from github
-scaled_model = ModelWithTemperature(model)
-scaled_model.set_temperature(val_loader)
+# # Load the saved model
+# model = DepressionPredictor1()  # Initialize your model architecture
+# model.load_state_dict(torch.load('final_model1.pth'))
+# model.eval()  # Set the model to evaluation mode
+# print("Model loaded and ready for calibration")
+# # Try calibration model from github
+# scaled_model = ModelWithTemperature(model)
+# scaled_model.set_temperature(val_loader)
 
-scaled_model.eval()
-all_probs = []
-all_patient_numbers = []
-all_segment_orders = []
-with torch.no_grad():   
-    for inputs, _ , patient_numbers,segments_order in train_loader:
-        logits = scaled_model(inputs)  # Scaled logits
-        probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
-        all_probs.append(probs)
-        # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
-        all_patient_numbers.extend(patient_numbers.tolist())
-        all_segment_orders.extend(segments_order.tolist())
-# Combine probabilities from all batches
-all_probs = torch.cat(all_probs, dim=0)
-# Convert patient numbers list to a tensor
-all_patient_numbers = torch.tensor(all_patient_numbers)
-all_segment_orders = torch.tensor(all_segment_orders)
+# scaled_model.eval()
+# all_probs = []
+# all_patient_numbers = []
+# all_segment_orders = []
+# with torch.no_grad():   
+#     for inputs, _ , patient_numbers,segments_order in train_loader:
+#         logits = scaled_model(inputs)  # Scaled logits
+#         probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
+#         all_probs.append(probs)
+#         # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
+#         all_patient_numbers.extend(patient_numbers.tolist())
+#         all_segment_orders.extend(segments_order.tolist())
+# # Combine probabilities from all batches
+# all_probs = torch.cat(all_probs, dim=0)
+# # Convert patient numbers list to a tensor
+# all_patient_numbers = torch.tensor(all_patient_numbers)
+# all_segment_orders = torch.tensor(all_segment_orders)
 
-torch.save(all_probs, 'probability_distributions.pth')
-torch.save(all_patient_numbers, 'all_patient_numbers.pth')
-torch.save(all_segment_orders, 'all_segment_orders.pth')
+# torch.save(all_probs, 'probability_distributions.pth')
+# torch.save(all_patient_numbers, 'all_patient_numbers.pth')
+# torch.save(all_segment_orders, 'all_segment_orders.pth')
  

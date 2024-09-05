@@ -95,8 +95,10 @@ for i,probability_distribution in enumerate(grouped_probabilities):
     # Normalize saliency
     normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
 
+    peak_segment_index = torch.argmax(normalized_saliency).item()
+    print(peak_segment_index)
     # Plot the saliency map
-    plot_saliency_map(normalized_saliency.numpy(),f'patient_{grouped_patients[i][0]}.png', title='Saliency Map')
+    # plot_saliency_map(normalized_saliency.numpy(),f'patient_{grouped_patients[i][0]}.png', title='Saliency Map')
 # --------------------------------------------------------------------------------------
 
 # # comment for the first run / maybe i'll put it in a different file
