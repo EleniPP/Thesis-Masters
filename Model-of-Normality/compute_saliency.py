@@ -31,8 +31,8 @@ def normalize_saliency(saliency_values):
 probability_distributions = torch.load('probability_distributions.pth')
 print(probability_distributions[0].type)
 all_patient_numbers = torch.load('all_patient_numbers.pth')
-# Now `probability_distributions` is ready for use
-print(probability_distributions.shape)
+all_segment_orders = torch.load('all_segment_orders.pth')
+
 
 # now this one has shuffled patient numbers. Each patient number appears in the torch as many times as the segments the patient video has. Each patient number
 # is in the position of the list where the respective segment is on the probability distribution list of the segment.
@@ -43,7 +43,7 @@ torch.set_printoptions(threshold=torch.inf)
 sorted_patients, indices = torch.sort(all_patient_numbers)
 # Then we use the indices to sort the probability distributions in the same order as the patients were sorted so that each segment belongs to the right patient
 sorted_probability_distributions = probability_distributions[indices]
-
+sorted_segment_orders = all_segment_orders[indices]
 
 # Now create a tensor of probability distributions for each patient. So i need to group sorted patients by patient.
 grouped_patients = []
@@ -56,9 +56,18 @@ unique_values, counts = torch.unique(sorted_patients, return_counts=True)
 start_idx = 0
 # Iterate through each unique value
 for value, count in zip(unique_values, counts):
+    patients=sorted_patients[start_idx:start_idx + count] #each patients tensor contains the id of a patient #ofsegments times
+    patient_segment_orders = sorted_segment_orders[start_idx:start_idx + count] #each patient_segment_orders contain the index of each segment which is the index from its original order before the shuffling
+    probabilities = sorted_probability_distributions[start_idx:start_idx + count] #each probabilities tensor contains the probability distribution of the segment in the aligned position with the above.
+
+    # Sort the segment orders to get the chronological order
+    sorted_orders, sorted_order_indices = torch.sort(patient_segment_orders)  # Sort the orders and get indices
+    # And now we also parallely sort the probabilities so they will also be in chronological order and that each probability will be alignes in its segment
+    sorted_probabilities = probabilities[sorted_order_indices]
+
     # Slice the tensors based on the count of each unique value
     grouped_patients.append(sorted_patients[start_idx:start_idx + count]) #slice starts at start_idx and ends at start_idx+count
-    grouped_probabilities.append(sorted_probability_distributions[start_idx:start_idx + count])
+    grouped_probabilities.append(sorted_probabilities)
 
     # Update the starting index for the next group
     start_idx += count

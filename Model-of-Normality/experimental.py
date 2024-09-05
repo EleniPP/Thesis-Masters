@@ -37,8 +37,8 @@ del labels_dict['492']
 # print(temp_labels)
 # numbers = list(labels_dict.keys())
 numbers = [int(key) for key in labels_dict.keys()]
-print(numbers[99])
-print(numbers[117])
+# print(numbers[99])
+# print(numbers[117])
 
 labels = list(labels_dict.values())
 tlabels = torch.tensor(labels)
@@ -76,18 +76,21 @@ def flatten(multimodal_features, labels):
     flattened_features = []
     flattened_labels = []
     num_seg_per_patient = []
+    segment_indices = []  # To track original chronological order within each patient
     for i, (features, label) in enumerate(zip(multimodal_features, labels)):
         cnt = 0
-        for segment in features:
+        for idx,segment in enumerate(features):
             cnt += 1
             flattened_features.append(segment)
             flattened_labels.append(label)
+            segment_indices.append(idx)
         num_seg_per_patient.append(cnt)
     # Convert flattened lists to tensors
     flattened_features = torch.stack(flattened_features)
     flattened_labels = torch.tensor(flattened_labels)
     segment_per_patient = torch.tensor(num_seg_per_patient)
-    return flattened_features,flattened_labels,segment_per_patient
+    segment_indices = torch.tensor(segment_indices) #so this contains the index of each segment for all the segments in the train multimodal
+    return flattened_features,flattened_labels,segment_per_patient, segment_indices
 
 def get_split(split):
     base_path = "D:/Data/"
@@ -185,16 +188,17 @@ class DepressionDatasetCross(Dataset):
         return self.data[idx], self.labels[idx]
     
 class DepressionDataset(Dataset):
-    def __init__(self, data, labels, patient_numbers):
+    def __init__(self, data, labels, patient_numbers, segment_indices):
         self.data = data
         self.labels = labels
         self.patient_numbers = patient_numbers
+        self.segment_indices = segment_indices  # Original segment order
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        return self.data[idx], self.labels[idx], self.patient_numbers[idx]
+        return self.data[idx], self.labels[idx], self.patient_numbers[idx], self.segment_indices[idx]
 
 # Function to collate and pad sequences within a batch
 def collate_fn(batch):
@@ -252,7 +256,7 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
 
     for epoch in range(epochs):
         total_loss = 0
-        for i, (features, labels,_) in enumerate(dataloader):
+        for i, (features, labels,_,_) in enumerate(dataloader):
             optimizer.zero_grad()
             # DEBUG: Ensure features do not contain NaN or Inf
             if torch.isnan(features).any() or torch.isinf(features).any():
@@ -375,27 +379,27 @@ for i, features in enumerate(normalized_multimodal):
 
 # Filter the features and labels for each split
 train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
-train_multimodal,train_labels,segments_per_patient_train = flatten(train_multimodal,train_labels)
+train_multimodal,train_labels,segments_per_patient_train,segments_order_train = flatten(train_multimodal,train_labels)
 
 # array that has the patient number for each segment in the train multimnodal
 segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
 
 
 val_multimodal, val_labels = filter_by_patient_numbers(normalized_multimodal, labels, val_split)
-val_multimodal,val_labels,segments_per_patient_val = flatten(val_multimodal,val_labels)
+val_multimodal,val_labels,segments_per_patient_val,segments_order_val = flatten(val_multimodal,val_labels)
 segments_patients_val = [num for count, num in zip(segments_per_patient_val, val_split) for _ in range(count)]
-print(val_multimodal.shape)
-print(val_multimodal[0].shape)
+# print(val_multimodal.shape)
+# print(val_multimodal[0].shape)
 # Leave the test alone for now :)
 test_multimodal, test_labels = filter_by_patient_numbers(normalized_multimodal, labels, test_split)
-test_multimodal,test_labels,segments_per_patient_test = flatten(test_multimodal,test_labels)
+test_multimodal,test_labels,segments_per_patient_test,segments_order_test = flatten(test_multimodal,test_labels)
 segments_patients_test = [num for count, num in zip(segments_per_patient_test, test_split) for _ in range(count)]
-print(test_multimodal.shape)
-print(test_multimodal[0].shape)
+# print(test_multimodal.shape)
+# print(test_multimodal[0].shape)
 # Create training, validation, and test datasets and dataloaders
-train_dataset = DepressionDataset(train_multimodal, train_labels,segments_patients_train)
-val_dataset = DepressionDataset(val_multimodal, val_labels,segments_patients_val)
-test_dataset = DepressionDataset(test_multimodal, test_labels,segments_patients_test)
+train_dataset = DepressionDataset(train_multimodal, train_labels,segments_patients_train,segments_order_train)
+val_dataset = DepressionDataset(val_multimodal, val_labels,segments_patients_val,segments_order_val)
+test_dataset = DepressionDataset(test_multimodal, test_labels,segments_patients_test,segments_order_test)
 
 train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
 # Do i need to shuffle the validation set as well?
@@ -495,20 +499,22 @@ scaled_model.set_temperature(val_loader)
 scaled_model.eval()
 all_probs = []
 all_patient_numbers = []
+all_segment_orders = []
 with torch.no_grad():   
-    for inputs, _ , patient_numbers in train_loader:
+    for inputs, _ , patient_numbers,segments_order in train_loader:
         logits = scaled_model(inputs)  # Scaled logits
         probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
         all_probs.append(probs)
         # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
         all_patient_numbers.extend(patient_numbers.tolist())
+        all_segment_orders.extend(segments_order.tolist())
 # Combine probabilities from all batches
 all_probs = torch.cat(all_probs, dim=0)
 # Convert patient numbers list to a tensor
 all_patient_numbers = torch.tensor(all_patient_numbers)
-print(all_probs)
-print(all_probs.shape) 
-print(all_patient_numbers.shape)
+all_segment_orders = torch.tensor(all_segment_orders)
+
 torch.save(all_probs, 'probability_distributions.pth')
 torch.save(all_patient_numbers, 'all_patient_numbers.pth')
-print(all_patient_numbers.shape)  
+torch.save(all_segment_orders, 'all_segment_orders.pth')
+ 

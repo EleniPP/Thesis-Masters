@@ -45,7 +45,7 @@ class ModelWithTemperature(nn.Module):
         logits_list = []
         labels_list = []
         with torch.no_grad():
-            for input, label,_ in valid_loader:
+            for input, label,_,_ in valid_loader:
                 if torch.isnan(input).any() or torch.isinf(input).any():
                     print("Skipping batch due to NaN or Inf values in input data or labels during calibration")
                     continue
