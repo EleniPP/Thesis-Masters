@@ -408,79 +408,79 @@ test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
 
 # -----------CROSS VALIDATION-------------------------------------
-# Number of folds for cross-validation
-n_splits = 5 #for the debugging of the temperature scaling
+# # Number of folds for cross-validation
+# n_splits = 5 #for the debugging of the temperature scaling
 
-# Initialize KFold
-kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+# # Initialize KFold
+# kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-# Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
-# and labels respectively
-features = train_multimodal  # Use your multimodal features directly
-labels = train_labels  # Use your labels directly
+# # Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
+# # and labels respectively
+# features = train_multimodal  # Use your multimodal features directly
+# labels = train_labels  # Use your labels directly
 
-# Store results for each fold
-fold_results = []
+# # Store results for each fold
+# fold_results = []
 
-# Cross-Validation Loop
-for fold, (train_index, val_index) in enumerate(kf.split(features)):
-    print(f"Fold {fold + 1}/{n_splits}")
+# # Cross-Validation Loop
+# for fold, (train_index, val_index) in enumerate(kf.split(features)):
+#     print(f"Fold {fold + 1}/{n_splits}")
     
-    # Split data into training and validation based on indices
-    train_features, val_features = features[train_index], features[val_index]
-    train_labels, val_labels = labels[train_index], labels[val_index]
+#     # Split data into training and validation based on indices
+#     train_features, val_features = features[train_index], features[val_index]
+#     train_labels, val_labels = labels[train_index], labels[val_index]
     
-    # Create DataLoaders for this fold
-    train_dataset = DepressionDatasetCross(train_features, train_labels)
-    val_dataset = DepressionDatasetCross(val_features, val_labels)
+#     # Create DataLoaders for this fold
+#     train_dataset = DepressionDatasetCross(train_features, train_labels)
+#     val_dataset = DepressionDatasetCross(val_features, val_labels)
     
-    training_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-    valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+#     training_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+#     valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
     
-    # Initialize a new model for this fold
-    model = DepressionPredictor1()
+#     # Initialize a new model for this fold
+#     model = DepressionPredictor1()
     
-    # Define the optimizer and learning rate scheduler
-    optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
+#     # Define the optimizer and learning rate scheduler
+#     optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+#     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
     
-    # Define the loss function
-    criterion = nn.CrossEntropyLoss(ignore_index=-100)
+#     # Define the loss function
+#     criterion = nn.CrossEntropyLoss(ignore_index=-100)
     
-    # Train the model for this fold
-    probability_distribution = train_model(model, training_loader,valid_loader, optimizer, criterion)
+#     # Train the model for this fold
+#     probability_distribution = train_model(model, training_loader,valid_loader, optimizer, criterion)
     
-    # Evaluate on the validation set
-    val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
+#     # Evaluate on the validation set
+#     val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
     
-    # Store results for this fold
-    fold_results.append({
-        'fold': fold + 1,
-        'val_loss': val_loss,
-        'accuracy': accuracy
-    })
+#     # Store results for this fold
+#     fold_results.append({
+#         'fold': fold + 1,
+#         'val_loss': val_loss,
+#         'accuracy': accuracy
+#     })
     
-    print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
-    print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
+#     print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
+#     print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
 
-# Calculate average validation loss and accuracy across all folds
-avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
-avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
+# # Calculate average validation loss and accuracy across all folds
+# avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
+# avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
 
-print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
-print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
+# print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
+# print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
 
 
-# Final training of the model in the whole training set
-# Assuming you have your full training data in train_loader
-final_model = DepressionPredictor1()  # Initialize your model architecture
+# # Final training of the model in the whole training set
+# # Assuming you have your full training data in train_loader
+# final_model = DepressionPredictor1()  # Initialize your model architecture
 
-# Define optimizer and criterion
-optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
-criterion = nn.CrossEntropyLoss()
+# # Define optimizer and criterion
+# optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
+# criterion = nn.CrossEntropyLoss()
 
-# Train the model on the full dataset
-final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
+# # Train the model on the full dataset
+# final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
 
 
 # Load the saved model
@@ -500,7 +500,7 @@ with torch.no_grad():
         logits = scaled_model(inputs)  # Scaled logits
         probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
         all_probs.append(probs)
-        # Save patient numbers from the current batch
+        # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
         all_patient_numbers.extend(patient_numbers.tolist())
 # Combine probabilities from all batches
 all_probs = torch.cat(all_probs, dim=0)

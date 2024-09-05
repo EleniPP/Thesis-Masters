@@ -6,7 +6,7 @@ import numpy as np
 def entropy(probabilities):
     return -(probabilities * torch.log(probabilities)).sum(dim=-1)
 
-def plot_saliency_map(saliency_values, title='Saliency Map'):
+def plot_saliency_map(saliency_values, file_name,  title='Saliency Map', save=True):
     plt.figure(figsize=(10, 5))
     plt.plot(saliency_values, label='Saliency')
     plt.xlabel('Segment')
@@ -14,7 +14,11 @@ def plot_saliency_map(saliency_values, title='Saliency Map'):
     plt.title(title)
     plt.legend()
     plt.grid(True)
-    plt.show()
+    if save:
+        plt.savefig(f'D:/Results/Saliency_maps/{file_name}')
+        plt.close()
+    else:
+        plt.show()
 
 
 def normalize_saliency(saliency_values):
@@ -25,31 +29,65 @@ def normalize_saliency(saliency_values):
 
 # Load the tensor from the file
 probability_distributions = torch.load('probability_distributions.pth')
+print(probability_distributions[0].type)
 all_patient_numbers = torch.load('all_patient_numbers.pth')
 # Now `probability_distributions` is ready for use
-print(probability_distributions.shape)  # Should print torch.Size([28317, 2])
+print(probability_distributions.shape)
+
+# now this one has shuffled patient numbers. Each patient number appears in the torch as many times as the segments the patient video has. Each patient number
+# is in the position of the list where the respective segment is on the probability distribution list of the segment.
 torch.set_printoptions(threshold=torch.inf)
-print(all_patient_numbers)
+
+# So what i want is for each patient, to have a probability distribution so i can calculate the jacobian and the saliency 
+# So first we have to align again the probability distribution torch with the all patient numbers torch after we put in ascending order the all patient numbers torch.
+sorted_patients, indices = torch.sort(all_patient_numbers)
+# Then we use the indices to sort the probability distributions in the same order as the patients were sorted so that each segment belongs to the right patient
+sorted_probability_distributions = probability_distributions[indices]
 
 
-# Compute the entropy for each probability distribution (each row in the tensor)
-segment_entropies = entropy(probability_distributions)
+# Now create a tensor of probability distributions for each patient. So i need to group sorted patients by patient.
+grouped_patients = []
+grouped_probabilities = []
 
-# Convert entropies to NumPy for gradient calculation
-segment_entropies_np = segment_entropies.numpy()
+# get unique values and how many times they appear
+unique_values, counts = torch.unique(sorted_patients, return_counts=True)
 
-# Compute the gradient of entropy across segments (not per single segment)
-jacobian = np.gradient(segment_entropies_np)
+# to keep track of where the groups start
+start_idx = 0
+# Iterate through each unique value
+for value, count in zip(unique_values, counts):
+    # Slice the tensors based on the count of each unique value
+    grouped_patients.append(sorted_patients[start_idx:start_idx + count]) #slice starts at start_idx and ends at start_idx+count
+    grouped_probabilities.append(sorted_probability_distributions[start_idx:start_idx + count])
 
-# Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
-# is the square of gradient itself
-segment_saliency = np.square(jacobian)
+    # Update the starting index for the next group
+    start_idx += count
 
-# Normalize saliency
-normalized_saliency = normalize_saliency(torch.tensor(segment_saliency))
 
-# Plot the saliency map
-plot_saliency_map(normalized_saliency.numpy(), title='Saliency Map')
+print(type(grouped_probabilities))
+print(type(grouped_probabilities[0]))
+# so now grouped probabilities is a list of torches
+
+for i,probability_distribution in enumerate(grouped_probabilities):
+
+    # Compute the entropy for each probability distribution (each row in the tensor)
+    entropies = entropy(probability_distribution)
+
+    # Convert entropies to NumPy for gradient calculation
+    entropies_np = entropies.numpy()
+
+    # Compute the gradient of entropy across segments (not per single segment)
+    jacobian = np.gradient(entropies_np)
+
+    # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
+    # is the square of gradient itself
+    patient_saliency = np.square(jacobian)
+
+    # Normalize saliency
+    normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
+
+    # Plot the saliency map
+    plot_saliency_map(normalized_saliency.numpy(),f'patient_{grouped_patients[i][0]}.png', title='Saliency Map')
 # --------------------------------------------------------------------------------------
 
 # # comment for the first run / maybe i'll put it in a different file
