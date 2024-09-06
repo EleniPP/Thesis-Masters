@@ -15,6 +15,7 @@ import csv
 from temperature_scaling import ModelWithTemperature
 from sklearn.model_selection import KFold
 from sklearn.metrics import classification_report
+from imblearn.over_sampling import SMOTE
 # Load the audio tensor
 audio_features = np.load('D:/Data/audio_features1.npy', allow_pickle=True)
 
@@ -115,6 +116,7 @@ def evaluate_model(model, dataloader, criterion):
     all_labels = []
     correct = 0
     total = 0
+    threshold = 0.48
     with torch.no_grad():  # Disable gradient calculation
         for features, labels in dataloader:
             if torch.isnan(features).any() or torch.isinf(features).any():
@@ -131,21 +133,27 @@ def evaluate_model(model, dataloader, criterion):
             test_loss += loss.item()
             
             # Store predictions and labels for further evaluation (e.g., accuracy, precision, recall)
-            all_predictions.append(outputs)
-            all_labels.append(labels)
+            # all_predictions.append(outputs)
+            # all_labels.append(labels)
     
             # Calculate accuracy for this batch
             # Convert logits to probabilities and predictions
-            probs = torch.softmax(outputs, dim=1)[:, 1]  # Probability of class 1
-            _, predicted = torch.max(outputs, -1)
+            probs = torch.softmax(outputs, dim=1)[:,1]  # Probability of class 1 
+            # _, predicted = torch.max(outputs, -1)
+            predicted = (probs > threshold).int()
+            # Append predictions and labels for later evaluation
+            all_predictions.append(predicted)  # Move to CPU if using GPU
+            all_labels.append(labels)
+
             correct += (predicted == labels).sum().item()
             total += labels.size(0)
-    # Combine predictions and labels from all batches
-    all_predictions = np.array(all_predictions,dtype=object)
-    all_labels = np.array(all_labels,dtype=object)
+
+    # Concatenate all predictions and labels from all batches
+    all_predictions = torch.cat(all_predictions).numpy()
+    all_labels = torch.cat(all_labels).numpy()
     # Calculate overall accuracy
     accuracy = correct / total if total > 0 else 0
-    print(classification_report(labels, predicted))
+    print(classification_report(all_labels, all_predictions))
     # precision = precision_score(all_labels, all_predictions)
     # recall = recall_score(all_labels, all_predictions)
     # f1 = f1_score(all_labels, all_predictions)
@@ -206,24 +214,24 @@ class DepressionPredictor1(nn.Module):
     def __init__(self):
         super(DepressionPredictor1, self).__init__()
         # Completely simplified:
-        self.classifier = nn.Sequential(
-            nn.Linear(3072, 512),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(512, 2)
-        )
         # self.classifier = nn.Sequential(
-        #     # nn.Linear(3072, 2048),
         #     nn.Linear(3072, 512),
         #     nn.ReLU(),
-        #     nn.Dropout(0.5),  # Assuming some dropout for regularization
-        #     # nn.Linear(2048, 512),
-        #     nn.Linear(512, 128),
-        #     nn.ReLU(),
-        #     nn.Dropout(0.5),  # Dropout to prevent overfitting
-        #     # nn.Linear(512, 2) #2 for softmax and 1 for sigmoid
-        #     nn.Linear(128, 2)
+        #     nn.Dropout(0.5),
+        #     nn.Linear(512, 2)
         # )
+        self.classifier = nn.Sequential(
+            # nn.Linear(3072, 2048),
+            nn.Linear(3072, 512),
+            nn.ReLU(),
+            nn.Dropout(0.5),  # Assuming some dropout for regularization
+            # nn.Linear(2048, 512),
+            nn.Linear(512, 128),
+            nn.ReLU(),
+            nn.Dropout(0.5),  # Dropout to prevent overfitting
+            # nn.Linear(512, 2) #2 for softmax and 1 for sigmoid
+            nn.Linear(128, 2)
+        )
 # possibleTODO - batch size change?
     def forward(self, x):
         x = self.classifier(x)
@@ -285,7 +293,7 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
 
     return model
 
-def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=10):
+def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=30):
     # Early stopping
     early_stopping_patience = 5  # Number of epochs with no improvement after which training will be stopped
     best_val_loss = float('inf')
@@ -376,12 +384,12 @@ for i, features in enumerate(normalized_multimodal):
 train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
 train_multimodal,train_labels,segments_per_patient_train,segments_order_train = flatten(train_multimodal,train_labels)
 
+# array that has the patient number for each segment in the train multimnodal
+segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+
 #Check inbalance
 unique, counts = np.unique(train_labels, return_counts=True)
 class_distribution = dict(zip(unique, counts))
-print(class_distribution)
-# array that has the patient number for each segment in the train multimnodal
-segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
 
 
 val_multimodal, val_labels = filter_by_patient_numbers(normalized_multimodal, labels, val_split)
@@ -421,7 +429,6 @@ kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 # and labels respectively
 features = train_multimodal  # Use your multimodal features directly
 labels = train_labels  # Use your labels directly
-
 # Store results for each fold
 fold_results = []
 
@@ -439,9 +446,11 @@ for fold, (train_index, val_index) in enumerate(kf.split(features)):
     class_distribution = dict(zip(unique, counts))
     print(class_distribution)
     
-    unique, counts = np.unique(val_labels, return_counts=True)
-    class_distribution = dict(zip(unique, counts))
-    print(class_distribution)
+
+    # Initialize SMOTE
+    smote = SMOTE(random_state=42)
+    # Try to solve the imbalance problem with oversampling
+    train_features, train_labels = smote.fit_resample(train_features, train_labels)
     # Create DataLoaders for this fold
     train_dataset = DepressionDatasetCross(train_features, train_labels)
     val_dataset = DepressionDatasetCross(val_features, val_labels)
@@ -457,7 +466,8 @@ for fold, (train_index, val_index) in enumerate(kf.split(features)):
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
     
     # Define the loss function
-    criterion = nn.CrossEntropyLoss(ignore_index=-100,weight=torch.tensor([1.38, 3.66]))
+    # 1.38, 3.66
+    criterion = nn.CrossEntropyLoss(ignore_index=-100,weight=torch.tensor([1.0, 1.2]))
     
     # Train the model for this fold
     probability_distribution = train_model(model, training_loader,valid_loader, optimizer, criterion)
