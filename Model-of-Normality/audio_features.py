@@ -75,7 +75,7 @@ def alexnet(pretrained=False, progress=True, **kwargs):
      
 
 class ModifiedAlexNet(nn.Module):
-    def __init__(self, num_classes=512):
+    def __init__(self, num_classes=3072):
         super(ModifiedAlexNet, self).__init__()
         self.num_classes=num_classes
         self.features = nn.Sequential(
@@ -170,8 +170,8 @@ feature_patients = np.array(patient_features, dtype=object)
 # print('Results:')
 # print(feature_patients[0].shape) #torch.Size([282, 4])
 # print(feature_patients[1].shape)
-
-np.save('D:/Data/audio_features1.npy', feature_patients)
+np.save('D:/Data/audio_features2.npy', feature_patients)
+# np.save('D:/Data/audio_features1.npy', feature_patients)
 # # Save a tensor
 # with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
 #     pickle.dump(feature_patients, f)

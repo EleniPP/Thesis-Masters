@@ -2,6 +2,7 @@ import torch
 import pickle
 from collections import Counter
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from torch.nn.functional import softmax
@@ -16,11 +17,23 @@ from temperature_scaling import ModelWithTemperature
 from sklearn.model_selection import KFold
 from sklearn.metrics import classification_report
 from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import ADASYN
+from torch.optim.lr_scheduler import StepLR
+
 # Load the audio tensor
 audio_features = np.load('D:/Data/audio_features1.npy', allow_pickle=True)
+# print(audio_features[0].shape)
+# log_mel_seg = np.load('D:/Data/log_mel.npy', allow_pickle=True)
 
+# reshaped_log_mel_seg = [sub_array.reshape(sub_array.shape[0], sub_array.shape[1] * sub_array.shape[2]) for sub_array in log_mel_seg]
+# audio_features = np.array(reshaped_log_mel_seg, dtype=object)
+# print(reshaped_log_mel_seg[0].shape)
 # Load the visual tensor
 visual_features = np.load('D:/Data/visual_features.npy', allow_pickle=True)
+# print(visual_features[0].shape)
+# visual_features = np.load('D:/Data/aggr_visual.npy', allow_pickle=True)
+
+
 # Load the labels
 # labels = np.load('V:/staff-umbrella/EleniSalient/Data/labels.npy')
 with open('D:/Data/labels.json', 'r') as file:
@@ -116,7 +129,7 @@ def evaluate_model(model, dataloader, criterion):
     all_labels = []
     correct = 0
     total = 0
-    threshold = 0.48
+    threshold = 0.47
     with torch.no_grad():  # Disable gradient calculation
         for features, labels in dataloader:
             if torch.isnan(features).any() or torch.isinf(features).any():
@@ -179,6 +192,64 @@ def filter_by_patient_numbers(features, labels, patient_numbers):
     filtered_labels = [labels[idx] for idx in indices]
     return filtered_features, filtered_labels
 
+# class FocalLoss(nn.Module):
+#     def __init__(self, alpha=1.0, gamma=2.0):
+#         """
+#         :param alpha: balancing factor between classes, similar to class weights.
+#         :param gamma: focusing parameter, controls the rate at which easy examples are down-weighted.
+#         """
+#         super(FocalLoss, self).__init__()
+#         self.alpha = alpha
+#         self.gamma = gamma
+#         self.ce_loss = nn.CrossEntropyLoss(reduction='none')  # We use reduction='none' to calculate the loss per sample
+
+#     def forward(self, outputs, targets):
+#         # Calculate the cross entropy loss for each sample
+#         ce_loss = self.ce_loss(outputs, targets)
+        
+#         # Get the probabilities of the correct class
+#         pt = torch.exp(-ce_loss)
+        
+#         # Compute the focal loss
+#         focal_loss = self.alpha * ((1 - pt) ** self.gamma) * ce_loss
+        
+#         # Return the mean of the focal loss over the batch
+#         return focal_loss.mean()
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha  # Class weights, should be a tensor with shape [num_classes]
+        self.gamma = gamma
+        self.reduction = reduction
+
+    def forward(self, inputs, targets):
+        # Compute cross-entropy loss
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none')  # No reduction to compute per-sample loss
+        
+        # Get the predicted probabilities for the correct class (pt)
+        pt = torch.exp(-ce_loss)  # Probabilities of the true class
+
+        # If alpha (class weights) are provided, apply them
+        if self.alpha is not None:
+            # Ensure alpha is properly broadcasted (shape [batch_size])
+            at = self.alpha.gather(0, targets)  # Gather correct alpha for each target in the batch
+            ce_loss = at * ce_loss  # Apply class weights to the cross-entropy loss
+
+        # Apply focal loss scaling
+        focal_loss = ((1 - pt) ** self.gamma) * ce_loss
+
+        # Apply the reduction (mean, sum, etc.)
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss  # Return raw losses if no reduction is needed
+
+
+
 class DepressionDatasetCross(Dataset):
     def __init__(self, data, labels):
         self.data = data
@@ -221,16 +292,18 @@ class DepressionPredictor1(nn.Module):
         #     nn.Linear(512, 2)
         # )
         self.classifier = nn.Sequential(
-            # nn.Linear(3072, 2048),
-            nn.Linear(3072, 512),
+            nn.Linear(3072, 1024),
+            # nn.Linear(3072, 512),
+            # nn.BatchNorm1d(1024),  # Batch normalization
             nn.ReLU(),
-            nn.Dropout(0.5),  # Assuming some dropout for regularization
-            # nn.Linear(2048, 512),
-            nn.Linear(512, 128),
+            nn.Dropout(0.6),  # Assuming some dropout for regularization
+            nn.Linear(1024, 256),
+            # nn.Linear(512, 128),
+            # nn.BatchNorm1d(256),
             nn.ReLU(),
-            nn.Dropout(0.5),  # Dropout to prevent overfitting
-            # nn.Linear(512, 2) #2 for softmax and 1 for sigmoid
-            nn.Linear(128, 2)
+            nn.Dropout(0.6),  # Dropout to prevent overfitting
+            nn.Linear(256, 2) #2 for softmax and 1 for sigmoid
+            # nn.Linear(128, 2)
         )
 # possibleTODO - batch size change?
     def forward(self, x):
@@ -293,13 +366,12 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
 
     return model
 
-def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=30):
+def train_model(model, dataloader,val_loader, optimizer, scheduler, criterion,epochs=30):
     # Early stopping
     early_stopping_patience = 5  # Number of epochs with no improvement after which training will be stopped
     best_val_loss = float('inf')
     patience_counter = 0
     model.train()
-    all_probabilities = []
     train_losses = []
     val_losses = []
     for epoch in range(epochs):
@@ -312,7 +384,6 @@ def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=30):
                 continue
 
             outputs = model(features)  # Outputs are now probabilities for two classes for each segment
-            probabilities = softmax(outputs, dim=-1) #i NEED TO CHECK WHERE THE SOFTMAX GOES HERE OR IN THE TEMPERATURE SCALER
             # loss = criterion(outputs.view(-1, 2), labels[i].view(-1))  # Reshape appropriately if needed
             loss = criterion(outputs,labels)
             loss.backward()
@@ -323,11 +394,10 @@ def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=30):
             optimizer.step()
             total_loss += loss.item()    
             # store probabilities for all the patients
-            epoch_probabilities.append(probabilities.detach())
-        # store probabilities across all epochs
-        all_probabilities.append(epoch_probabilities) 
+        
         # TODO: me poio val kano edo validate? poios val_loader einai aftos?
         val_loss = validate_model(model, val_loader, criterion)
+        scheduler.step(val_loss)
         # Early stopping
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -349,7 +419,7 @@ def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=30):
     plot_losses(train_losses,val_losses)
     # all_probabilities = np.array(all_probabilities, dtype=object)
     # np.save('V:/staff-umbrella/EleniSalient/Data/probability_distributions.npy', all_probabilities)
-    return all_probabilities
+    return model
 
 # Use the temp labels since we only have 2 patients
 
@@ -358,12 +428,14 @@ def train_model(model, dataloader,val_loader, optimizer, criterion,epochs=30):
 # Instantiate the model
 model = DepressionPredictor1()
 
-# Define the optimizer
-# optimizer = optim.Adam(model.parameters(), lr=2e-5, weight_decay=2e-4)
-optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
-# 5e-3
-# Define the learning rate scheduler
-scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
+# # Define the optimizer
+# # optimizer = optim.Adam(model.parameters(), lr=2e-5, weight_decay=2e-4)
+# # optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+# optimizer = optim.Adam(model.parameters(), lr=0.001)
+# # 5e-3
+# # Define the learning rate scheduler
+# # scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
+# scheduler = StepLR(optimizer, step_size=10, gamma=0.1)
 # Calibrate the model
 
 # Get splits
@@ -446,11 +518,13 @@ for fold, (train_index, val_index) in enumerate(kf.split(features)):
     class_distribution = dict(zip(unique, counts))
     print(class_distribution)
     
-
     # Initialize SMOTE
-    smote = SMOTE(random_state=42)
+    smote = SMOTE(sampling_strategy=0.5)
+    # Assuming you have your training data in X_train and y_train
+    # adasyn = ADASYN(sampling_strategy='auto', random_state=42, n_neighbors=2)
     # Try to solve the imbalance problem with oversampling
-    train_features, train_labels = smote.fit_resample(train_features, train_labels)
+    # train_features, train_labels = smote.fit_resample(train_features, train_labels)
+    
     # Create DataLoaders for this fold
     train_dataset = DepressionDatasetCross(train_features, train_labels)
     val_dataset = DepressionDatasetCross(val_features, val_labels)
@@ -462,15 +536,21 @@ for fold, (train_index, val_index) in enumerate(kf.split(features)):
     model = DepressionPredictor1()
     
     # Define the optimizer and learning rate scheduler
-    optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.01, patience=3, verbose=True)
+    # optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+    
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)  # Adam default learning rate is 0.001
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+    # Initialize the scheduler (e.g., StepLR)
+    # scheduler = StepLR(optimizer, step_size=8, gamma=0.7)
     
     # Define the loss function
-    # 1.38, 3.66
-    criterion = nn.CrossEntropyLoss(ignore_index=-100,weight=torch.tensor([1.0, 1.2]))
+    # criterion = nn.CrossEntropyLoss(ignore_index=-100,weight=torch.tensor([1.0, 1.2]))
+    alpha = torch.tensor([1.0, 1.2])  # Weights for class 0 and class 
+    # when it goes up like 1.3 from 1.2 then precision is higher for class 1 but recall is lower
+    criterion = FocalLoss(alpha=alpha, gamma=1.6)
     
     # Train the model for this fold
-    probability_distribution = train_model(model, training_loader,valid_loader, optimizer, criterion)
+    probability_distribution = train_model(model, training_loader,valid_loader, optimizer,scheduler, criterion)
     
     # Evaluate on the validation set
     val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
@@ -493,46 +573,46 @@ print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
 print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
 
 
-# # Final training of the model in the whole training set
-# # Assuming you have your full training data in train_loader
-# final_model = DepressionPredictor1()  # Initialize your model architecture
+# Final training of the model in the whole training set
+# Assuming you have your full training data in train_loader
+final_model = DepressionPredictor1()  # Initialize your model architecture
 
-# # Define optimizer and criterion
-# optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
-# criterion = nn.CrossEntropyLoss()
+# Define optimizer and criterion
+optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
+criterion = nn.CrossEntropyLoss()
 
-# # Train the model on the full dataset
-# final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
+# Train the model on the full dataset
+final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
 
 
-# # Load the saved model
-# model = DepressionPredictor1()  # Initialize your model architecture
-# model.load_state_dict(torch.load('final_model1.pth'))
-# model.eval()  # Set the model to evaluation mode
-# print("Model loaded and ready for calibration")
-# # Try calibration model from github
-# scaled_model = ModelWithTemperature(model)
-# scaled_model.set_temperature(val_loader)
+# Load the saved model
+model = DepressionPredictor1()  # Initialize your model architecture
+model.load_state_dict(torch.load('final_model1.pth'))
+model.eval()  # Set the model to evaluation mode
+print("Model loaded and ready for calibration")
+# Try calibration model from github
+scaled_model = ModelWithTemperature(model)
+scaled_model.set_temperature(val_loader)
 
-# scaled_model.eval()
-# all_probs = []
-# all_patient_numbers = []
-# all_segment_orders = []
-# with torch.no_grad():   
-#     for inputs, _ , patient_numbers,segments_order in train_loader:
-#         logits = scaled_model(inputs)  # Scaled logits
-#         probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
-#         all_probs.append(probs)
-#         # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
-#         all_patient_numbers.extend(patient_numbers.tolist())
-#         all_segment_orders.extend(segments_order.tolist())
-# # Combine probabilities from all batches
-# all_probs = torch.cat(all_probs, dim=0)
-# # Convert patient numbers list to a tensor
-# all_patient_numbers = torch.tensor(all_patient_numbers)
-# all_segment_orders = torch.tensor(all_segment_orders)
+scaled_model.eval()
+all_probs = []
+all_patient_numbers = []
+all_segment_orders = []
+with torch.no_grad():   
+    for inputs, _ , patient_numbers,segments_order in train_loader:
+        logits = scaled_model(inputs)  # Scaled logits
+        probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
+        all_probs.append(probs)
+        # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
+        all_patient_numbers.extend(patient_numbers.tolist())
+        all_segment_orders.extend(segments_order.tolist())
+# Combine probabilities from all batches
+all_probs = torch.cat(all_probs, dim=0)
+# Convert patient numbers list to a tensor
+all_patient_numbers = torch.tensor(all_patient_numbers)
+all_segment_orders = torch.tensor(all_segment_orders)
 
-# torch.save(all_probs, 'probability_distributions.pth')
-# torch.save(all_patient_numbers, 'all_patient_numbers.pth')
-# torch.save(all_segment_orders, 'all_segment_orders.pth')
+torch.save(all_probs, 'probability_distributions.pth')
+torch.save(all_patient_numbers, 'all_patient_numbers.pth')
+torch.save(all_segment_orders, 'all_segment_orders.pth')
  
