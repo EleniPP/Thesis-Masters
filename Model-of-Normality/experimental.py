@@ -21,8 +21,10 @@ from imblearn.over_sampling import ADASYN
 from torch.optim.lr_scheduler import StepLR
 
 # Load the audio tensor
-audio_features = np.load('D:/Data/audio_features1.npy', allow_pickle=True)
-# print(audio_features[0].shape)
+audio_features = np.load('D:/Data/audio_features15.npy', allow_pickle=True)
+audio_featureseeee = np.load('D:/Data/audio_features1.npy', allow_pickle=True)
+print(audio_features[0].shape)
+print(audio_featureseeee[0].shape)
 # log_mel_seg = np.load('D:/Data/log_mel.npy', allow_pickle=True)
 
 # reshaped_log_mel_seg = [sub_array.reshape(sub_array.shape[0], sub_array.shape[1] * sub_array.shape[2]) for sub_array in log_mel_seg]
@@ -39,6 +41,7 @@ visual_features = np.load('D:/Data/visual_features.npy', allow_pickle=True)
 with open('D:/Data/labels.json', 'r') as file:
     labels_dict = json.load(file)
 del labels_dict['492']
+
 
 # tlabels = torch.from_numpy(labels)
 # temp_labels = torch.stack([tlabels[0], tlabels[10]])
@@ -135,20 +138,10 @@ def evaluate_model(model, dataloader, criterion):
             if torch.isnan(features).any() or torch.isinf(features).any():
                 continue
             outputs = model(features)
-                        
-            # labels_flat = labels.view(-1)
-            # outputs_flat = outputs.view(-1, 2)
-            # valid_mask = labels_flat != -100
-            # labels_flat = labels_flat[valid_mask]
-            # outputs_flat = outputs_flat[valid_mask]
             loss = criterion(outputs, labels)
             # loss = xon(outputs.view(-1, 2), labels.view(-1))
             test_loss += loss.item()
-            
-            # Store predictions and labels for further evaluation (e.g., accuracy, precision, recall)
-            # all_predictions.append(outputs)
-            # all_labels.append(labels)
-    
+
             # Calculate accuracy for this batch
             # Convert logits to probabilities and predictions
             probs = torch.softmax(outputs, dim=1)[:,1]  # Probability of class 1 
@@ -167,10 +160,6 @@ def evaluate_model(model, dataloader, criterion):
     # Calculate overall accuracy
     accuracy = correct / total if total > 0 else 0
     print(classification_report(all_labels, all_predictions))
-    # precision = precision_score(all_labels, all_predictions)
-    # recall = recall_score(all_labels, all_predictions)
-    # f1 = f1_score(all_labels, all_predictions)
-    # auc = roc_auc_score(all_labels, all_predictions)
     return test_loss / len(dataloader),accuracy, all_predictions, all_labels
 
 def validate_model(model, dataloader, criterion):
@@ -191,30 +180,6 @@ def filter_by_patient_numbers(features, labels, patient_numbers):
     filtered_features = [features[idx] for idx in indices]
     filtered_labels = [labels[idx] for idx in indices]
     return filtered_features, filtered_labels
-
-# class FocalLoss(nn.Module):
-#     def __init__(self, alpha=1.0, gamma=2.0):
-#         """
-#         :param alpha: balancing factor between classes, similar to class weights.
-#         :param gamma: focusing parameter, controls the rate at which easy examples are down-weighted.
-#         """
-#         super(FocalLoss, self).__init__()
-#         self.alpha = alpha
-#         self.gamma = gamma
-#         self.ce_loss = nn.CrossEntropyLoss(reduction='none')  # We use reduction='none' to calculate the loss per sample
-
-#     def forward(self, outputs, targets):
-#         # Calculate the cross entropy loss for each sample
-#         ce_loss = self.ce_loss(outputs, targets)
-        
-#         # Get the probabilities of the correct class
-#         pt = torch.exp(-ce_loss)
-        
-#         # Compute the focal loss
-#         focal_loss = self.alpha * ((1 - pt) ** self.gamma) * ce_loss
-        
-#         # Return the mean of the focal loss over the batch
-#         return focal_loss.mean()
 
 
 class FocalLoss(nn.Module):
@@ -247,8 +212,6 @@ class FocalLoss(nn.Module):
             return focal_loss.sum()
         else:
             return focal_loss  # Return raw losses if no reduction is needed
-
-
 
 class DepressionDatasetCross(Dataset):
     def __init__(self, data, labels):
@@ -573,46 +536,46 @@ print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
 print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
 
 
-# Final training of the model in the whole training set
-# Assuming you have your full training data in train_loader
-final_model = DepressionPredictor1()  # Initialize your model architecture
+# # Final training of the model in the whole training set
+# # Assuming you have your full training data in train_loader
+# final_model = DepressionPredictor1()  # Initialize your model architecture
 
-# Define optimizer and criterion
-optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
-criterion = nn.CrossEntropyLoss()
+# # Define optimizer and criterion
+# optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
+# criterion = nn.CrossEntropyLoss()
 
-# Train the model on the full dataset
-final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
+# # Train the model on the full dataset
+# final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
 
 
-# Load the saved model
-model = DepressionPredictor1()  # Initialize your model architecture
-model.load_state_dict(torch.load('final_model1.pth'))
-model.eval()  # Set the model to evaluation mode
-print("Model loaded and ready for calibration")
-# Try calibration model from github
-scaled_model = ModelWithTemperature(model)
-scaled_model.set_temperature(val_loader)
+# # Load the saved model
+# model = DepressionPredictor1()  # Initialize your model architecture
+# model.load_state_dict(torch.load('final_model1.pth'))
+# model.eval()  # Set the model to evaluation mode
+# print("Model loaded and ready for calibration")
+# # Try calibration model from github
+# scaled_model = ModelWithTemperature(model)
+# scaled_model.set_temperature(val_loader)
 
-scaled_model.eval()
-all_probs = []
-all_patient_numbers = []
-all_segment_orders = []
-with torch.no_grad():   
-    for inputs, _ , patient_numbers,segments_order in train_loader:
-        logits = scaled_model(inputs)  # Scaled logits
-        probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
-        all_probs.append(probs)
-        # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
-        all_patient_numbers.extend(patient_numbers.tolist())
-        all_segment_orders.extend(segments_order.tolist())
-# Combine probabilities from all batches
-all_probs = torch.cat(all_probs, dim=0)
-# Convert patient numbers list to a tensor
-all_patient_numbers = torch.tensor(all_patient_numbers)
-all_segment_orders = torch.tensor(all_segment_orders)
+# scaled_model.eval()
+# all_probs = []
+# all_patient_numbers = []
+# all_segment_orders = []
+# with torch.no_grad():   
+#     for inputs, _ , patient_numbers,segments_order in train_loader:
+#         logits = scaled_model(inputs)  # Scaled logits
+#         probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
+#         all_probs.append(probs)
+#         # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
+#         all_patient_numbers.extend(patient_numbers.tolist())
+#         all_segment_orders.extend(segments_order.tolist())
+# # Combine probabilities from all batches
+# all_probs = torch.cat(all_probs, dim=0)
+# # Convert patient numbers list to a tensor
+# all_patient_numbers = torch.tensor(all_patient_numbers)
+# all_segment_orders = torch.tensor(all_segment_orders)
 
-torch.save(all_probs, 'probability_distributions.pth')
-torch.save(all_patient_numbers, 'all_patient_numbers.pth')
-torch.save(all_segment_orders, 'all_segment_orders.pth')
+# torch.save(all_probs, 'probability_distributions.pth')
+# torch.save(all_patient_numbers, 'all_patient_numbers.pth')
+# torch.save(all_segment_orders, 'all_segment_orders.pth')
  

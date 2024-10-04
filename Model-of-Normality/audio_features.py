@@ -16,6 +16,7 @@ model_urls = {
 
 log_mel_seg = np.load('D:/Data/log_mel.npy', allow_pickle=True)
 print(log_mel_seg.shape)
+print(log_mel_seg[0].shape)
 # log_mel_segments is numpy array of numpy array
 # print(log_mel_seg[0].shape) #(282,64,351) 
 # print(log_mel_seg[1].shape) #(195,64,351)
@@ -150,6 +151,8 @@ pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in
 patient_features = []
 for log_mel in log_mel_seg:
     results = []
+    for segment in log_mel:
+        print(f"Segment shape: {segment.shape}")
     log_mel_spec_3d = np.array([get_3d_spec(segment) for segment in log_mel])
     for segment in log_mel_spec_3d:
         npimg = np.transpose(segment,(2,0,1))
