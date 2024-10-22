@@ -20,16 +20,7 @@ from imblearn.over_sampling import SMOTE
 from imblearn.over_sampling import ADASYN
 from torch.optim.lr_scheduler import StepLR
 import h5py
-import gc
-from pyspark.sql import SparkSession
-from pyspark.sql.types import ArrayType, FloatType
-from pyspark.sql.functions import udf
-import psutil
-
-# Function to check available memory
-def available_memory():
-    mem = psutil.virtual_memory()
-    return mem.available / (1024 ** 2)  # Return available memory in MB
+from sklearn.model_selection import train_test_split
 
 def load_features_from_hdf5(hdf5_file_path):
     patient_features = []
@@ -45,16 +36,13 @@ def load_features_from_hdf5(hdf5_file_path):
     feature_patients = np.array(patient_features, dtype=object)
     return feature_patients
 
-# Initialize Spark
-spark = SparkSession.builder.appName("FeatureProcessing") .config("spark.executor.memory", "4g") \
-    .config("spark.driver.memory", "4g")\
-    .config("spark.memory.fraction", "0.8").config("spark.storage.memoryFraction", "0.1")\
-    .getOrCreate()
 # Example usage to load the features
-audio_features = load_features_from_hdf5('D:/Data/log_mel_sliding/audio_features2_sliding.h5')
+# audio_features = load_features_from_hdf5('D:/Data/log_mel_sliding/test_audio_features2_sliding.h5')
+audio_features = load_features_from_hdf5('../../../tudelft.net/staff-umbrella/EleniSalient/log_mel_sliding/audio_features2_sliding.h5')
 print(f"Loaded audio features for all patients. Shape: {audio_features.shape}")
 
-visual_features = load_features_from_hdf5('D:/Data/aggr_visual_sliding/visual_features_sliding2.h5')
+# visual_features = load_features_from_hdf5('D:/Data/aggr_visual_sliding/test_visual_features_sliding2.h5')
+visual_features = load_features_from_hdf5('../../../tudelft.net/staff-umbrella/EleniSalient/aggr_visual_sliding/visual_features_sliding2.h5')
 print(f"Loaded visual features for all patients. Shape: {visual_features.shape}")
 
 print(audio_features.shape)
@@ -63,80 +51,23 @@ print(audio_features[0].shape)
 print(visual_features.shape)
 print(visual_features[0].shape)
 
-print('1')
-
-with open('D:/Data/labels.json', 'r') as file:
+with open('../../../tudelft.net/staff-umbrella/EleniSalient/Data/labels.json', 'r') as file:
     labels_dict = json.load(file)
+# Only for the test
 del labels_dict['492']
-
-print('2')
+# Print or work with the first three labels
+print(labels_dict)
 
 numbers = [int(key) for key in labels_dict.keys()]
 
-print('3')
 
 labels = list(labels_dict.values())
 tlabels = torch.tensor(labels)
-print('4')
 # Convert audio and visual features to torch tensors 
 audio_features = [torch.from_numpy(a) for a in audio_features]
-print('5')
 visual_features = [torch.from_numpy(v) for v in visual_features]
-print('6')
-gc.collect()
-# Check available memory
-print(f"Available memory before processing: {available_memory()} MB")
 
-# Create the RDD from the numpy array (do this in smaller chunks if needed)
-batch_size = 100  # Adjust based on your memory capacity
-for i in range(0, len(audio_features), batch_size):
-    audio_batch = audio_features[i:i + batch_size]
-    visual_batch = visual_features[i:i + batch_size]
-    
-    # Create RDD for the batch
-    audio_rdd = spark.sparkContext.parallelize([(i.tolist(), idx) for idx, i in enumerate(audio_batch, i)])
-    visual_rdd = spark.sparkContext.parallelize([(i.tolist(), idx) for idx, i in enumerate(visual_batch, i)])
-
-    # Convert to DataFrames
-    audio_features_df = audio_rdd.toDF(["audio", "id"])
-    visual_features_df = visual_rdd.toDF(["visual", "id"])
-
-    # Proceed with the join and concatenation here for each batch
-    multimodal_df = audio_features_df.join(visual_features_df, on="id")
-    print(f"Processed batch {i//batch_size + 1}")
-# audio_rdd = spark.sparkContext.parallelize([(i.tolist(), idx) for idx, i in enumerate(audio_features)], numSlices=10)
-# visual_rdd = spark.sparkContext.parallelize([(i.tolist(), idx) for idx, i in enumerate(visual_features)], numSlices=10)
-# Create DataFrames directly from the NumPy arrays and add an `id` column using range
-# audio_features_df = spark.createDataFrame([(i.tolist(), idx) for idx, i in enumerate(audio_features)], ["audio", "id"])
-# visual_features_df = spark.createDataFrame([(i.tolist(), idx) for idx, i in enumerate(visual_features)], ["visual", "id"])
-# audio_features_df = audio_rdd.toDF(["audio", "id"])
-# visual_features_df = visual_rdd.toDF(["visual", "id"])
-print(f"Available memory after processing: {available_memory()} MB")
-print(1/0)
-multimodal_df = audio_features_df.join(visual_features_df, on="id")
-
-# Define a UDF to concatenate the audio and visual features along the last dimension
-concat_udf = udf(lambda a, v: a + v, ArrayType(FloatType()))
-
-# Apply the UDF to create a combined "multimodal" column by concatenating audio and visual features
-multimodal_df = multimodal_df.withColumn("multimodal", concat_udf("audio", "visual"))
-
-# Collect the multimodal features as a list of NumPy arrays
-multimodal_features = multimodal_df.select("multimodal").rdd.map(lambda row: np.array(row[0])).collect()
-print('hi')
-print(f"Shape of first patient's multimodal features: {multimodal_features[0].shape}")
-# batch_size = 10 # Adjust this based on your available memory
-# multimodal_features = []
-
-# for i in range(0, len(audio_features), batch_size):
-#     batch_audio = audio_features[i:i+batch_size]
-#     batch_visual = visual_features[i:i+batch_size]
-#     batch_multimodal = [torch.cat((a, v), dim=1) for a, v in zip(batch_audio, batch_visual)]
-#     del batch_audio
-#     del batch_visual
-#     multimodal_features.extend(batch_multimodal)
-#     print(f"Processed batch {i//batch_size + 1}")
-# multimodal_features = [torch.cat((a, v), dim=1) for a, v in zip(audio_features, visual_features)]
+multimodal_features = [torch.cat((a, v), dim=1) for a, v in zip(audio_features, visual_features)]
 # print(multimodal_features.shape)
 # Normalize each tensor individually
 normalized_multimodal = []
@@ -182,7 +113,7 @@ def flatten(multimodal_features, labels):
     return flattened_features,flattened_labels,segment_per_patient, segment_indices
 
 def get_split(split):
-    base_path = "D:/Data/"
+    base_path = "../../../tudelft.net/staff-umbrella/EleniSalient/"
     extension = "_split.csv"
     file = f"{base_path}{split}{extension}"
     patients_list=[]
@@ -212,7 +143,9 @@ def evaluate_model(model, dataloader, criterion):
     total = 0
     threshold = 0.47
     with torch.no_grad():  # Disable gradient calculation
-        for features, labels in dataloader:
+        for features, labels,_,_ in dataloader:
+        # for the final train evaluation / because I have different data loaders.
+        # for features, labels,_,_ in dataloader:
             if torch.isnan(features).any() or torch.isinf(features).any():
                 continue
             outputs = model(features)
@@ -244,7 +177,7 @@ def validate_model(model, dataloader, criterion):
     model.eval()  # Set the model to evaluation mode
     val_loss = 0
     with torch.no_grad():  # Disable gradient calculation
-        for features, labels in dataloader:
+        for features, labels,_,_ in dataloader:
             if torch.isnan(features).any() or torch.isinf(features).any():
                 continue
             outputs = model(features)
@@ -333,7 +266,7 @@ class DepressionPredictor1(nn.Module):
         #     nn.Linear(512, 2)
         # )
         self.classifier = nn.Sequential(
-            nn.Linear(3072, 1024),
+            nn.Linear(5632, 1024),
             # nn.Linear(3072, 512),
             # nn.BatchNorm1d(1024),  # Batch normalization
             nn.ReLU(),
@@ -364,10 +297,11 @@ def plot_losses(train_losses,val_losses):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss Over Epochs')
     plt.legend()
-    plt.show()
+    plt.savefig('../../../tudelft.net/staff-umbrella/EleniSalient/loss_plot.png')
+    plt.close()
 
 
-def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
+def train_final_model(model, dataloader,optimizer,scheduler, criterion, epochs = 30):
     model.train()
     train_losses = []
 
@@ -390,11 +324,13 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
             total_loss += loss.item()
         # Logging the average training loss for this epoch
         avg_train_loss = total_loss / len(dataloader)
+        scheduler.step(avg_train_loss)
         train_losses.append(avg_train_loss)
         print(f'Epoch {epoch+1}, Training Loss: {avg_train_loss:.4f}')
 
     # Save the final trained model
-    torch.save(model.state_dict(), 'final_model1.pth')
+    # for the test comment
+    torch.save(model.state_dict(), '../../../tudelft.net/staff-umbrella/EleniSalient/final_model1.pth')
     print("Final model saved as 'final_model1.pth'")
 
     # Optionally, plot the training losses
@@ -403,7 +339,8 @@ def train_final_model(model, dataloader,optimizer, criterion, epochs = 10):
     plt.ylabel('Loss')
     plt.title('Training Loss Over Epochs')
     plt.legend()
-    plt.show()
+    plt.savefig('../../../tudelft.net/staff-umbrella/EleniSalient/training_loss_plot.png')
+    plt.close()
 
     return model
 
@@ -412,13 +349,12 @@ def train_model(model, dataloader,val_loader, optimizer, scheduler, criterion,ep
     early_stopping_patience = 5  # Number of epochs with no improvement after which training will be stopped
     best_val_loss = float('inf')
     patience_counter = 0
-    model.train()
     train_losses = []
     val_losses = []
     for epoch in range(epochs):
+        model.train()
         total_loss = 0
-        epoch_probabilities = []
-        for i, (features,labels) in enumerate(dataloader):
+        for i, (features,labels,_,_) in enumerate(dataloader):
             optimizer.zero_grad()
             # DEBUG: Ensure features do not contain NaN or Inf
             if torch.isnan(features).any() or torch.isinf(features).any():
@@ -444,7 +380,8 @@ def train_model(model, dataloader,val_loader, optimizer, scheduler, criterion,ep
             best_val_loss = val_loss
             patience_counter = 0
             # Save model if it's the best one yet
-            torch.save(model.state_dict(), 'best_model1.pth')
+            # for the test comment
+            torch.save(model.state_dict(), '../../../tudelft.net/staff-umbrella/EleniSalient/best_model1.pth')
         else:
             patience_counter += 1
     
@@ -480,20 +417,28 @@ model = DepressionPredictor1()
 # Calibrate the model
 
 # Get splits
+# for test comment
 train_split = get_split('train')
 test_split = get_split('test')
 val_split = get_split('dev')
+# # for the test
 train_split = train_split[:-1] #because i didnt put the 491 in the labels_dict and in the data
 
+# train_split = np.array([303,304])
+# val_split = np.array([302])
+# test_split = np.array([300])
+# Only for test
 del numbers[117]
 del numbers[99]
 # Create a dictionary mapping patient numbers to their corresponding index
+
 patient_to_index = {patient_num: idx for idx, patient_num in enumerate(numbers)}
 for i, features in enumerate(normalized_multimodal):
     if torch.isnan(features).any():
         print(f"NaN values in normalized_multimodal before dataloaders at index {i}")
 
 # Filter the features and labels for each split
+
 train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
 train_multimodal,train_labels,segments_per_patient_train,segments_order_train = flatten(train_multimodal,train_labels)
 
@@ -532,128 +477,134 @@ test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
 
 # -----------CROSS VALIDATION-------------------------------------
-# Number of folds for cross-validation
-n_splits = 5 #for the debugging of the temperature scaling
+# # Number of folds for cross-validation
+# n_splits = 5 #for the debugging of the temperature scaling
 
-# Initialize KFold
-kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+# # Initialize KFold
+# kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-# Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
-# and labels respectively
-features = train_multimodal  # Use your multimodal features directly
-labels = train_labels  # Use your labels directly
-# Store results for each fold
-fold_results = []
+# # Assuming train_multimodal and train_labels are already in the shape (number_of_segments x features)
+# # and labels respectively
+# features = train_multimodal  # Use your multimodal features directly
+# labels = train_labels  # Use your labels directly
+# # Store results for each fold
+# fold_results = []
 
-# Cross-Validation Loop
-for fold, (train_index, val_index) in enumerate(kf.split(features)):
-    print(f"Fold {fold + 1}/{n_splits}")
+# # Cross-Validation Loop
+# for fold, (train_index, val_index) in enumerate(kf.split(features)):
+#     print(f"Fold {fold + 1}/{n_splits}")
     
-    # Split data into training and validation based on indices
-    train_features, val_features = features[train_index], features[val_index]
-    train_labels, val_labels = labels[train_index], labels[val_index]
+#     # Split data into training and validation based on indices
+#     train_features, val_features = features[train_index], features[val_index]
+#     train_labels, val_labels = labels[train_index], labels[val_index]
 
 
-    # Assuming y contains your labels (for the entire dataset)
-    unique, counts = np.unique(train_labels, return_counts=True)
-    class_distribution = dict(zip(unique, counts))
-    print(class_distribution)
+#     # Assuming y contains your labels (for the entire dataset)
+#     unique, counts = np.unique(train_labels, return_counts=True)
+#     class_distribution = dict(zip(unique, counts))
+#     print(class_distribution)
     
-    # Initialize SMOTE
-    smote = SMOTE(sampling_strategy=0.5)
-    # Assuming you have your training data in X_train and y_train
-    # adasyn = ADASYN(sampling_strategy='auto', random_state=42, n_neighbors=2)
-    # Try to solve the imbalance problem with oversampling
-    # train_features, train_labels = smote.fit_resample(train_features, train_labels)
+#     # Initialize SMOTE
+#     smote = SMOTE(sampling_strategy=0.5)
+#     # Assuming you have your training data in X_train and y_train
+#     # adasyn = ADASYN(sampling_strategy='auto', random_state=42, n_neighbors=2)
+#     # Try to solve the imbalance problem with oversampling
+#     # train_features, train_labels = smote.fit_resample(train_features, train_labels)
     
-    # Create DataLoaders for this fold
-    train_dataset = DepressionDatasetCross(train_features, train_labels)
-    val_dataset = DepressionDatasetCross(val_features, val_labels)
+#     # Create DataLoaders for this fold
+#     train_dataset = DepressionDatasetCross(train_features, train_labels)
+#     val_dataset = DepressionDatasetCross(val_features, val_labels)
     
-    training_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-    valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+#     training_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+#     valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
     
-    # Initialize a new model for this fold
-    model = DepressionPredictor1()
+#     # Initialize a new model for this fold
+#     model = DepressionPredictor1()
     
-    # Define the optimizer and learning rate scheduler
-    # optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
+#     # Define the optimizer and learning rate scheduler
+#     # optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
     
-    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)  # Adam default learning rate is 0.001
-    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
-    # Initialize the scheduler (e.g., StepLR)
-    # scheduler = StepLR(optimizer, step_size=8, gamma=0.7)
+#     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)  # Adam default learning rate is 0.001
+#     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+#     # Initialize the scheduler (e.g., StepLR)
+#     # scheduler = StepLR(optimizer, step_size=8, gamma=0.7)
     
-    # Define the loss function
-    # criterion = nn.CrossEntropyLoss(ignore_index=-100,weight=torch.tensor([1.0, 1.2]))
-    alpha = torch.tensor([1.0, 1.2])  # Weights for class 0 and class 
-    # when it goes up like 1.3 from 1.2 then precision is higher for class 1 but recall is lower
-    criterion = FocalLoss(alpha=alpha, gamma=1.6)
+#     # Define the loss function
+#     # criterion = nn.CrossEntropyLoss(ignore_index=-100,weight=torch.tensor([1.0, 1.2]))
+#     alpha = torch.tensor([1.0, 1.2])  # Weights for class 0 and class 
+#     # when it goes up like 1.3 from 1.2 then precision is higher for class 1 but recall is lower
+#     criterion = FocalLoss(alpha=alpha, gamma=1.6)
     
-    # Train the model for this fold
-    probability_distribution = train_model(model, training_loader,valid_loader, optimizer,scheduler, criterion)
+#     # Train the model for this fold
+#     probability_distribution = train_model(model, training_loader,valid_loader, optimizer,scheduler, criterion)
     
-    # Evaluate on the validation set
-    val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
+#     # Evaluate on the validation set
+#     val_loss, accuracy, _, _ = evaluate_model(model, valid_loader, criterion)
     
-    # Store results for this fold
-    fold_results.append({
-        'fold': fold + 1,
-        'val_loss': val_loss,
-        'accuracy': accuracy
-    })
+#     # Store results for this fold
+#     fold_results.append({
+#         'fold': fold + 1,
+#         'val_loss': val_loss,
+#         'accuracy': accuracy
+#     })
     
-    print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
-    print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
+#     print(f"Validation Loss for fold {fold + 1}: {val_loss:.4f}")
+#     print(f"Validation Accuracy for fold {fold + 1}: {accuracy:.4f}")
 
-# Calculate average validation loss and accuracy across all folds
-avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
-avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
+# # Calculate average validation loss and accuracy across all folds
+# avg_val_loss = np.mean([result['val_loss'] for result in fold_results])
+# avg_accuracy = np.mean([result['accuracy'] for result in fold_results])
 
-print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
-print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
-
-
-# # Final training of the model in the whole training set
-# # Assuming you have your full training data in train_loader
-# final_model = DepressionPredictor1()  # Initialize your model architecture
-
-# # Define optimizer and criterion
-# optimizer = optim.Adam(final_model.parameters(), lr=1e-5, weight_decay=1e-4)
-# criterion = nn.CrossEntropyLoss()
-
-# # Train the model on the full dataset
-# final_model = train_final_model(final_model, train_loader, optimizer, criterion, epochs=8)
+# print(f"Average Validation Loss across {n_splits} folds: {avg_val_loss:.4f}")
+# print(f"Average Validation Accuracy across {n_splits} folds: {avg_accuracy:.4f}")
 
 
-# # Load the saved model
-# model = DepressionPredictor1()  # Initialize your model architecture
-# model.load_state_dict(torch.load('final_model1.pth'))
-# model.eval()  # Set the model to evaluation mode
-# print("Model loaded and ready for calibration")
-# # Try calibration model from github
-# scaled_model = ModelWithTemperature(model)
-# scaled_model.set_temperature(val_loader)
+# Final training of the model in the whole training set
+# Assuming you have your full training data in train_loader
+final_model = DepressionPredictor1()  # Initialize your model architecture
 
-# scaled_model.eval()
-# all_probs = []
-# all_patient_numbers = []
-# all_segment_orders = []
-# with torch.no_grad():   
-#     for inputs, _ , patient_numbers,segments_order in train_loader:
-#         logits = scaled_model(inputs)  # Scaled logits
-#         probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
-#         all_probs.append(probs)
-#         # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
-#         all_patient_numbers.extend(patient_numbers.tolist())
-#         all_segment_orders.extend(segments_order.tolist())
-# # Combine probabilities from all batches
-# all_probs = torch.cat(all_probs, dim=0)
-# # Convert patient numbers list to a tensor
-# all_patient_numbers = torch.tensor(all_patient_numbers)
-# all_segment_orders = torch.tensor(all_segment_orders)
+# Define optimizer and criterion
+optimizer = optim.Adam(final_model.parameters(), lr=1e-4, weight_decay=1e-4)
+alpha = torch.tensor([1.0, 1.2])
+criterion = FocalLoss(alpha=alpha, gamma=1.6)
+    
+scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+# Train the model on the full dataset
+# final_model = train_final_model(final_model, train_loader, optimizer, scheduler, criterion, epochs=30)
+final_model = train_model(model, train_loader,val_loader, optimizer,scheduler, criterion)
 
-# torch.save(all_probs, 'probability_distributions.pth')
-# torch.save(all_patient_numbers, 'all_patient_numbers.pth')
-# torch.save(all_segment_orders, 'all_segment_orders.pth')
+# Evaluate on the validation set
+val_loss, accuracy, _, _ = evaluate_model(model, val_loader, criterion)
+
+# Load the saved model
+model = DepressionPredictor1()  # Initialize your model architecture
+model.load_state_dict(torch.load('../../../tudelft.net/staff-umbrella/EleniSalient/final_model1.pth'))
+model.eval()  # Set the model to evaluation mode
+print("Model loaded and ready for calibration")
+# Try calibration model from github
+scaled_model = ModelWithTemperature(model)
+scaled_model.set_temperature(val_loader)
+
+scaled_model.eval()
+all_probs = []
+all_patient_numbers = []
+all_segment_orders = []
+with torch.no_grad():   
+    for inputs, _ , patient_numbers,segments_order in train_loader:
+        logits = scaled_model(inputs)  # Scaled logits
+        probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
+        all_probs.append(probs)
+        # Save patient numbers from the current batch (same order as the probabilities predicted for the same segments)
+        all_patient_numbers.extend(patient_numbers.tolist())
+        all_segment_orders.extend(segments_order.tolist())
+# Combine probabilities from all batches
+all_probs = torch.cat(all_probs, dim=0)
+# Convert patient numbers list to a tensor
+all_patient_numbers = torch.tensor(all_patient_numbers)
+all_segment_orders = torch.tensor(all_segment_orders)
+
+# for the test
+torch.save(all_probs, '../../../tudelft.net/staff-umbrella/EleniSalient/probability_distributions.pth')
+torch.save(all_patient_numbers, '../../../tudelft.net/staff-umbrella/EleniSalient/all_patient_numbers.pth')
+torch.save(all_segment_orders, '../../../tudelft.net/staff-umbrella/EleniSalient/all_segment_orders.pth')
  

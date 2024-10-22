@@ -137,7 +137,7 @@ def get_3d_spec(Sxx_in, moments=None):
     return np.concatenate(stacked, axis=2)
 
 # Save each patient's data into HDF5
-def save_to_hdf5(numbers, base_path="D:/Data/log_mel_sliding", data_type="log_mel", output_file="combined_log_mel_all_patients.h5"):
+def save_to_hdf5(numbers, base_path="D:/Data/log_mel_sliding", data_type="log_mel", output_file="test_combined_log_mel_all_patients.h5"):
     with h5py.File(f"{base_path}/{output_file}", 'w') as hdf5_file:
         patient_group = hdf5_file.create_group("patients")
         
@@ -157,7 +157,9 @@ def save_features_to_hdf5(patient_features, patient_ids, output_file):
             # Save the features using the actual patient ID
             hdf5_file.create_dataset(f"patient_{patient_id}", data=features)
 
-numbers = list(range(300, 491))  # Patient IDs
+# numbers = list(range(300, 303))  # Patient IDs
+# for test
+numbers = [303,304,302,300]
 save_to_hdf5(numbers)
 # if os.path.exists("D:/Data/log_mel_sliding/combined_log_mel_all_patients.h5"):
 #     print(f"{'D:/Data/log_mel_sliding/combined_log_mel_all_patients.h5'} already exists. Skipping save_to_hdf5.")
@@ -173,7 +175,7 @@ modified_model_dict = modifiedAlexNet.state_dict()
 pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in modified_model_dict}
 
 patient_features = []
-with h5py.File('D:/Data/log_mel_sliding/combined_log_mel_all_patients.h5', 'r') as hdf5_file:
+with h5py.File('D:/Data/log_mel_sliding/test_combined_log_mel_all_patients.h5', 'r') as hdf5_file:
     patient_group = hdf5_file["patients"]
 
     # We need to sort because h5py doesnt guarantee that its iterating the patient id;s in the order they are in the group
@@ -198,6 +200,6 @@ with h5py.File('D:/Data/log_mel_sliding/combined_log_mel_all_patients.h5', 'r') 
         patient_features.append(features.numpy())
     # feature_patients = np.array(patient_features, dtype=object)
 
-save_features_to_hdf5(patient_features, sorted_patient_ids, 'D:/Data/log_mel_sliding/audio_features2_sliding.h5')
+save_features_to_hdf5(patient_features, sorted_patient_ids, 'D:/Data/log_mel_sliding/test_audio_features2_sliding.h5')
 
 # np.save('D:/Data/audio_features2_sliding.npy', feature_patients)

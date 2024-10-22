@@ -9,7 +9,7 @@ import os
 # visuals = np.load('V:/staff-umbrella/EleniSalient/Data/aggr_visual.npy', allow_pickle=True)
 # print(visuals.shape) #(2, 282, 24)
 # Save each patient's data into HDF5
-def save_to_hdf5(numbers, base_path="D:/Data/aggr_visual_sliding", data_type="visual", output_file="combined_visual_all_patients.h5"):
+def save_to_hdf5(numbers, base_path="D:/Data/aggr_visual_sliding", data_type="visual", output_file="test_combined_visual_all_patients.h5"):
     with h5py.File(f"{base_path}/{output_file}", 'w') as hdf5_file:
         patient_group = hdf5_file.create_group("patients")
         
@@ -27,6 +27,9 @@ def save_features_to_hdf5(patient_features, patient_ids, output_file):
             print(f"Saving features for patient {patient_id} with shape {features.shape}")
             # Save the features using the actual patient ID
             hdf5_file.create_dataset(f"patient_{patient_id}", data=features)
+
+def serialize_array(array):
+    return pickle.dumps(array)
 
 # print(type(input_data[0][0]))
 class AU1DCNN(nn.Module):
@@ -74,12 +77,18 @@ class AU1DCNN(nn.Module):
                     nn.init.constant_(m.bias, 0)
 
 
-if os.path.exists("D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5"):
-    print(f"{'D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5'} already exists. Skipping save_to_hdf5.")
-else:
-    print(f"{'D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5'} does not exist. Saving data...")
-    numbers = list(range(300, 491))  # Patient IDs
-    save_to_hdf5(numbers)  # Save if the file doesn't exist                
+# if os.path.exists("D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5"):
+#     print(f"{'D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5'} already exists. Skipping save_to_hdf5.")
+# else:
+#     print(f"{'D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5'} does not exist. Saving data...")
+#     numbers = list(range(300, 491))  # Patient IDs
+#     save_to_hdf5(numbers)  # Save if the file doesn't exist  
+# 
+# numbers = list(range(300, 303))  # Patient IDs
+# for test
+numbers = [303,304,302,300]
+save_to_hdf5(numbers)
+#               
 # Example usage:
 model = AU1DCNN(num_features=1)
 print(model)
@@ -88,7 +97,7 @@ print(model)
 
 
 patient_features = []
-with h5py.File('D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5', 'r') as hdf5_file:
+with h5py.File('D:/Data/aggr_visual_sliding/test_combined_visual_all_patients.h5', 'r') as hdf5_file:
     patient_group = hdf5_file["patients"]
 
     sorted_patient_ids = sorted(patient_group.keys(), key=lambda x: int(x.split('_')[1]))
@@ -102,9 +111,16 @@ with h5py.File('D:/Data/aggr_visual_sliding/combined_visual_all_patients.h5', 'r
         with torch.no_grad():
             model.eval()
             features = model(input_data)
-            patient_features.append(features.numpy())
+            patient_features.append(features.numpy())  # Append the NumPy array as it is
+            # serialized_features = serialize_array(features.numpy())
+            # patient_features.append(Row(patient_id=float(patient_id.split('_')[1]), features=serialized_features))
+            # patient_features.append(Row(patient_id=float(patient_id.split('_')[1]), features=features.numpy().flatten().tolist()))  # Flatten the array and convert to list
+            # patient_features.append(features.numpy())
 
-save_features_to_hdf5(patient_features, sorted_patient_ids, 'D:/Data/aggr_visual_sliding/audio_features_sliding2.h5')
+
+
+
+save_features_to_hdf5(patient_features, sorted_patient_ids, 'D:/Data/aggr_visual_sliding/test_visual_features_sliding2.h5')
 # all_features = []
 # for visual in visuals:
 #     filtered_visual = visual[:, 4:].astype(np.float32)
@@ -116,7 +132,7 @@ save_features_to_hdf5(patient_features, sorted_patient_ids, 'D:/Data/aggr_visual
 #         features = model(input_data)
 #         all_features.append(features.numpy())
 
-# Convert list of numpy arrays to a single numpy array with dtype=object
+# # Convert list of numpy arrays to a single numpy array with dtype=object
 # all_features_np = np.array(all_features, dtype=object)
 
 # np.save('V:/staff-umbrella/EleniSalient/Data/visual_features.npy', all_features_np)
