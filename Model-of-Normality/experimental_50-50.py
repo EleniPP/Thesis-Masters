@@ -39,6 +39,7 @@ def load_features_from_hdf5(hdf5_file_path):
 # Example usage to load the features
 # audio_features = load_features_from_hdf5('D:/Data/log_mel_sliding/test_audio_features2_sliding.h5')
 audio_features = load_features_from_hdf5('../../../tudelft.net/staff-umbrella/EleniSalient/log_mel_sliding/audio_features2_sliding.h5')
+# audio_features = load_features_from_hdf5('../../../tudelft.net/staff-umbrella/EleniSalient/audio_features2_sliding.h5')
 print(f"Loaded audio features for all patients. Shape: {audio_features.shape}")
 
 # visual_features = load_features_from_hdf5('D:/Data/aggr_visual_sliding/test_visual_features_sliding2.h5')
@@ -733,10 +734,10 @@ final_model.apply(init_weights)
 
 # Define optimizer and criterion
 optimizer = optim.Adam(final_model.parameters(), lr=1e-4, weight_decay=1e-4)
-# alpha = torch.tensor([1.0, 1.2])
-# criterion = FocalLoss(alpha=alpha, gamma=1.6)
+alpha = torch.tensor([1.0, 1.2])
+criterion = FocalLoss(alpha=alpha, gamma=1.0)
 # class_weights = torch.tensor([2.0,1.0])
-criterion = nn.CrossEntropyLoss()
+# criterion = nn.CrossEntropyLoss()
 
 scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
 # Train the model on the full dataset

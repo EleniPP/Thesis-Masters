@@ -519,7 +519,7 @@ test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
 # probability_distribution = train_model(model, train_loader,val_loader, optimizer, criterion)
 
-# NESTED CROSS VALIDATION /// AAAAAAAAAAAAAAA complicated bc i want also the flatten and stuff
+# NESTED CROSS VALIDATION /// AAAAAAAAAAAAAAA complicated bc i want also the flatten and stuff (not done yet)
 # Inner CV: Stratified for hyperparameter tuning
 param_grid = {
     'learning_rate': [0.001, 0.01, 0.0001],
