@@ -61,6 +61,7 @@ print(model)
 
 all_features = []
 for visual in visuals:
+    # This is excluding the columns that contain the metadata, like frame, timestamp, confidence , success
     filtered_visual = visual[:, 4:].astype(np.float32)
     tvisual = torch.from_numpy(filtered_visual)
 

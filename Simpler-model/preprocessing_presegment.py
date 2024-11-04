@@ -1,23 +1,10 @@
 import csv
-import zipfile 
-from scipy.io.wavfile import read
 import numpy as np
-import wave
 import random
 import librosa
-from scipy.spatial.distance import euclidean
-from fastdtw import fastdtw
-from dtaidistance import dtw
 import csv
-import matplotlib.pyplot as plt
-import json
-from pprint import pprint 
 import pandas as pd
-import soundfile as sf
-
-def extract_zip():
-    with zipfile.ZipFile("C:/Users/eleni/Data/303_P.zip", 'r') as zip_ref:
-        zip_ref.extractall("C:/Users/eleni/Data/303_P")
+from sklearn.preprocessing import MinMaxScaler
 
 
 def preprocess_audio(audio,sr):
@@ -34,7 +21,8 @@ def preprocess_audio(audio,sr):
 
 
 def get_labels(split):
-    base_path = "V:/staff-umbrella/EleniSalient/"
+    base_path = "/tudelft.net/staff-umbrella/EleniSalient/"
+    # base_path = "V:/staff-umbrella/EleniSalient/"
     extension = "_split.csv"
     file = f"{base_path}{split}{extension}"
     labels_list=[]
@@ -90,7 +78,8 @@ for row in labels_array:
 
 # Read the files
 # base_path = "C:/Users/eleni/Data/"
-base_path = "V:/staff-umbrella/EleniSalient/"
+base_path = "/tudelft.net/staff-umbrella/EleniSalient/"
+# base_path = "V:/staff-umbrella/EleniSalient/"
 patient = "_P/"
 audio_extension = "_AUDIO.wav"
 visual_extension = "_CLNF_AUs.txt"
@@ -99,13 +88,9 @@ transcript_extension = "_TRANSCRIPT.csv"
 # numbers = [303, 319]
 numbers = list(range(300, 492))
 # read files from all patients
-srs = []
-preprocessed = []
-num_of_segments = []
-log_mel_segments = []
-hop_lengths = []
-visuals = []
-aggregated_visual_features = []
+log_mels = []
+aus = []
+masks = []
 for number in numbers:
     file_audio = f"{base_path}{number}{patient}{number}{audio_extension}"
     file_visual = f"{base_path}{number}{patient}{number}{visual_extension}"
@@ -119,16 +104,15 @@ for number in numbers:
         if number in labels_dict:
             del labels_dict[number]  # Remove the entry from the dictionary
         continue  # Skip to the next iteration if the audio file is not found
-
-    print(audio.shape)
+    
+    # print('Shape of audio:')
+    # print(audio.shape)
     # Load the transcript CSV file
     transcript_df = pd.read_csv(transcript_file, sep='\t')
 
     # Create an array of zeros (silence) the same size as the full audio
     final_audio = np.zeros_like(audio)
-    print(final_audio.shape)
-    # Initialize an empty list to store the participant's audio segments
-    participant_segments = []
+    
     # Iterate through the transcript to segment the audio
     for index, row in transcript_df.iterrows():
         start_time = row['start_time']
@@ -137,7 +121,7 @@ for number in numbers:
         text = row['value']
         
         # Skip entries marked as scrubbed
-        if "scrubbed_entry" in text.lower():
+        if "scrubbed_entry" in str(text).lower():
             print(f"Skipping scrubbed entry from {start_time} to {stop_time}")
             continue
 
@@ -149,13 +133,11 @@ for number in numbers:
 
             # Extract the audio segment
             audio_segment = audio[start_sample:stop_sample]
-            
-            # Append the participant's audio segment to the list
-            participant_segments.append(audio_segment)
 
             # Copy the participant's speech into the final audio array
             final_audio[start_sample:stop_sample] = audio_segment
 
+    # TODO: check it out
     # preprocessed_audio = preprocess_audio(final_audio,sr)
 
     # Step 2: Calculate Mel-spectrogram for the final_audio
@@ -192,16 +174,16 @@ for number in numbers:
         # Move the window by the stride (0.1 seconds worth of frames)
         start_frame += frames_per_stride
 
-    plt.figure(figsize=(10, 4))
-    librosa.display.specshow(mel_segments[620], sr=sr, hop_length=hop_length, x_axis='time', y_axis='mel')
-    plt.colorbar(format='%+2.0f dB')
-    plt.title('Log-Mel Spectrogram for 1st 3.5s Segment (Sliding Window)')
-    plt.tight_layout()
-    plt.show()
-
+    # plt.figure(figsize=(10, 4))
+    # librosa.display.specshow(mel_segments[620], sr=sr, hop_length=hop_length, x_axis='time', y_axis='mel')
+    # plt.colorbar(format='%+2.0f dB')
+    # plt.title('Log-Mel Spectrogram for 1st 3.5s Segment (Sliding Window)')
+    # plt.tight_layout()
+    # plt.show()
+    log_mels.append(mel_segments)
     # Step 5: Check number of segments and shapes
-    print(f"Number of segments: {len(mel_segments)}")
-    print(f"Shape of one Mel-spectrogram segment: {mel_segments[0].shape}")  # Should be (n_mels, frames_per_segment)
+    # print(f"Number of segments: {len(mel_segments)}")
+    # print(f"Shape of one Mel-spectrogram segment: {mel_segments[0].shape}")  # Should be (n_mels, frames_per_segment) / it is (64,350)
 
     # Visual
     fps_au = 30  # 30 AU frames per second
@@ -214,7 +196,7 @@ for number in numbers:
     total_audio_duration = len(audio) / sr  # Total duration of audio in seconds
     total_au_duration = au_df['timestamp'].iloc[-1]  # Last AU timestamp
 
-        # Ensure both modalities are aligned by trimming the longer one
+    # Ensure both modalities are aligned by trimming the longer one
     if total_audio_duration > total_au_duration:
         # Trim the audio to match the AU duration
         num_samples = int(total_au_duration * sr)
@@ -223,52 +205,148 @@ for number in numbers:
         # Trim the AU data to match the audio duration
         au_df = au_df[au_df['timestamp'] <= total_audio_duration]
 
+    # ZERO out the unreliable data
+    au_columns = au_df.columns[4:]  # Assuming the first four columns are metadata
+    # Create a binary mask for low confidence and success == 0
+    mask = (au_df['confidence'] >= 0.7) & (au_df['success'] == 1)
+    # Apply the mask to set the values to zero for unreliable rows
+    au_df.loc[~mask, au_columns] = 0  # ~mask inverts the mask, selecting rows with success == 0
+    mask = mask.astype(int)  # Convert to integer (1 for reliable, 0 for unreliable)
 
     #  Step 1: Extract the AU features (ignoring metadata like frame, timestamp, confidence, success)
     au_features = au_df.drop(['frame', 'timestamp', 'confidence', 'success'], axis=1)
 
-    # Step 2: Sliding window segmentation of AUs
+    # Extract regression and binary AUs
+    au_features_r = au_features.filter(regex='_r$')  # Select only regression outputs (continuous values)
+    # DEBUG
+    non_numeric_r = au_features_r.apply(lambda x: pd.to_numeric(x, errors='coerce').isna())
+    if non_numeric_r.any().any():
+        print("Non-numeric or NaN values found in au_features_r at:")
+        print(non_numeric_r[non_numeric_r].stack())
+
+    au_features_c = au_features.filter(regex='_c$')  # Select only classification labels (binary 0/1)
+    # DEBUG
+    non_numeric_c = au_features_c.apply(lambda x: pd.to_numeric(x, errors='coerce').isna())
+    if non_numeric_c.any().any():
+        print("Non-numeric or NaN values found in au_features_c at:")
+        print(non_numeric_c[non_numeric_c].stack())
+
+    scaler = MinMaxScaler(feature_range=(0, 1))  # Normalize to [0, 1]
+    au_features_r_normalized = pd.DataFrame(scaler.fit_transform(au_features_r), columns=au_features_r.columns)
+
+    # DEBUG
+    non_numeric_c = au_features_r_normalized.apply(lambda x: pd.to_numeric(x, errors='coerce').isna())
+    if non_numeric_c.any().any():
+        print("Non-numeric or NaN values found in au_features_r normalized after MinMax scaler at:")
+        print(non_numeric_c[non_numeric_c].stack())
+
+    # Combine both standardized regression and binary features into one dataset
+    combined_au_features = pd.concat([au_features_r_normalized, au_features_c], axis=1)
+    # DEBUG
+    non_numeric_combined = combined_au_features.apply(lambda x: pd.to_numeric(x, errors='coerce').isna())
+    if non_numeric_combined.any().any():
+        print("Non-numeric or NaN values found in combined_au_features right after combining:")
+        print(non_numeric_combined[non_numeric_combined].stack())
+
+
+    # Reshape the mask to match segment dimensions
+    mask_segments = []
+    start_frame = 0
+
+    while start_frame + frames_per_segment_au <= len(mask):
+        end_frame = start_frame + frames_per_segment_au
+        mask_segment = mask.iloc[start_frame:end_frame].values
+        mask_segments.append(mask_segment)
+        start_frame += frames_per_stride_au
+
+    masks.append(mask_segments)
+
+    # Sliding window segmentation of AUs
     au_segments = []
     start_frame = 0
 
     # Sliding window over the AU frames
-    while start_frame + frames_per_segment_au <= len(au_features):
+    while start_frame + frames_per_segment_au <= len(combined_au_features):
         end_frame = start_frame + frames_per_segment_au
         
         # Extract AU frames for the current window
-        au_segment = au_features.iloc[start_frame:end_frame].values
+        au_segment = combined_au_features.iloc[start_frame:end_frame].values    
+        if not np.isfinite(au_segment).all():
+            print(f"Non-numeric values detected in `au_segment` for patient {number} in frames {start_frame}:{end_frame}")
         au_segments.append(au_segment)
         
         # Move the window by the stride (0.1 seconds worth of frames)
         start_frame += frames_per_stride_au
 
+    aus.append(au_segments)
     # Step 3: Check number of AU segments and shapes
-    print(f"Number of AU segments: {len(au_segments)}")
-    print(f"Shape of one AU segment: {au_segments[0].shape}")  # Should be (105, num_AUs)
-    print(1/0)
+    # print(f"Number of AU segments: {len(au_segments)}")
+    # print(f"Shape of one AU segment: {au_segments[0].shape}")  # Should be (105, num_AUs) / it is (105,20)
+    # print(f"Shape of one mask segment: {mask_segments[0].shape}")
 
+# Save arrays in files
+log_mels = np.array(log_mels, dtype=object)
 
-#     # Initialize an array to hold the aggregated visual features for each audio segment
-#     aggregated_visual = np.zeros((number_of_segments, 24))  # 282 segments(for the initial patient), 2560 features per visual frame
+# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
+# np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
 
-#     for segment_index in range(number_of_segments):
-#         # Calculate the start and end frame indices for the visual data corresponding to this audio segment
-#         start_frame = segment_index * visual_frames_per_segment
-#         end_frame = start_frame + visual_frames_per_segment
-        
-#   x      # Ensure the end_frame does not exceed the total number of frames
-#         end_frame = min(end_frame, visual.shape[0])
+# Convert each segment within each patient to float32
+# for patient_index, patient_segments in enumerate(aus):
+#     aus[patient_index] = [seg.astype(np.float32) for seg in patient_segments]
 
-#         # Aggregate visual features within this segment by calculating the mean
-#         aggregated_visual[segment_index, :] = visual[start_frame:end_frame].mean(axis=0)
-#     aggregated_visual_features.append(aggregated_visual)
-#     print("Done with:", number)
+# DEBUG
+# Iterate through each patient in `aus`
+for patient_idx, patient_segments in enumerate(aus):
+    # Iterate through each segment for the current patient
+    for segment_idx, segment in enumerate(patient_segments):
+        # Check if all values in the segment are finite (numeric)
+        if not np.isfinite(segment).all():
+            print(f"Non-numeric values detected in patient {patient_idx}, segment {segment_idx}")
+            # Optionally, print the non-numeric values for more detail
+            print(segment[~np.isfinite(segment)])
 
-# # Save arrays in files
-# log_mel_segments = np.array(log_mel_segments, dtype=object)
-# np.save('V:/staff-umbrella/EleniSalient/Data/log_mel.npy', log_mel_segments)
-# aggregated_visual_features = np.array(aggregated_visual_features, dtype=object)
-# np.save('V:/staff-umbrella/EleniSalient/Data/aggr_visual.npy', aggregated_visual_features)
+aus = np.array(aus, dtype=object)
+
+# DEBUG
+
+# Ensure aus is converted to a DataFrame for easier handling of non-numeric values
+aus_df = pd.DataFrame(aus)
+
+# Apply pd.to_numeric to coerce non-numeric values to NaN
+aus_numeric = aus_df.apply(pd.to_numeric, errors='coerce')
+
+# Convert back to NumPy if needed
+aus_numeric_array = aus_numeric.to_numpy()
+
+# Create a mask for NaN values
+non_numeric_mask = np.isnan(aus_numeric_array)
+
+# DEBUG: Check if any NaNs are present
+if np.any(non_numeric_mask):
+    print("Non-numeric or NaN values found in aus at indices:")
+    print(np.argwhere(non_numeric_mask))
+
+# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
+# # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
+
+masks = np.array(masks, dtype=object)
+# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/mask_segments.npy', masks)
+# np.save('V:/staff-umbrella/EleniSalient/Preprocessing/mask_segments.npy', masks)
+
+print('Log-mels')
+print(log_mels.shape)
+print(len(log_mels[0]))
+print(len(log_mels[1]))
+
+print('Action Units')
+print(aus.shape)
+print(len(aus[0]))
+print(len(aus[1]))
+
+print('Masks')
+print(masks.shape)
+print(len(masks[0]))
+print(len(masks[1]))
 
 # print("lenght:", len(labels_dict))
 # pprint(labels_dict)

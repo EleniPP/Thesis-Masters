@@ -1,0 +1,7 @@
+name: pandas1  # Name of the environment
+channels:
+  - defaults  # Channel to fetch packages from (you can add other channels if needed)
+dependencies:
+  - python=3.11  # Set the Python version
+  - pandas=1.*   # Specify the version of pandas
+  - librosa
