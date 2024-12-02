@@ -257,7 +257,7 @@ class DepressionPredictor1(nn.Module):
         #     nn.Linear(512, 2)
         # )
         self.classifier = nn.Sequential(
-            nn.Linear(3072, 1024),
+            nn.Linear(1024, 1024),
             # nn.Linear(3072, 512),
             # nn.BatchNorm1d(1024),  # Batch normalization
             nn.ReLU(),
@@ -500,8 +500,6 @@ for fold, (train_index, val_index) in enumerate(kf.split(features)):
     valid_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
     
     # Example usage
-    num_segments = 3072  # Assuming mono audio signal (1D input)
-    num_features = 27197
     # 3072
     conv_out_channels = 64  # Number of output channels for convolution
     lstm_hidden_size = 128  # Hidden size of LSTM
@@ -509,7 +507,7 @@ for fold, (train_index, val_index) in enumerate(kf.split(features)):
     fc_hidden_size = 64  # Number of neurons in the first fully connected layer
     output_size = 2  # Binary classification (depression or not)
 
-    model = DepAudioNet(conv_out_channels, lstm_hidden_size)
+    model = DepressionPredictor1(conv_out_channels, lstm_hidden_size)
 
     # Define loss and optimizer
     criterion = nn.BCELoss()  # Binary Cross Entropy Loss

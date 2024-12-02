@@ -197,11 +197,14 @@ feature_patients = np.array(patient_features, dtype=object)
 # print('Results:')
 # print(feature_patients[0].shape) #torch.Size([282, 4])
 # print(feature_patients[1].shape)
+
 np.save('../../../tudelft.net/staff-umbrella/EleniSalient/audio_features_sliding_2.npy', feature_patients)
 # np.save('D:/Data/audio_features1.npy', feature_patients)
 # # Save a tensor
 # with open('C:/Users/eleni/Data/audio_features.pkl', 'wb') as f:
 #     pickle.dump(feature_patients, f)
+
+
 
 # -----------------------------------The simple one-------------------------------------------------------------
 # class AudioFeatureExtractor(nn.Module):

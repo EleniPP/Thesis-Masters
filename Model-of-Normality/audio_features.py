@@ -1,11 +1,6 @@
 import numpy as np
 import torch 
-import torchvision.models as models
-import tensorflow as tf
-import tensorflow_hub as hub
 import torch.nn as nn
-import pickle
-import torch.nn.functional as F
 from torch.hub import load_state_dict_from_url
 
 __all__ = ['AlexNet', 'alexnet']
@@ -142,7 +137,7 @@ def get_3d_spec(Sxx_in, moments=None):
 
 original_model=alexnet(pretrained=True)
 original_dict = original_model.state_dict()
-modifiedAlexNet=modifiedAlexNet(pretrained=False)
+modified_model=modifiedAlexNet(pretrained=False)
 modified_model_dict = modifiedAlexNet.state_dict()
 pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in modified_model_dict}
 
@@ -151,8 +146,6 @@ pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in
 patient_features = []
 for log_mel in log_mel_seg:
     results = []
-    for segment in log_mel:
-        print(f"Segment shape: {segment.shape}")
     log_mel_spec_3d = np.array([get_3d_spec(segment) for segment in log_mel])
     for segment in log_mel_spec_3d:
         npimg = np.transpose(segment,(2,0,1))
@@ -163,7 +156,7 @@ for log_mel in log_mel_seg:
             # input_batch = input_batch.to('cuda')
             # modifiedAlexNet.to('cuda')
         with torch.no_grad():
-            output = modifiedAlexNet(input_batch)
+            output = modified_model(input_batch)
             results.append(output)
     features = torch.cat(results, dim=0)
     patient_features.append(features.numpy())

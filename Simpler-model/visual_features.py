@@ -2,21 +2,17 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pickle
 
 # log_mels = np.load('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
 
-visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus.npy', allow_pickle=True)
+visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable.npy', allow_pickle=True)
 print('Action Units')
 print(visuals.shape)
 print(len(visuals[0]))
 print(len(visuals[1]))
-is_numeric = np.vectorize(lambda x: isinstance(x, (int, float)))(visuals)
-if not is_numeric.all():
-    print("Non-numeric data detected in visuals array.")
-# print(visuals.shape)
-non_numeric_indices = np.where(~is_numeric)
-for idx in non_numeric_indices[0]:  # Only show the first 10 for inspection
-    print(f"Non-numeric element at index {idx}")
+# I STILL HAVEN'T ADDED THE MLP AT THE END FOR DIMENTIONALITY REDUCTION SOS
+
 
 class AU1DCNN(nn.Module):
     def __init__(self):
@@ -39,14 +35,19 @@ class AU1DCNN(nn.Module):
         self._initialize_weights()
 
     def forward(self, x):
-        # Input x shape: [num_of_patients, num_segments_per_patient, 105, 20]
-        # We need to swap dimensions to make it compatible with Conv1d:
-        # New shape for Conv1d: [num_of_patients * num_segments_per_patient, 20 (in_channels), 105 (sequence_length)]
-        batch_size, num_segments, num_frames, num_aus = x.shape
+        # # Input x shape: [num_of_patients, num_segments_per_patient, 105, 20]
+        # # We need to swap dimensions to make it compatible with Conv1d:
+        # # New shape for Conv1d: [num_of_patients * num_segments_per_patient, 20 (in_channels), 105 (sequence_length)]
+        # batch_size, num_segments, num_frames, num_aus = x.shape
         
-        # Reshape: combine patients and segments, swap AUs and frames
-        x = x.view(-1, num_aus, num_frames)
+        # # Reshape: combine patients and segments, swap AUs and frames
+        # x = x.view(-1, num_aus, num_frames)
         
+        # Input x shape for each patient: [num_segments, 105, 20]
+    
+        # Permute to match Conv1D input shape: [num_segments, 20 (AUs), 105 (frames)]
+        # x = x.permute(0, 2, 1)
+
         # Apply Conv1D layers
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
@@ -70,29 +71,94 @@ class AU1DCNN(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
+# Dimensionality reduction model
+class FeatureReducer(nn.Module):
+    def __init__(self, input_dim, reduced_dim):
+        super(FeatureReducer, self).__init__()
+        self.fc = nn.Linear(input_dim, reduced_dim)
+
+    def forward(self, x):
+        return self.fc(x)
 
 # Input shape [num_of_patients, num_segments_per_patient, 105, 20]
 model = AU1DCNN()
 model.eval()  # Set the model to evaluation mode
 
-# Convert your 'visuals' array (which contains all patients' AU data) to a tensor
-visuals = np.array(visuals)  # Ensure visuals is in the correct shape
-# Check if all elements are numeric
-visuals = torch.from_numpy(visuals).float()  # Convert to PyTorch tensor
+input_dim = 13312  # Size of extracted features
+output_dim = 512   # Reduced dimensionality (adjust based on your needs)
+reducer = FeatureReducer(input_dim, output_dim)
+reducer.eval()  # Set to evaluation mode for now
 
-# Assuming the visuals have shape [num_patients, num_segments, 105, 20]
-num_patients, num_segments, num_frames, num_aus = visuals.shape
+# List to hold extracted features for each patient
+all_extracted_features = []
+all_reduced_features = []
+# Iterate over each patient
+for patient_idx, patient_data in enumerate(visuals):
+    try:
+        # Ensure patient data is numeric and convert to float32
+        patient_data = np.array(patient_data, dtype=np.float32)
+        
+        # Check if the patient data has the correct shape
+        if patient_data.shape[1:] == (105, 20):
+            # Reshape for 1D-CNN and permute to [num_segments, 20, 105]
+            patient_tensor = torch.from_numpy(patient_data).view(-1, 105, 20).permute(0, 2, 1)  # Shape: [num_segments, 20, 105]
 
-# Reshape for the 1D-CNN: [batch_size (patients * segments), 20 (AUs), 105 (frames)]
-visuals = visuals.view(num_patients * num_segments, num_frames, num_aus).permute(0, 2, 1)  # Shape: [num_patients * num_segments, 20, 105]
+            # Extract features with the model
+            with torch.no_grad():
+                features = model(patient_tensor)
+                reduced_features = reducer(features)  # Shape: [num_segments, output_dim]
 
-# Perform feature extraction
-with torch.no_grad():
-    features = model(visuals)
+            print('Features')
+            print(features.shape)
+            print(features[0].shape)
+            print(type(features[0]))
 
-# Reshape the features back to [num_patients, num_segments, features] if necessary
-extracted_features = features.view(num_patients, num_segments, -1)
 
-extracted_features = np.array(extracted_features)
-print('Extracted features shape: {}'.format(extracted_features.shape))
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', extracted_features)
+            # Apply dimensionality reduction
+            print('Reduced Features')
+            print(reduced_features.shape)
+            print(reduced_features[0].shape)  
+            print(type(reduced_features[0]))
+
+            # Collect features for this patient
+            all_extracted_features.append(features.numpy())
+            # Collect reduced features for this patient
+            all_reduced_features.append(reduced_features.numpy())
+        else:
+            print(f"Skipping patient {patient_idx} due to incorrect shape: {patient_data.shape}")
+    except Exception as e:
+        print(f"Error processing patient {patient_idx}: {e}")
+
+
+
+extracted_features = np.array(all_extracted_features, dtype=object)
+reduced_features = np.array(all_reduced_features, dtype=object)
+
+for idx, patient_features in enumerate(all_reduced_features):
+    if len(patient_features) == 0 or not all(isinstance(segment, np.ndarray) for segment in patient_features):
+        print(f"Problematic patient {idx}: {patient_features}")
+
+# print('Extracted Features')
+# print(extracted_features.shape)
+# print(all_extracted_features[0].shape)
+# print(all_extracted_features[0][0].shape)
+# print(all_extracted_features[0][0][0].shape)
+
+# print('Reduced Features')
+# print(reduced_features_array.shape)
+# print(all_reduced_features[0].shape)
+# print(all_reduced_features[0][0].shape)
+# print(all_reduced_features[0][0][0].shape)
+
+# print('Extracted Features')
+# print(extracted_features.shape)
+# print(len(extracted_features[0]))
+# print(all_extracted_features[0][0][0].shape)
+
+# print('Reduced Features')
+# print(reduced_features_array.shape)
+# print(len(reduced_features_array[0]))
+# print(all_reduced_features[0][0][0].shape)
+# I STILL HAVEN'T ADDED THE MLP AT THE END FOR DIMENTIONALITY REDUCTION SOS
+# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', extracted_features)
+np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', reduced_features)
