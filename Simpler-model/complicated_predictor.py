@@ -15,17 +15,18 @@ import matplotlib.pyplot as plt
 import torch.optim.lr_scheduler as lr_scheduler
 
 # Load the audio tensor
-audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features.npy', allow_pickle=True)
-print(f"Audio features shape: {type(audio_features[0])}")
+# audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features.npy', allow_pickle=True)
+audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', allow_pickle=True)
+print(f"Audio features shape: {audio_features.shape}")
 print(f"Audio feature sample shape: {audio_features[0].shape}")
 
 # Load the visual tensor
-visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', allow_pickle=True)
+# visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', allow_pickle=True)
+visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', allow_pickle=True)
 print(f"Visual features shape: {visual_features.shape}")
 print(f"Visual feature sample shape: {visual_features[0].shape}")
-
 # Load the labels
-with open('/tudelft.net/staff-umbrella/EleniSalient/Data/labels.json', 'r') as file:
+with open('/tudelft.net/staff-umbrella/EleniSalient/labels.json', 'r') as file:
     labels_dict = json.load(file)
 del labels_dict['492']
 
@@ -207,13 +208,14 @@ class DepressionPredictor1(nn.Module):
     def __init__(self):
         super(DepressionPredictor1, self).__init__()
         self.classifier = nn.Sequential(
-            nn.Linear(5632, 1024),
-            nn.ReLU(),
-            nn.Dropout(0.6),
-            nn.Linear(1024, 256),
-            nn.ReLU(),
-            nn.Dropout(0.6),
-            nn.Linear(256, 2)
+        nn.Linear(1024, 512),
+        nn.BatchNorm1d(512),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Linear(512, 128),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Linear(128, 2)
         )
 
     def forward(self, x):
@@ -292,7 +294,6 @@ def final_train_model(model, dataloader,val_loader, optimizer, scheduler, criter
     for epoch in range(epochs):
         model.train()
         total_loss = 0
-        epoch_probabilities = []
         for i, (features,labels,_,_) in enumerate(dataloader):
             optimizer.zero_grad()
             # DEBUG: Ensure features do not contain NaN or Inf
@@ -495,7 +496,7 @@ final_model = DepressionPredictor1()  # Initialize your model architecture
 
 # Define optimizer and criterion
 optimizer = optim.Adam(final_model.parameters(), lr=1e-4, weight_decay=1e-4)
-alpha = torch.tensor([1.0, 2.0])
+alpha = torch.tensor([1.0, 1.3])
 criterion = FocalLoss(alpha=alpha, gamma=1.6)
     
 scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
@@ -534,7 +535,7 @@ all_probs = torch.cat(all_probs, dim=0)
 all_patient_numbers = torch.tensor(all_patient_numbers)
 all_segment_orders = torch.tensor(all_segment_orders)
 
-torch.save(all_probs, 'probability_distributions.pth')
-torch.save(all_patient_numbers, 'all_patient_numbers.pth')
-torch.save(all_segment_orders, 'all_segment_orders.pth')
+torch.save(all_probs, '/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/probability_distributions.pth')
+torch.save(all_patient_numbers, '/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_patient_numbers.pth')
+torch.save(all_segment_orders, '/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_segment_orders.pth')
  

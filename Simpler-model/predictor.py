@@ -12,20 +12,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
+from torch.utils.data import WeightedRandomSampler, DataLoader
+from sklearn.utils import resample
 import torch.optim.lr_scheduler as lr_scheduler
 
 # Load the audio tensor
-audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features.npy', allow_pickle=True)
+# audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features.npy', allow_pickle=True)
+audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', allow_pickle=True)
 print(f"Audio features shape: {audio_features.shape}")
 print(f"Audio feature sample shape: {audio_features[0].shape}")
 
 # Load the visual tensor
-visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', allow_pickle=True)
+# visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', allow_pickle=True)
+visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', allow_pickle=True)
 print(f"Visual features shape: {visual_features.shape}")
 print(f"Visual feature sample shape: {visual_features[0].shape}")
 
 # Load the labels
-with open('/tudelft.net/staff-umbrella/EleniSalient/Data/labels.json', 'r') as file:
+with open('/tudelft.net/staff-umbrella/EleniSalient/labels.json', 'r') as file:
     labels_dict = json.load(file)
 del labels_dict['492']
 
@@ -114,7 +118,7 @@ def evaluate_model(model, dataloader, criterion):
     all_labels = []
     correct = 0
     total = 0
-    threshold = 0.47
+    threshold = 0.5
     with torch.no_grad():  # Disable gradient calculation
         for features, labels, _, _ in dataloader:
             if torch.isnan(features).any() or torch.isinf(features).any():
@@ -213,14 +217,14 @@ class DepressionPredictor1(nn.Module):
             # nn.Linear(17408, 1024),
             # nn.ReLU(),
             # nn.Dropout(0.5),
-            nn.Linear(1024, 512),
-            # nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(256, 2)
+        nn.Linear(1024, 512),
+        nn.BatchNorm1d(512),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Linear(512, 128),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Linear(128, 2)
         )
 
     def forward(self, x):
@@ -288,12 +292,72 @@ for i, features in enumerate(normalized_multimodal):
     if torch.isnan(features).any():
         print(f"NaN values in normalized_multimodal before dataloaders at index {i}")
 
+
+
 train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
 train_multimodal, train_labels, segments_per_patient_train, segments_order_train = flatten(train_multimodal, train_labels)
-segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
-
+print(train_multimodal.shape)
+print(train_multimodal[0].shape)
+# #Check inbalance
 unique, counts = np.unique(train_labels, return_counts=True)
 class_distribution = dict(zip(unique, counts))
+
+print(f"Class distribution: {class_distribution}")
+
+# Determine majority and minority class
+majority_class = max(class_distribution, key=class_distribution.get)
+minority_class = min(class_distribution, key=class_distribution.get)
+
+
+# Get indices of the majority and minority classes
+majority_indices = np.where(train_labels == majority_class)[0]
+minority_indices = np.where(train_labels == minority_class)[0]
+
+n_majority = len(majority_indices)
+n_minority = len(minority_indices)
+
+
+#MAKE BALANCED MINI BATCHES
+class_counts = np.bincount(train_labels)
+class_weights = 1. / torch.tensor(class_counts, dtype=torch.float)
+sample_weights = class_weights[train_labels]  # Assuming `labels` contains class labels
+# sampler = WeightedRandomSampler(sample_weights, len(sample_weights)) 
+sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
+
+# TRY THE 50-50 DISTRIBUTION
+
+# # Undersample the majority class to match the number of minority cl   ass samples
+# majority_undersampled_indices = resample(majority_indices, 
+#                                          replace=False,  # No replacement, undersample without duplication
+#                                          n_samples=n_minority,  # Match the number of minority class samples
+#                                          random_state=42)
+
+# # Combine the minority and undersampled majority indices
+# balanced_indices = np.concatenate([majority_undersampled_indices, minority_indices])
+
+# # Shuffle the indices to ensure randomization
+# np.random.shuffle(balanced_indices)
+
+# balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  # Convert indices to tensor if not already
+
+# # Index train_multimodal and train_labels using balanced_indices
+# train_multimodal = train_multimodal[balanced_indices]
+# train_labels = train_labels[balanced_indices]
+
+
+
+# # Check the new class distribution
+# unique_balanced, counts_balanced = np.unique(train_labels, return_counts=True)
+# class_distribution_balanced = dict(zip(unique_balanced, counts_balanced))
+# print(f"Balanced class distribution: {class_distribution_balanced}")
+# # array that has the patient number for each segment in the train multimnodal
+# segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+
+# IMBALANCED DATASET
+segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+
+ 
+
 
 val_multimodal, val_labels = filter_by_patient_numbers(normalized_multimodal, labels, val_split)
 val_multimodal, val_labels, segments_per_patient_val, segments_order_val = flatten(val_multimodal, val_labels)
@@ -307,7 +371,7 @@ train_dataset = DepressionDataset(train_multimodal, train_labels, segments_patie
 val_dataset = DepressionDataset(val_multimodal, val_labels, segments_patients_val, segments_order_val)
 test_dataset = DepressionDataset(test_multimodal, test_labels, segments_patients_test, segments_order_test)
 
-train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=128,sampler=sampler)
 val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
@@ -315,8 +379,9 @@ model = DepressionPredictor1()
 # why no SGD?
 optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
-alpha = torch.tensor([1.0, 1.3])
-criterion = FocalLoss(alpha=alpha, gamma=1.6)
+# alpha = torch.tensor([1.0, 1.3])
+# criterion = FocalLoss(alpha=alpha, gamma=1.6)
+criterion = nn.CrossEntropyLoss()
 
 model = train_model(model, train_loader, val_loader, optimizer, scheduler, criterion)
 
