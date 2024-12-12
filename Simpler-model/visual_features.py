@@ -4,15 +4,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pickle
 
-# log_mels = np.load('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
-
-visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable.npy', allow_pickle=True)
-print('Action Units')
-print(visuals.shape)
-print(len(visuals[0]))
-print(len(visuals[1]))
-# I STILL HAVEN'T ADDED THE MLP AT THE END FOR DIMENTIONALITY REDUCTION SOS
-
 
 class AU1DCNN(nn.Module):
     def __init__(self):
@@ -80,85 +71,94 @@ class FeatureReducer(nn.Module):
     def forward(self, x):
         return self.fc(x)
 
-# Input shape [num_of_patients, num_segments_per_patient, 105, 20]
-model = AU1DCNN()
-model.eval()  # Set the model to evaluation mode
+if __name__ == "__main__":
+    # log_mels = np.load('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
 
-input_dim = 13312  # Size of extracted features
-output_dim = 512   # Reduced dimensionality (adjust based on your needs)
-reducer = FeatureReducer(input_dim, output_dim)
-reducer.eval()  # Set to evaluation mode for now
+    visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable.npy', allow_pickle=True)
+    print('Action Units')
+    print(visuals.shape)
+    print(len(visuals[0]))
+    print(len(visuals[1]))
+    # I STILL HAVEN'T ADDED THE MLP AT THE END FOR DIMENTIONALITY REDUCTION SOS
+    # Input shape [num_of_patients, num_segments_per_patient, 105, 20]
+    model = AU1DCNN()
+    model.eval()  # Set the model to evaluation mode
 
-# List to hold extracted features for each patient
-all_extracted_features = []
-all_reduced_features = []
-# Iterate over each patient
-for patient_idx, patient_data in enumerate(visuals):
-    try:
-        # Ensure patient data is numeric and convert to float32
-        patient_data = np.array(patient_data, dtype=np.float32)
-        
-        # Check if the patient data has the correct shape
-        if patient_data.shape[1:] == (105, 20):
-            # Reshape for 1D-CNN and permute to [num_segments, 20, 105]
-            patient_tensor = torch.from_numpy(patient_data).view(-1, 105, 20).permute(0, 2, 1)  # Shape: [num_segments, 20, 105]
+    input_dim = 13312  # Size of extracted features
+    output_dim = 512   # Reduced dimensionality (adjust based on your needs)
+    reducer = FeatureReducer(input_dim, output_dim)
+    reducer.eval()  # Set to evaluation mode for now
 
-            # Extract features with the model
-            with torch.no_grad():
-                features = model(patient_tensor)
-                reduced_features = reducer(features)  # Shape: [num_segments, output_dim]
+    # List to hold extracted features for each patient
+    all_extracted_features = []
+    all_reduced_features = []
+    # Iterate over each patient
+    for patient_idx, patient_data in enumerate(visuals):
+        try:
+            # Ensure patient data is numeric and convert to float32
+            patient_data = np.array(patient_data, dtype=np.float32)
+            
+            # Check if the patient data has the correct shape
+            if patient_data.shape[1:] == (105, 20):
+                # Reshape for 1D-CNN and permute to [num_segments, 20, 105]
+                patient_tensor = torch.from_numpy(patient_data).view(-1, 105, 20).permute(0, 2, 1)  # Shape: [num_segments, 20, 105]
 
-            print('Features')
-            print(features.shape)
-            print(features[0].shape)
-            print(type(features[0]))
+                # Extract features with the model
+                with torch.no_grad():
+                    features = model(patient_tensor)
+                    reduced_features = reducer(features)  # Shape: [num_segments, output_dim]
 
-
-            # Apply dimensionality reduction
-            print('Reduced Features')
-            print(reduced_features.shape)
-            print(reduced_features[0].shape)  
-            print(type(reduced_features[0]))
-
-            # Collect features for this patient
-            all_extracted_features.append(features.numpy())
-            # Collect reduced features for this patient
-            all_reduced_features.append(reduced_features.numpy())
-        else:
-            print(f"Skipping patient {patient_idx} due to incorrect shape: {patient_data.shape}")
-    except Exception as e:
-        print(f"Error processing patient {patient_idx}: {e}")
+                print('Features')
+                print(features.shape)
+                print(features[0].shape)
+                print(type(features[0]))
 
 
+                # Apply dimensionality reduction
+                print('Reduced Features')
+                print(reduced_features.shape)
+                print(reduced_features[0].shape)  
+                print(type(reduced_features[0]))
 
-extracted_features = np.array(all_extracted_features, dtype=object)
-reduced_features = np.array(all_reduced_features, dtype=object)
+                # Collect features for this patient
+                all_extracted_features.append(features.numpy())
+                # Collect reduced features for this patient
+                all_reduced_features.append(reduced_features.numpy())
+            else:
+                print(f"Skipping patient {patient_idx} due to incorrect shape: {patient_data.shape}")
+        except Exception as e:
+            print(f"Error processing patient {patient_idx}: {e}")
 
-for idx, patient_features in enumerate(all_reduced_features):
-    if len(patient_features) == 0 or not all(isinstance(segment, np.ndarray) for segment in patient_features):
-        print(f"Problematic patient {idx}: {patient_features}")
 
-# print('Extracted Features')
-# print(extracted_features.shape)
-# print(all_extracted_features[0].shape)
-# print(all_extracted_features[0][0].shape)
-# print(all_extracted_features[0][0][0].shape)
 
-# print('Reduced Features')
-# print(reduced_features_array.shape)
-# print(all_reduced_features[0].shape)
-# print(all_reduced_features[0][0].shape)
-# print(all_reduced_features[0][0][0].shape)
+    extracted_features = np.array(all_extracted_features, dtype=object)
+    reduced_features = np.array(all_reduced_features, dtype=object)
 
-# print('Extracted Features')
-# print(extracted_features.shape)
-# print(len(extracted_features[0]))
-# print(all_extracted_features[0][0][0].shape)
+    for idx, patient_features in enumerate(all_reduced_features):
+        if len(patient_features) == 0 or not all(isinstance(segment, np.ndarray) for segment in patient_features):
+            print(f"Problematic patient {idx}: {patient_features}")
 
-# print('Reduced Features')
-# print(reduced_features_array.shape)
-# print(len(reduced_features_array[0]))
-# print(all_reduced_features[0][0][0].shape)
-# I STILL HAVEN'T ADDED THE MLP AT THE END FOR DIMENTIONALITY REDUCTION SOS
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', extracted_features)
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', reduced_features)
+    # print('Extracted Features')
+    # print(extracted_features.shape)
+    # print(all_extracted_features[0].shape)
+    # print(all_extracted_features[0][0].shape)
+    # print(all_extracted_features[0][0][0].shape)
+
+    # print('Reduced Features')
+    # print(reduced_features_array.shape)
+    # print(all_reduced_features[0].shape)
+    # print(all_reduced_features[0][0].shape)
+    # print(all_reduced_features[0][0][0].shape)
+
+    # print('Extracted Features')
+    # print(extracted_features.shape)
+    # print(len(extracted_features[0]))
+    # print(all_extracted_features[0][0][0].shape)
+
+    # print('Reduced Features')
+    # print(reduced_features_array.shape)
+    # print(len(reduced_features_array[0]))
+    # print(all_reduced_features[0][0][0].shape)
+    # I STILL HAVEN'T ADDED THE MLP AT THE END FOR DIMENTIONALITY REDUCTION SOS
+    # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', extracted_features)
+    np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', reduced_features)

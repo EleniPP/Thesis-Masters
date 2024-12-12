@@ -90,7 +90,7 @@ transcript_extension = "_TRANSCRIPT.csv"
 final_audio_extension = "_final_audio.wav"
 
 # numbers = [303, 319]
-numbers = list(range(300, 492))
+numbers = list(range(300, 303))
 # read files from all patients
 log_mels = []
 aus = []
@@ -360,38 +360,38 @@ aus = np.array(aus, dtype=object)
 # Save arrays in files
 log_mels_reliable = np.array(log_mels_reliable, dtype=object)
 
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', log_mels_reliable)
+np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable2.npy', log_mels_reliable)
 # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', log_mels_reliable)
 # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
 
 aus_reliable = np.array(aus_reliable, dtype=object)
 
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable.npy', aus_reliable)
+np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable2.npy', aus_reliable)
 # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
 
 # masks = np.array(masks, dtype=object)
 # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/mask_segments.npy', masks)
 # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/mask_segments.npy', masks)
 
-print('Log-mels')
-print(log_mels.shape)
-print(len(log_mels[0]))
-print(len(log_mels[1]))
+# print('Log-mels')
+# print(log_mels.shape)
+# print(len(log_mels[0]))
+# print(len(log_mels[1]))
 
-print('Action Units')
-print(aus.shape)
-print(len(aus[0]))
-print(len(aus[1]))
+# print('Action Units')
+# print(aus.shape)
+# print(len(aus[0]))
+# print(len(aus[1]))
 
-print('Log-mels_reliable')
-print(log_mels_reliable.shape)
-print(len(log_mels_reliable[0]))
-print(len(log_mels_reliable[1]))
+# print('Log-mels_reliable')
+# print(log_mels_reliable.shape)
+# print(len(log_mels_reliable[0]))
+# print(len(log_mels_reliable[1]))
 
-print('Action Units reliable')
-print(aus_reliable.shape)
-print(len(aus_reliable[0]))
-print(len(aus_reliable[1]))
+# print('Action Units reliable')
+# print(aus_reliable.shape)
+# print(len(aus_reliable[0]))
+# print(len(aus_reliable[1]))
 
 # print('Masks')
 # print(masks.shape)

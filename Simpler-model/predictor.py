@@ -16,59 +16,6 @@ from torch.utils.data import WeightedRandomSampler, DataLoader
 from sklearn.utils import resample
 import torch.optim.lr_scheduler as lr_scheduler
 
-# Load the audio tensor
-# audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features.npy', allow_pickle=True)
-audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', allow_pickle=True)
-print(f"Audio features shape: {audio_features.shape}")
-print(f"Audio feature sample shape: {audio_features[0].shape}")
-
-# Load the visual tensor
-# visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', allow_pickle=True)
-visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', allow_pickle=True)
-print(f"Visual features shape: {visual_features.shape}")
-print(f"Visual feature sample shape: {visual_features[0].shape}")
-
-# Load the labels
-with open('/tudelft.net/staff-umbrella/EleniSalient/labels.json', 'r') as file:
-    labels_dict = json.load(file)
-del labels_dict['492']
-
-numbers = [int(key) for key in labels_dict.keys()]
-labels = list(labels_dict.values())
-tlabels = torch.tensor(labels)
-
-# Convert audio and visual features to torch tensors
-audio_features = [torch.from_numpy(a) for a in audio_features]
-visual_features = [torch.from_numpy(v) for v in visual_features]
-
-for i, (a, v) in enumerate(zip(audio_features, visual_features)):
-    if a.shape[0] != v.shape[0]:
-        print(f"Mismatch in number of segments for index {i}: audio {a.shape[0]}, visual {v.shape[0]}")
-
-# Concatenate audio and visual features for each entry
-multimodal_features = [torch.cat((a, v), dim=1) for a, v in zip(audio_features, visual_features)]
-
-# Normalize each tensor individually
-normalized_multimodal = []
-for tensor in multimodal_features:
-    mean = tensor.mean(dim=0)
-    std = tensor.std(dim=0)
-    normalized_tensor = (tensor - mean) / (std + 1e-5)
-    normalized_multimodal.append(normalized_tensor)
-
-# Identify and remove NaN entries and flatten inputs for training
-cleaned_multimodal_features = []
-cleaned_labels = []
-for i, (features, label) in enumerate(zip(normalized_multimodal, labels)):
-    if not torch.isnan(features).any() and not torch.isinf(features).any():
-        cleaned_multimodal_features.append(features)
-        cleaned_labels.append(label)
-    else:
-        print(f"Removed entry with NaN/Inf values at index {i}")
-
-# Re-assign the cleaned data
-normalized_multimodal = cleaned_multimodal_features
-tlabels = torch.tensor(cleaned_labels)
 
 def flatten(multimodal_features, labels):
     flattened_features = []
@@ -241,7 +188,8 @@ def plot_losses(train_losses, val_losses):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss Over Epochs')
     plt.legend()
-    plt.show()
+    plt.savefig('../../../tudelft.net/staff-umbrella/EleniSalient/loss_plot_imbalanced_focal.png')
+    plt.close()
 
 def train_model(model, dataloader, val_loader, optimizer, scheduler, criterion, epochs=30):
     early_stopping_patience = 5
@@ -278,112 +226,168 @@ def train_model(model, dataloader, val_loader, optimizer, scheduler, criterion, 
     plot_losses(train_losses, val_losses)
     return model
 
-# Get splits
-train_split = get_split('train')
-test_split = get_split('test')
-val_split = get_split('dev')
-train_split = train_split[:-1]
+if __name__ == "__main__":
+    # Load the audio tensor
+    # audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features.npy', allow_pickle=True)
+    audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', allow_pickle=True)
+    print(f"Audio features shape: {audio_features.shape}")
+    print(f"Audio feature sample shape: {audio_features[0].shape}")
 
-del numbers[117]
-del numbers[99]
-patient_to_index = {patient_num: idx for idx, patient_num in enumerate(numbers)}
+    # Load the visual tensor
+    # visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', allow_pickle=True)
+    visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', allow_pickle=True)
+    print(f"Visual features shape: {visual_features.shape}")
+    print(f"Visual feature sample shape: {visual_features[0].shape}")
 
-for i, features in enumerate(normalized_multimodal):
-    if torch.isnan(features).any():
-        print(f"NaN values in normalized_multimodal before dataloaders at index {i}")
+    # Load the labels
+    with open('/tudelft.net/staff-umbrella/EleniSalient/labels.json', 'r') as file:
+        labels_dict = json.load(file)
+    del labels_dict['492']
 
+    numbers = [int(key) for key in labels_dict.keys()]
+    labels = list(labels_dict.values())
+    tlabels = torch.tensor(labels)
 
+    # Convert audio and visual features to torch tensors
+    audio_features = [torch.from_numpy(a) for a in audio_features]
+    visual_features = [torch.from_numpy(v) for v in visual_features]
 
-train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
-train_multimodal, train_labels, segments_per_patient_train, segments_order_train = flatten(train_multimodal, train_labels)
-print(train_multimodal.shape)
-print(train_multimodal[0].shape)
-# #Check inbalance
-unique, counts = np.unique(train_labels, return_counts=True)
-class_distribution = dict(zip(unique, counts))
+    for i, (a, v) in enumerate(zip(audio_features, visual_features)):
+        if a.shape[0] != v.shape[0]:
+            print(f"Mismatch in number of segments for index {i}: audio {a.shape[0]}, visual {v.shape[0]}")
 
-print(f"Class distribution: {class_distribution}")
+    # Concatenate audio and visual features for each entry
+    multimodal_features = [torch.cat((a, v), dim=1) for a, v in zip(audio_features, visual_features)]
 
-# Determine majority and minority class
-majority_class = max(class_distribution, key=class_distribution.get)
-minority_class = min(class_distribution, key=class_distribution.get)
+    # Normalize each tensor individually
+    normalized_multimodal = []
+    for tensor in multimodal_features:
+        mean = tensor.mean(dim=0)
+        std = tensor.std(dim=0)
+        normalized_tensor = (tensor - mean) / (std + 1e-5)
+        normalized_multimodal.append(normalized_tensor)
 
+    # Identify and remove NaN entries and flatten inputs for training
+    cleaned_multimodal_features = []
+    cleaned_labels = []
+    for i, (features, label) in enumerate(zip(normalized_multimodal, labels)):
+        if not torch.isnan(features).any() and not torch.isinf(features).any():
+            cleaned_multimodal_features.append(features)
+            cleaned_labels.append(label)
+        else:
+            print(f"Removed entry with NaN/Inf values at index {i}")
 
-# Get indices of the majority and minority classes
-majority_indices = np.where(train_labels == majority_class)[0]
-minority_indices = np.where(train_labels == minority_class)[0]
+    # Re-assign the cleaned data
+    normalized_multimodal = cleaned_multimodal_features
+    tlabels = torch.tensor(cleaned_labels)
 
-n_majority = len(majority_indices)
-n_minority = len(minority_indices)
+    # Get splits
+    train_split = get_split('train')
+    test_split = get_split('test')
+    val_split = get_split('dev')
+    train_split = train_split[:-1]
 
+    del numbers[117]
+    del numbers[99]
+    patient_to_index = {patient_num: idx for idx, patient_num in enumerate(numbers)}
 
-#MAKE BALANCED MINI BATCHES
-class_counts = np.bincount(train_labels)
-class_weights = 1. / torch.tensor(class_counts, dtype=torch.float)
-sample_weights = class_weights[train_labels]  # Assuming `labels` contains class labels
-# sampler = WeightedRandomSampler(sample_weights, len(sample_weights)) 
-sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
-
-# TRY THE 50-50 DISTRIBUTION
-
-# # Undersample the majority class to match the number of minority cl   ass samples
-# majority_undersampled_indices = resample(majority_indices, 
-#                                          replace=False,  # No replacement, undersample without duplication
-#                                          n_samples=n_minority,  # Match the number of minority class samples
-#                                          random_state=42)
-
-# # Combine the minority and undersampled majority indices
-# balanced_indices = np.concatenate([majority_undersampled_indices, minority_indices])
-
-# # Shuffle the indices to ensure randomization
-# np.random.shuffle(balanced_indices)
-
-# balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  # Convert indices to tensor if not already
-
-# # Index train_multimodal and train_labels using balanced_indices
-# train_multimodal = train_multimodal[balanced_indices]
-# train_labels = train_labels[balanced_indices]
-
-
-
-# # Check the new class distribution
-# unique_balanced, counts_balanced = np.unique(train_labels, return_counts=True)
-# class_distribution_balanced = dict(zip(unique_balanced, counts_balanced))
-# print(f"Balanced class distribution: {class_distribution_balanced}")
-# # array that has the patient number for each segment in the train multimnodal
-# segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
-
-# IMBALANCED DATASET
-segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
-
- 
+    for i, features in enumerate(normalized_multimodal):
+        if torch.isnan(features).any():
+            print(f"NaN values in normalized_multimodal before dataloaders at index {i}")
 
 
-val_multimodal, val_labels = filter_by_patient_numbers(normalized_multimodal, labels, val_split)
-val_multimodal, val_labels, segments_per_patient_val, segments_order_val = flatten(val_multimodal, val_labels)
-segments_patients_val = [num for count, num in zip(segments_per_patient_val, val_split) for _ in range(count)]
 
-test_multimodal, test_labels = filter_by_patient_numbers(normalized_multimodal, labels, test_split)
-test_multimodal, test_labels, segments_per_patient_test, segments_order_test = flatten(test_multimodal, test_labels)
-segments_patients_test = [num for count, num in zip(segments_per_patient_test, test_split) for _ in range(count)]
+    train_multimodal, train_labels = filter_by_patient_numbers(normalized_multimodal, labels, train_split)
+    train_multimodal, train_labels, segments_per_patient_train, segments_order_train = flatten(train_multimodal, train_labels)
+    print(train_multimodal.shape)
+    print(train_multimodal[0].shape)
+    # #Check inbalance
+    unique, counts = np.unique(train_labels, return_counts=True)
+    class_distribution = dict(zip(unique, counts))
 
-train_dataset = DepressionDataset(train_multimodal, train_labels, segments_patients_train, segments_order_train)
-val_dataset = DepressionDataset(val_multimodal, val_labels, segments_patients_val, segments_order_val)
-test_dataset = DepressionDataset(test_multimodal, test_labels, segments_patients_test, segments_order_test)
+    print(f"Class distribution: {class_distribution}")
 
-train_loader = DataLoader(train_dataset, batch_size=128,sampler=sampler)
-val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
-test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
+    # Determine majority and minority class
+    majority_class = max(class_distribution, key=class_distribution.get)
+    minority_class = min(class_distribution, key=class_distribution.get)
 
-model = DepressionPredictor1()
-# why no SGD?
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
-scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
-# alpha = torch.tensor([1.0, 1.3])
-# criterion = FocalLoss(alpha=alpha, gamma=1.6)
-criterion = nn.CrossEntropyLoss()
 
-model = train_model(model, train_loader, val_loader, optimizer, scheduler, criterion)
+    # Get indices of the majority and minority classes
+    majority_indices = np.where(train_labels == majority_class)[0]
+    minority_indices = np.where(train_labels == minority_class)[0]
 
-# Evaluate on the validation set
-val_loss, accuracy, _, _ = evaluate_model(model, val_loader, criterion)
+    n_majority = len(majority_indices)
+    n_minority = len(minority_indices)
+
+
+    # #MAKE BALANCED MINI BATCHES
+    # class_counts = np.bincount(train_labels)
+    # class_weights = 1. / torch.tensor(class_counts, dtype=torch.float)
+    # sample_weights = class_weights[train_labels]  # Assuming `labels` contains class labels
+    # # sampler = WeightedRandomSampler(sample_weights, len(sample_weights)) 
+    # sampler = WeightedRandomSampler(weights=sample_weights, num_samples=len(sample_weights), replacement=True)
+
+    # TRY THE 50-50 DISTRIBUTION
+
+    # # Undersample the majority class to match the number of minority cl   ass samples
+    # majority_undersampled_indices = resample(majority_indices, 
+    #                                          replace=False,  # No replacement, undersample without duplication
+    #                                          n_samples=n_minority,  # Match the number of minority class samples
+    #                                          random_state=42)
+
+    # # Combine the minority and undersampled majority indices
+    # balanced_indices = np.concatenate([majority_undersampled_indices, minority_indices])
+
+    # # Shuffle the indices to ensure randomization
+    # np.random.shuffle(balanced_indices)
+
+    # balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  # Convert indices to tensor if not already
+
+    # # Index train_multimodal and train_labels using balanced_indices
+    # train_multimodal = train_multimodal[balanced_indices]
+    # train_labels = train_labels[balanced_indices]
+
+
+
+    # # Check the new class distribution
+    # unique_balanced, counts_balanced = np.unique(train_labels, return_counts=True)
+    # class_distribution_balanced = dict(zip(unique_balanced, counts_balanced))
+    # print(f"Balanced class distribution: {class_distribution_balanced}")
+    # # array that has the patient number for each segment in the train multimnodal
+    # segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+
+    # IMBALANCED DATASET
+    segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+
+    
+
+
+    val_multimodal, val_labels = filter_by_patient_numbers(normalized_multimodal, labels, val_split)
+    val_multimodal, val_labels, segments_per_patient_val, segments_order_val = flatten(val_multimodal, val_labels)
+    segments_patients_val = [num for count, num in zip(segments_per_patient_val, val_split) for _ in range(count)]
+
+    test_multimodal, test_labels = filter_by_patient_numbers(normalized_multimodal, labels, test_split)
+    test_multimodal, test_labels, segments_per_patient_test, segments_order_test = flatten(test_multimodal, test_labels)
+    segments_patients_test = [num for count, num in zip(segments_per_patient_test, test_split) for _ in range(count)]
+
+    train_dataset = DepressionDataset(train_multimodal, train_labels, segments_patients_train, segments_order_train)
+    val_dataset = DepressionDataset(val_multimodal, val_labels, segments_patients_val, segments_order_val)
+    test_dataset = DepressionDataset(test_multimodal, test_labels, segments_patients_test, segments_order_test)
+
+    train_loader = DataLoader(train_dataset, batch_size=128,shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
+
+    model = DepressionPredictor1()
+    # why no SGD?
+    optimizer = optim.Adam(model.parameters(),  lr=1e-4, weight_decay=1e-4)
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+    alpha = torch.tensor([1.0, 2.0])
+    criterion = FocalLoss(alpha=alpha, gamma=1.6)
+    # criterion = nn.CrossEntropyLoss()
+
+    model = train_model(model, train_loader, val_loader, optimizer, scheduler, criterion)
+
+    # Evaluate on the validation set
+    # val_loss, accuracy, _, _ = evaluate_model(model, val_loader, criterion)
+    val_loss, accuracy, _, _ = evaluate_model(model, train_loader, criterion)

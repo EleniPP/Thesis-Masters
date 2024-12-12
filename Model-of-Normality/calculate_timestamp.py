@@ -10,7 +10,7 @@ def get_timestamp(segment_number, segment_duration):
 
 # Example usage
 segment_duration = 3.5  # Each segment is 3.5 seconds
-segment_number = 183    # You can change this to any segment number
+segment_number = 2750    # You can change this to any segment number
 
 timestamp = get_timestamp(segment_number, segment_duration)
 print(f"Timestamp of segment {segment_number}: {timestamp}")

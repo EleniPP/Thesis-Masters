@@ -79,36 +79,38 @@ def get_3d_spec(Sxx_in, moments=None):
     stacked = [arr.reshape((h, w, 1)) for arr in (base, delta, delta2)]
     return np.concatenate(stacked, axis=2)
 
-# Load logmel data
-# log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
-log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', allow_pickle=True)
+
+if __name__ == "__main__":
+    # Load logmel data
+    # log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
+    log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', allow_pickle=True)
 
 
-# original_model = alexnet(pretrained=True)
-# original_dict = original_model.state_dict()
-modified_model = modifiedAlexNet(pretrained=False)
-modified_model_dict = modified_model.state_dict()
-# pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in modified_model_dict}
+    # original_model = alexnet(pretrained=True)
+    # original_dict = original_model.state_dict()
+    modified_model = modifiedAlexNet(pretrained=False)
+    modified_model_dict = modified_model.state_dict()
+    # pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in modified_model_dict}
 
-patient_features = []
+    patient_features = []
 
-for patient_idx, log_mel in enumerate(log_mel_data):
-    print(f"Processing patient {patient_idx}")
-    results = []
-    log_mel_spec_3d = np.array([get_3d_spec(segment) for segment in log_mel])
-    for segment in log_mel_spec_3d:
-        npimg = np.transpose(segment, (2, 0, 1))
-        # npimg = np.expand_dims(segment, axis=0)
-        input_tensor = torch.tensor(npimg, dtype=torch.float)
-        input_batch = input_tensor.unsqueeze(0)  # Create mini-batch
-        with torch.no_grad():
-            output = modified_model(input_batch)
-            results.append(output)
-    features = torch.cat(results, dim=0)
-    # Append features to the patient features list
-    patient_features.append(features.numpy())
+    for patient_idx, log_mel in enumerate(log_mel_data):
+        print(f"Processing patient {patient_idx}")
+        results = []
+        log_mel_spec_3d = np.array([get_3d_spec(segment) for segment in log_mel])
+        for segment in log_mel_spec_3d:
+            npimg = np.transpose(segment, (2, 0, 1))
+            # npimg = np.expand_dims(segment, axis=0)
+            input_tensor = torch.tensor(npimg, dtype=torch.float)
+            input_batch = input_tensor.unsqueeze(0)  # Create mini-batch
+            with torch.no_grad():
+                output = modified_model(input_batch)
+                results.append(output)
+        features = torch.cat(results, dim=0)
+        # Append features to the patient features list
+        patient_features.append(features.numpy())
 
-feature_patients = np.array(patient_features, dtype=object)
-# Save features to .npy file
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', feature_patients)
-print("Features saved to audio_features.npy")
+    feature_patients = np.array(patient_features, dtype=object)
+    # Save features to .npy file
+    np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', feature_patients)
+    print("Features saved to audio_features.npy")

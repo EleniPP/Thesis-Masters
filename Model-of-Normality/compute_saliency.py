@@ -7,15 +7,20 @@ def entropy(probabilities):
     return -(probabilities * torch.log(probabilities)).sum(dim=-1)
 
 def plot_saliency_map(saliency_values, file_name,  title='Saliency Map', save=True):
+    step = 5  # Plot every n-th segment
+    sampled_saliency = saliency_values[::step]  # Downsample saliency values
+    sampled_indices = range(0, len(saliency_values), step)  # Downsample indices
+
     plt.figure(figsize=(10, 5))
-    plt.plot(saliency_values, label='Saliency')
+    # plt.plot(saliency_values, label='Saliency')
+    plt.plot(sampled_indices, sampled_saliency, label=f"Sampled (every {step})", color='olive')
     plt.xlabel('Segment')
     plt.ylabel('Normalized Saliency')
     plt.title(title)
     plt.legend()
     plt.grid(True)
     if save:
-        plt.savefig(f'D:/Results/Saliency_maps/{file_name}')
+        plt.savefig(f'/tudelft.net/staff-umbrella/EleniSalient/Results/Saliency_maps/{file_name}')
         plt.close()
     else:
         plt.show()
@@ -28,10 +33,10 @@ def normalize_saliency(saliency_values):
     return normalized_saliency
 
 # Load the tensor from the file
-probability_distributions = torch.load('probability_distributions.pth')
+probability_distributions = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/probability_distributions.pth')
 print(probability_distributions[0].type)
-all_patient_numbers = torch.load('all_patient_numbers.pth')
-all_segment_orders = torch.load('all_segment_orders.pth')
+all_patient_numbers = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_patient_numbers.pth')
+all_segment_orders = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_segment_orders.pth')
 
 
 # now this one has shuffled patient numbers. Each patient number appears in the torch as many times as the segments the patient video has. Each patient number
@@ -77,15 +82,16 @@ print(type(grouped_probabilities))
 print(type(grouped_probabilities[0]))
 # so now grouped probabilities is a list of torches
 
-for i,probability_distribution in enumerate(grouped_probabilities):
+step = 100  # Inspect every 3rd segment
+for i, probability_distribution in enumerate(grouped_probabilities):
 
     # Compute the entropy for each probability distribution (each row in the tensor)
     entropies = entropy(probability_distribution)
 
-    # Convert entropies to NumPy for gradient calculation
+    # Slice the entropies to inspect every nth segment
     entropies_np = entropies.numpy()
 
-    # Compute the gradient of entropy across segments (not per single segment)
+    # Compute the gradient of entropy across selected segments
     jacobian = np.gradient(entropies_np)
 
     # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
@@ -95,10 +101,38 @@ for i,probability_distribution in enumerate(grouped_probabilities):
     # Normalize saliency
     normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
 
-    peak_segment_index = torch.argmax(normalized_saliency).item()
+    # Find the peak segment index (adjusted for skipping segments)
+    peak_segment_index = torch.argmax(normalized_saliency).item() 
     print(peak_segment_index)
-    # Plot the saliency map
-    plot_saliency_map(normalized_saliency.numpy(),f'patient_{grouped_patients[i][0]}.png', title='Saliency Map')
+    
+    # Plot the saliency map for the first patient as an example
+    if i == 10:
+        plot_saliency_map(normalized_saliency.numpy(), f'patient_{grouped_patients[i][0]}.png', title='Saliency Map')
+
+# for i,probability_distribution in enumerate(grouped_probabilities):
+
+#     # Compute the entropy for each probability distribution (each row in the tensor)
+#     entropies = entropy(probability_distribution)
+
+#     # Convert entropies to NumPy for gradient calculation
+#     entropies_np = entropies.numpy()
+
+#     # Compute the gradient of entropy across segments (not per single segment)
+#     jacobian = np.gradient(entropies_np)
+
+#     # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
+#     # is the square of gradient itself
+#     patient_saliency = np.square(jacobian)
+
+#     # Normalize saliency
+#     normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
+
+#     peak_segment_index = torch.argmax(normalized_saliency).item()
+#     print(peak_segment_index)
+#     # Plot the saliency map
+#     if i == 0:
+#         plot_saliency_map(normalized_saliency.numpy(),f'patient_{grouped_patients[i][0]}.png', title='Saliency Map')
+    # plot_saliency_map(normalized_saliency.numpy(),f'patient_{grouped_patients[i][0]}.png', title='Saliency Map')
 # --------------------------------------------------------------------------------------
 
 # # comment for the first run / maybe i'll put it in a different file

@@ -32,14 +32,39 @@ labels = list(labels_dict.values())
 tlabels = torch.tensor(labels)
 
 # Load the audio and visual
+
 visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable.npy', allow_pickle=True)
+# print(visuals.shape)
+# print(len(visuals[0]))
+# print(type(visuals[0][0]))
+# print(visuals[0][0].shape)
+# visuals = np.load('D:/Data/Preprocessing/aus_reliable2.npy', allow_pickle=True)
 log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', allow_pickle=True)
+# log_mel_data = np.load('D:/Data/Preprocessing/log_mels_reliable2.npy', allow_pickle=True)
+
+    # Convert audio and visual features to torch tensors
+log_mels_data = [torch.tensor(patient, dtype=torch.float32) for patient in log_mel_data]
+visuals = [torch.tensor(patient, dtype=torch.float32) for patient in visuals]
+# visuals = [
+#     torch.stack([torch.tensor(segment, dtype=torch.float32) for segment in patient])
+#     for patient in visuals
+# ]
+# print('Visuals')
+# print(len(visuals))
+# print(type(visuals[0]))
+# print(visuals[0].shape)
+# print(type(visuals[0][0]))
+# print(visuals[0][0].shape)
+
 
 def flatten(multimodal_features, labels):
     flattened_features = []
     flattened_labels = []
     for i, (features, label) in enumerate(zip(multimodal_features, labels)):
         for idx, segment in enumerate(features):
+            # print(type(segment)) # it was numpy
+            if isinstance(segment, np.ndarray):  # Check if the segment is a NumPy array
+                segment = torch.tensor(segment, dtype=torch.float32)  # Convert to PyTorch tensor
             flattened_features.append(segment)
             flattened_labels.append(label)
     # Convert flattened lists to tensors
@@ -68,49 +93,24 @@ def get_split(split):
     patients_array = np.array(patients_list).astype(np.int32)
     return patients_array
 
-def evaluate_model(model, dataloader, criterion):
-    model.eval()  # Set the model to evaluation mode
-    test_loss = 0
-    all_predictions = []
-    all_labels = []
-    correct = 0
-    total = 0
-    threshold = 0.5
-    with torch.no_grad():  # Disable gradient calculation
-        for features, labels, _, _ in dataloader:
-            if torch.isnan(features).any() or torch.isinf(features).any():
-                continue
-            outputs = model(features)
-            loss = criterion(outputs, labels)
-            test_loss += loss.item()
-
-            probs = torch.softmax(outputs, dim=1)[:, 1]  # Probability of class 1
-            predicted = (probs > threshold).int()
-            all_predictions.append(predicted)
-            all_labels.append(labels)
-
-            correct += (predicted == labels).sum().item()
-            total += labels.size(0)
-
-    all_predictions = torch.cat(all_predictions).numpy()
-    all_labels = torch.cat(all_labels).numpy()
-    accuracy = correct / total if total > 0 else 0
-    print(classification_report(all_labels, all_predictions))
-    return test_loss / len(dataloader), accuracy, all_predictions, all_labels
-
-def validate_model(audio_model, visual_model, reducer, predictor, val_loader, criterion):
-    predictor.eval()  # Set the predictor to evaluation mode
+def evaluate_model(audio_model, visual_model, reducer, predictor, test_loader, criterion):
+   # Set models to evaluation mode
+    audio_model.eval()
+    visual_model.eval()
+    reducer.eval()
+    predictor.eval()
     val_loss = 0.0  # Initialize validation loss accumulator
+    threshold = 0.5  # Threshold for binary classification
 
     with torch.no_grad():  # Disable gradient calculation
-        for batch_audio, batch_visual, batch_labels in val_loader:
+        for batch_labels, batch_audio, batch_visual in test_loader:
             # Ensure no NaN or Inf in the batch
             if torch.isnan(batch_audio).any() or torch.isinf(batch_audio).any() or \
                torch.isnan(batch_visual).any() or torch.isinf(batch_visual).any():
                 continue
 
             # Feature Extraction for Audio
-            log_mel_spec_3d = torch.stack([get_3d_spec(segment.numpy()) for segment in batch_audio])
+            log_mel_spec_3d = torch.stack([torch.tensor(get_3d_spec(segment.numpy())) for segment in batch_audio])
             log_mel_spec_3d = log_mel_spec_3d.permute(0, 3, 1, 2)  # Shape: [batch_size, 3, 64, 351]
             audio_features = audio_model(log_mel_spec_3d)  # Shape: [batch_size, audio_feature_dim]
 
@@ -123,7 +123,64 @@ def validate_model(audio_model, visual_model, reducer, predictor, val_loader, cr
             combined_features = torch.cat((audio_features, reduced_visual_features), dim=1)  # [batch_size, combined_dim]
 
             # Normalize and flatten the combined features
-            normalized_multimodal = normalize_clean_data(combined_features)
+            normalized_multimodal,batch_labels = normalize_clean_data(combined_features,batch_labels)
+
+            # Make Predictions
+            outputs = predictor(normalized_multimodal)
+            loss = criterion(outputs, batch_labels)
+            test_loss += loss.item()
+
+            # Convert Predictions to Binary
+            probs = torch.softmax(outputs, dim=1)[:, 1]  # Probability of class 1
+            predicted = (probs > threshold).int()
+            all_predictions.append(predicted)
+            all_labels.append(batch_labels)
+
+            # Calculate Accuracy
+            correct += (predicted == batch_labels).sum().item()
+            total += batch_labels.size(0)
+
+    # Combine all predictions and labels
+    all_predictions = torch.cat(all_predictions).cpu().numpy()
+    all_labels = torch.cat(all_labels).cpu().numpy()
+
+    # Print Classification Report
+    print(classification_report(all_labels, all_predictions))
+
+    # Calculate and Return Metrics
+    accuracy = correct / total if total > 0 else 0
+    return test_loss / len(test_loader), accuracy, all_predictions, all_labels
+
+def validate_model(audio_model, visual_model, reducer, predictor, val_loader, criterion):
+    # Set models to evaluation mode
+    audio_model.eval()
+    visual_model.eval()
+    reducer.eval()
+    predictor.eval()
+    val_loss = 0.0  # Initialize validation loss accumulator
+
+    with torch.no_grad():  # Disable gradient calculation
+        for batch_labels, batch_audio, batch_visual in val_loader:
+            # Ensure no NaN or Inf in the batch
+            if torch.isnan(batch_audio).any() or torch.isinf(batch_audio).any() or \
+               torch.isnan(batch_visual).any() or torch.isinf(batch_visual).any():
+                continue
+
+            # Feature Extraction for Audio
+            log_mel_spec_3d = torch.stack([torch.tensor(get_3d_spec(segment.numpy())) for segment in batch_audio])
+            log_mel_spec_3d = log_mel_spec_3d.permute(0, 3, 1, 2)  # Shape: [batch_size, 3, 64, 351]
+            audio_features = audio_model(log_mel_spec_3d)  # Shape: [batch_size, audio_feature_dim]
+
+            # Feature Extraction for Visual
+            batch_visual = batch_visual.permute(0, 2, 1)  # Shape: [batch_size, 20, 105]
+            visual_features = visual_model(batch_visual)  # Shape: [batch_size, visual_feature_dim]
+            reduced_visual_features = reducer(visual_features)  # Shape: [batch_size, reduced_dim]
+
+            # Combine Features
+            combined_features = torch.cat((audio_features, reduced_visual_features), dim=1)  # [batch_size, combined_dim]
+
+            # Normalize and flatten the combined features
+            normalized_multimodal,batch_labels = normalize_clean_data(combined_features,batch_labels)
 
             # Skip if NaN/Inf
             if torch.isnan(normalized_multimodal).any() or torch.isinf(normalized_multimodal).any():
@@ -167,17 +224,6 @@ class FocalLoss(nn.Module):
         else:
             return focal_loss
 
-class DepressionDatasetCross(Dataset):
-    def __init__(self, data, labels):
-        self.data = data
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.labels)
-
-    def __getitem__(self, idx):
-        return self.data[idx], self.labels[idx]
-
 class DepressionDataset(Dataset):
     def __init__(self, labels, audio_data, visual_data):
         self.labels = labels
@@ -206,10 +252,12 @@ def plot_losses(train_losses, val_losses):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss Over Epochs')
     plt.legend()
-    plt.show()
+    plt.savefig('../../../tudelft.net/staff-umbrella/EleniSalient/loss_plot.png')
+    plt.close()
 
 
-def normalize_clean_data(multimodal_features):
+
+def normalize_clean_data(multimodal_features,labels):
     # Normalize each tensor individually
     normalized_multimodal = []
     for tensor in multimodal_features:
@@ -229,8 +277,9 @@ def normalize_clean_data(multimodal_features):
             print(f"Removed entry with NaN/Inf values at index {i}")
 
     # Re-assign the cleaned data
-    normalized_multimodal = cleaned_multimodal_features
-    return normalized_multimodal
+    normalized_multimodal = torch.stack(cleaned_multimodal_features)
+    cleaned_labels = torch.tensor(cleaned_labels)
+    return normalized_multimodal, cleaned_labels
 
 
 
@@ -282,7 +331,7 @@ def train_pipeline(audio_model, visual_model, reducer, predictor, dataloader, va
 
             # Feature Extraction for Audio
             # Flattened audio data is already [batch_size, 64, 351]
-            log_mel_spec_3d = torch.stack([get_3d_spec(segment.numpy()) for segment in batch_audio])
+            log_mel_spec_3d = torch.stack([torch.tensor(get_3d_spec(segment.numpy())) for segment in batch_audio])
             log_mel_spec_3d = log_mel_spec_3d.permute(0, 3, 1, 2)  # Shape: [batch_size, 3, 64, 351]
             audio_features = audio_model(log_mel_spec_3d)  # Shape: [batch_size, audio_feature_dim]
 
@@ -296,7 +345,7 @@ def train_pipeline(audio_model, visual_model, reducer, predictor, dataloader, va
             combined_features = torch.cat((audio_features, reduced_visual_features), dim=1)  # Shape: [num_segments, combined_feature_dim]
 
             # Normalize and flatten the combined features
-            normalized_multimodal = normalize_clean_data(combined_features)
+            normalized_multimodal,batch_labels = normalize_clean_data(combined_features,batch_labels)
 
             # Skip if NaN/Inf
             if torch.isnan(normalized_multimodal).any() or torch.isinf(normalized_multimodal).any():
@@ -326,20 +375,74 @@ def train_pipeline(audio_model, visual_model, reducer, predictor, dataloader, va
         val_losses.append(val_loss)
         print(f'Epoch {epoch+1}, Training Loss: {total_loss / len(dataloader)}, Validation Loss: {val_loss}')
     plot_losses(train_losses, val_losses)
-    return model
+    return predictor
 
 
 
 # Split the data
 # Audio is [num_patients,num_segments,64,351]
 # Visual is [num_patients,num_segments,105,20]
-
 train_visuals, train_labels = filter_by_patient_numbers(visuals, labels, train_split)
+# print(f"train_visuals size after filtering: {len(train_visuals)}")
+# print(f"train_labels size after filtering: {len(train_labels)}")
+# print(train_visuals[0].shape)
+# print(train_visuals[1].shape)
 train_visuals, flatlabels = flatten(train_visuals, train_labels)
-print(flatlabels.shape)
+# print('Train Visual')
+# print(train_visuals.shape)
+# print('Train Visual Labels')
+# print(flatlabels.shape)
+
 train_audio, train_labels = filter_by_patient_numbers(log_mel_data, labels, train_split)
 train_audio, train_labels = flatten(train_audio, train_labels)
-print(train_labels.shape)
+# print('Train Audio Labels')
+# print(train_labels.shape)
+
+assert len(train_visuals) == len(train_labels), "Mismatch between visuals and labels after flattening."
+assert len(train_audio) == len(train_labels), "Mismatch between audio and labels after flattening."
+
+# #IN CASE I WANT 50-50
+# unique, counts = np.unique(train_labels, return_counts=True)
+# class_distribution = dict(zip(unique, counts))
+
+# print(f"Class distribution: {class_distribution}")
+
+# # Determine majority and minority class
+# majority_class = max(class_distribution, key=class_distribution.get)
+# minority_class = min(class_distribution, key=class_distribution.get)
+
+# # Get indices of the majority and minority classes
+# majority_indices = np.where(train_labels == majority_class)[0]
+# minority_indices = np.where(train_labels == minority_class)[0]
+
+# n_majority = len(majority_indices)
+# n_minority = len(minority_indices)
+
+# # Undersample the majority class to match the number of minority class samples
+# majority_undersampled_indices = resample(majority_indices, 
+#                                          replace=False,  # No replacement, undersample without duplication
+#                                          n_samples=n_minority,  # Match the number of minority class samples
+#                                          random_state=42)
+
+# # Combine the minority and undersampled majority indices
+# balanced_indices = np.concatenate([majority_undersampled_indices, minority_indices])
+
+# # Shuffle the indices to ensure randomization
+# np.random.shuffle(balanced_indices)
+
+# balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  # Convert indices to tensor if not already
+
+# print(f"train_visuals shape: {train_visuals.shape}")
+# print(f"train_audio shape: {train_audio.shape}")
+# print(f"train_labels shape: {train_labels.shape}")
+# print(f"balanced_indices max: {balanced_indices.max()}, length: {len(balanced_indices)}")
+
+# # Index train_multimodal and train_labels using balanced_indices
+# train_visuals = train_visuals[balanced_indices]
+# train_audio = train_audio[balanced_indices]
+# train_labels = train_labels[balanced_indices]
+
+
 
 val_visuals, val_labels = filter_by_patient_numbers(visuals, labels, val_split)
 val_visuals, _ = flatten(val_visuals, val_labels)
@@ -360,7 +463,7 @@ train_loader = DataLoader(train_dataset, batch_size=128,shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
-model = DepressionPredictor1()
+predictor = DepressionPredictor1()
 audio_model = modifiedAlexNet(pretrained=False)
 visual_model = AU1DCNN()
 
@@ -369,14 +472,14 @@ output_dim = 512   # Reduced dimensionality (adjust based on your needs)
 reducer = FeatureReducer(input_dim, output_dim)
 
 # why no SGD?
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
+optimizer = optim.Adam(predictor.parameters(), lr=1e-4, weight_decay=1e-4)
 scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
-# alpha = torch.tensor([1.0, 1.3])
-# criterion = FocalLoss(alpha=alpha, gamma=1.6)
-criterion = nn.CrossEntropyLoss()
+alpha = torch.tensor([1.0, 1.3])
+criterion = FocalLoss(alpha=alpha, gamma=1.6)
+# criterion = nn.CrossEntropyLoss()
 
-model = train_pipeline(audio_model, visual_model, reducer, model, train_loader, val_loader, optimizer, scheduler, criterion, epochs=30) 
+model = train_pipeline(audio_model, visual_model, reducer, predictor, train_loader, val_loader, optimizer, scheduler, criterion, epochs=30) 
 # model = train_model(model, train_loader, val_loader, optimizer, scheduler, criterion)
 
 # Evaluate on the validation set
-val_loss, accuracy, _, _ = evaluate_model(model, val_loader, criterion)
+val_loss, accuracy, _, _ = evaluate_model(audio_model, visual_model, reducer, predictor, test_loader, criterion)
