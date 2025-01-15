@@ -83,7 +83,9 @@ def get_3d_spec(Sxx_in, moments=None):
 if __name__ == "__main__":
     # Load logmel data
     # log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
-    log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', allow_pickle=True)
+    # log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', allow_pickle=True)
+    log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable_prep.npy', allow_pickle=True)
+    
 
 
     # original_model = alexnet(pretrained=True)
@@ -112,5 +114,5 @@ if __name__ == "__main__":
 
     feature_patients = np.array(patient_features, dtype=object)
     # Save features to .npy file
-    np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', feature_patients)
+    np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable_prep.npy', feature_patients)
     print("Features saved to audio_features.npy")

@@ -1,0 +1,186 @@
+Patient 0, High Saliency Indices: 4811
+Patient 1, High Saliency Indices: [3078, 3080, 5448, 6089, 6522, 6853, 6855]
+Patient 2, High Saliency Indices: [565, 568]
+Patient 3, High Saliency Indices: [865, 985, 1590, 5012, 5017]
+Patient 4, High Saliency Indices: [2764, 2806]
+Patient 5, High Saliency Indices: [3808, 4640, 9065, 9561, 13449]
+Patient 6, High Saliency Indices: [300, 378, 409, 428]
+Patient 7, High Saliency Indices: [2803, 3053, 4118]
+Patient 8, High Saliency Indices: [738, 1627, 1629]
+Patient 9, High Saliency Indices: [4533, 4570]
+Patient 10, High Saliency Indices: [2681, 4528]
+Patient 11, High Saliency Indices: [4465, 4715, 4723, 5161, 5255]
+Patient 12, High Saliency Indices: 704
+Patient 13, High Saliency Indices: [1617, 4881, 4883]
+Patient 14, High Saliency Indices: 564
+Patient 15, High Saliency Indices: [7073, 7075, 7093]
+Patient 16, High Saliency Indices: [3, 16, 775, 2322, 2666, 2821, 4308, 4329, 5200, 6107, 6109, 6201, 6226, 6254]
+Patient 17, High Saliency Indices: 3866
+Patient 18, High Saliency Indices: [598, 3515]
+Patient 19, High Saliency Indices: 820
+Patient 20, High Saliency Indices: [2904, 4244, 4335, 4346, 4372]
+Patient 21, High Saliency Indices: [931, 4282]
+Patient 22, High Saliency Indices: [1417, 4155, 7664]
+Patient 23, High Saliency Indices: 2359
+Patient 24, High Saliency Indices: 32
+Patient 25, High Saliency Indices: [12, 2219, 2229, 3995, 4922]
+Patient 26, High Saliency Indices: [3318, 3893, 3912]
+Patient 27, High Saliency Indices: [790, 1661]
+Patient 28, High Saliency Indices: 1773
+Patient 29, High Saliency Indices: 3944
+Patient 30, High Saliency Indices: 4608
+Patient 31, High Saliency Indices: 3748
+Patient 32, High Saliency Indices: 1399
+Patient 33, High Saliency Indices: [7186, 7645]
+Patient 34, High Saliency Indices: [2479, 3131, 7608]
+Patient 35, High Saliency Indices: [2074, 2076, 2940, 3469]
+Patient 36, High Saliency Indices: [2770, 5321]
+Patient 37, High Saliency Indices: [3514, 10277, 12781, 12783]
+Patient 38, High Saliency Indices: [3802, 3815]
+Patient 39, High Saliency Indices: [6307, 6933]
+Patient 40, High Saliency Indices: [1241, 3108, 3120]
+Patient 41, High Saliency Indices: [1012, 1014, 4917, 4918, 5222]
+Patient 42, High Saliency Indices: [112, 2929, 3671]
+Patient 43, High Saliency Indices: [796, 804]
+Patient 44, High Saliency Indices: [1889, 2371, 2682, 4900, 5001, 5038]
+Patient 45, High Saliency Indices: [3577, 4423, 4424]
+Patient 46, High Saliency Indices: [74, 1940, 1942, 2941, 3836]
+Patient 47, High Saliency Indices: [3133, 4196, 4353, 5563, 5568]
+Patient 48, High Saliency Indices: 3298
+Patient 49, High Saliency Indices: [788, 1383, 1399, 2281]
+Patient 50, High Saliency Indices: 1587
+Patient 51, High Saliency Indices: [4169, 4171]
+Patient 52, High Saliency Indices: [4727, 5733, 5871]
+Patient 53, High Saliency Indices: [4017, 4019, 4026]
+Patient 54, High Saliency Indices: [1269, 2243, 2279]
+Patient 55, High Saliency Indices: [467, 5519, 5523, 5531, 5785, 7421]
+Patient 56, High Saliency Indices: [192, 1828]
+Patient 57, High Saliency Indices: [3485, 3490, 3492]
+Patient 58, High Saliency Indices: [590, 5207, 5209, 5608]
+Patient 59, High Saliency Indices: 34
+Patient 60, High Saliency Indices: [989, 991, 2982, 3832]
+Patient 61, High Saliency Indices: [830, 2102, 4143]
+Patient 62, High Saliency Indices: [1856, 2134, 2147]
+Patient 63, High Saliency Indices: [10490, 10492]
+Patient 64, High Saliency Indices: [2503, 6557, 6793, 8865, 9104, 9858]
+Patient 65, High Saliency Indices: [2826, 6262]
+Patient 66, High Saliency Indices: [1041, 11666, 11857]
+Patient 67, High Saliency Indices: [7026, 7047, 7415, 7416, 10638]
+Patient 68, High Saliency Indices: [2476, 2478, 2680, 5287, 7543]
+Patient 69, High Saliency Indices: [5783, 6251]
+Patient 70, High Saliency Indices: [2333, 2334, 2336]
+Patient 71, High Saliency Indices: 3219
+Patient 72, High Saliency Indices: [2022, 2023]
+Patient 73, High Saliency Indices: [1924, 1926, 4251, 4253, 6052]
+Patient 74, High Saliency Indices: 1834
+Patient 75, High Saliency Indices: [8051, 8068]
+Patient 76, High Saliency Indices: [1125, 1127, 2318, 2545]
+Patient 77, High Saliency Indices: [25, 3137]
+Patient 78, High Saliency Indices: [34, 62, 71]
+Patient 79, High Saliency Indices: [3708, 7257, 7258]
+Patient 80, High Saliency Indices: [3035, 3204, 3216]
+Patient 81, High Saliency Indices: [4181, 5763, 6357]
+Patient 82, High Saliency Indices: [888, 5153, 6129, 6131, 10498]
+Patient 83, High Saliency Indices: [202, 3147, 6387, 6410]
+Patient 84, High Saliency Indices: [0, 327, 1160, 3369, 3371]
+Patient 85, High Saliency Indices: 919
+Patient 86, High Saliency Indices: [2518, 2524, 2526, 3258]
+Patient 87, High Saliency Indices: [2269, 4607]
+Patient 88, High Saliency Indices: 5515
+Patient 89, High Saliency Indices: [5027, 5455]
+Patient 90, High Saliency Indices: 4342
+Patient 91, High Saliency Indices: [0, 1262]
+Patient 92, High Saliency Indices: 957
+Patient 93, High Saliency Indices: [1932, 3300, 4402, 4452, 4457, 4459]
+Patient 94, High Saliency Indices: [140, 143, 2423]
+Patient 95, High Saliency Indices: [2072, 3669, 3932, 3934, 4692, 4697, 4698, 5390]
+Patient 96, High Saliency Indices: 4859
+Patient 97, High Saliency Indices: [4686, 4687]
+Patient 98, High Saliency Indices: 5129
+Patient 99, High Saliency Indices: [630, 632]
+Patient 100, High Saliency Indices: [941, 3310, 6160]
+Patient 101, High Saliency Indices: [1942, 3183]
+Patient 102, High Saliency Indices: 4852
+Patient 103, High Saliency Indices: [3872, 4662, 4676]
+Patient 104, High Saliency Indices: [9291, 9293]
+Patient 105, High Saliency Indices: 600
+Patient 106, High Saliency Indices: 5507
+Patient 107, High Saliency Indices: 3862
+Patient 108, High Saliency Indices: 2853
+Patient 109, High Saliency Indices: 3180
+Patient 110, High Saliency Indices: [4998, 5062, 5075]
+Patient 111, High Saliency Indices: [921, 6405]
+Patient 112, High Saliency Indices: [3763, 5254]
+Patient 113, High Saliency Indices: 3763
+Patient 114, High Saliency Indices: [526, 528]
+Patient 115, High Saliency Indices: 785
+Patient 116, High Saliency Indices: [4831, 5131]
+Patient 117, High Saliency Indices: [982, 984, 3096, 3098, 5901]
+Patient 118, High Saliency Indices: [3081, 3083]
+Patient 119, High Saliency Indices: [3330, 6858, 6863, 7110]
+Patient 120, High Saliency Indices: [231, 1624, 3390]
+Patient 121, High Saliency Indices: [5450, 9412]
+Patient 122, High Saliency Indices: [6262, 6266]
+Patient 123, High Saliency Indices: [1137, 3222, 3224, 6502]
+Patient 124, High Saliency Indices: [3819, 3832]
+Patient 125, High Saliency Indices: 825
+Patient 126, High Saliency Indices: [2627, 2868, 2870, 2877, 2881, 5878, 6732]
+Patient 127, High Saliency Indices: [1707, 3907]
+Patient 128, High Saliency Indices: [1083, 1649]
+Patient 129, High Saliency Indices: [945, 1302, 1304, 4543]
+Patient 130, High Saliency Indices: [1297, 1841, 2224]
+Patient 131, High Saliency Indices: 6480
+Patient 132, High Saliency Indices: 2177
+Patient 133, High Saliency Indices: [68, 373, 2675, 2749, 2968, 5004, 6336]
+Patient 134, High Saliency Indices: 7357
+Patient 135, High Saliency Indices: [1706, 6361, 6647]
+Patient 136, High Saliency Indices: 7511
+Patient 137, High Saliency Indices: [2054, 2056]
+Patient 138, High Saliency Indices: 6387
+Patient 139, High Saliency Indices: 4025
+Patient 140, High Saliency Indices: [685, 687, 5251, 5253, 6282, 6284]
+Patient 141, High Saliency Indices: 141
+Patient 142, High Saliency Indices: 5284
+Patient 143, High Saliency Indices: 2923
+Patient 144, High Saliency Indices: [852, 3537, 3539, 5244, 7460, 7462]
+Patient 145, High Saliency Indices: [1870, 2438]
+Patient 146, High Saliency Indices: [4877, 4982]
+Patient 147, High Saliency Indices: 4220
+Patient 148, High Saliency Indices: [127, 1044]
+Patient 149, High Saliency Indices: [6316, 7505]
+Patient 150, High Saliency Indices: 5240
+Patient 151, High Saliency Indices: [4589, 4590]
+Patient 152, High Saliency Indices: [101, 4278, 6119]
+Patient 153, High Saliency Indices: [1905, 5450, 6982]
+Patient 154, High Saliency Indices: [4836, 4853, 7933]
+Patient 155, High Saliency Indices: 2003
+Patient 156, High Saliency Indices: [2826, 4187, 5383, 5430]
+Patient 157, High Saliency Indices: 1489
+Patient 158, High Saliency Indices: [1450, 1452]
+Patient 159, High Saliency Indices: 4608
+Patient 160, High Saliency Indices: [54, 616, 6254]
+Patient 161, High Saliency Indices: [6517, 6519]
+Patient 162, High Saliency Indices: [648, 1043, 2133, 2134]
+Patient 163, High Saliency Indices: [3569, 4995, 4997]
+Patient 164, High Saliency Indices: 3483
+Patient 165, High Saliency Indices: [1745, 2375, 4016]
+Patient 166, High Saliency Indices: 3938
+Patient 167, High Saliency Indices: 0
+Patient 168, High Saliency Indices: [2724, 3712, 3714]
+Patient 169, High Saliency Indices: 3678
+Patient 170, High Saliency Indices: 594
+Patient 171, High Saliency Indices: 0
+Patient 172, High Saliency Indices: [3354, 3394, 3545, 5219]
+Patient 173, High Saliency Indices: [5061, 6223, 6225]
+Patient 174, High Saliency Indices: [281, 432, 5525, 7420]
+Patient 175, High Saliency Indices: [2376, 2588]
+Patient 176, High Saliency Indices: [5563, 7987]
+Patient 177, High Saliency Indices: 6188
+Patient 178, High Saliency Indices: 4278
+Patient 179, High Saliency Indices: [641, 1761, 7576]
+Patient 180, High Saliency Indices: [1411, 1413, 2735]
+Patient 181, High Saliency Indices: [2494, 3272]
+Patient 182, High Saliency Indices: [2432, 2987, 2989, 3652]
+Patient 183, High Saliency Indices: [47, 1486, 1488]
+Patient 184, High Saliency Indices: 3604
+Patient 185, High Saliency Indices: 2638

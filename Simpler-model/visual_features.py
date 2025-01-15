@@ -74,7 +74,7 @@ class FeatureReducer(nn.Module):
 if __name__ == "__main__":
     # log_mels = np.load('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
 
-    visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable.npy', allow_pickle=True)
+    visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable_prep.npy', allow_pickle=True)
     print('Action Units')
     print(visuals.shape)
     print(len(visuals[0]))
@@ -161,4 +161,4 @@ if __name__ == "__main__":
     # print(all_reduced_features[0][0][0].shape)
     # I STILL HAVEN'T ADDED THE MLP AT THE END FOR DIMENTIONALITY REDUCTION SOS
     # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', extracted_features)
-    np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', reduced_features)
+    np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable_prep.npy', reduced_features)

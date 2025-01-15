@@ -99,7 +99,11 @@ def evaluate_model(audio_model, visual_model, reducer, predictor, test_loader, c
     visual_model.eval()
     reducer.eval()
     predictor.eval()
-    val_loss = 0.0  # Initialize validation loss accumulator
+    all_predictions = []
+    all_labels = []
+    correct = 0
+    total = 0
+    test_loss = 0.0  # Initialize validation loss accumulator
     threshold = 0.5  # Threshold for binary classification
 
     with torch.no_grad():  # Disable gradient calculation
@@ -296,7 +300,7 @@ patient_to_index = {patient_num: idx for idx, patient_num in enumerate(numbers)}
 #Train Pipeline
 
 def train_pipeline(audio_model, visual_model, reducer, predictor, dataloader, val_loader, optimizer, scheduler, criterion, epochs=30):
-    early_stopping_patience = 5
+    early_stopping_patience = 30
     best_val_loss = float('inf')
     patience_counter = 0
     train_losses = []
@@ -401,46 +405,46 @@ train_audio, train_labels = flatten(train_audio, train_labels)
 assert len(train_visuals) == len(train_labels), "Mismatch between visuals and labels after flattening."
 assert len(train_audio) == len(train_labels), "Mismatch between audio and labels after flattening."
 
-# #IN CASE I WANT 50-50
-# unique, counts = np.unique(train_labels, return_counts=True)
-# class_distribution = dict(zip(unique, counts))
+#IN CASE I WANT 50-50
+unique, counts = np.unique(train_labels, return_counts=True)
+class_distribution = dict(zip(unique, counts))
 
-# print(f"Class distribution: {class_distribution}")
+print(f"Class distribution: {class_distribution}")
 
-# # Determine majority and minority class
-# majority_class = max(class_distribution, key=class_distribution.get)
-# minority_class = min(class_distribution, key=class_distribution.get)
+# Determine majority and minority class
+majority_class = max(class_distribution, key=class_distribution.get)
+minority_class = min(class_distribution, key=class_distribution.get)
 
-# # Get indices of the majority and minority classes
-# majority_indices = np.where(train_labels == majority_class)[0]
-# minority_indices = np.where(train_labels == minority_class)[0]
+# Get indices of the majority and minority classes
+majority_indices = np.where(train_labels == majority_class)[0]
+minority_indices = np.where(train_labels == minority_class)[0]
 
-# n_majority = len(majority_indices)
-# n_minority = len(minority_indices)
+n_majority = len(majority_indices)
+n_minority = len(minority_indices)
 
-# # Undersample the majority class to match the number of minority class samples
-# majority_undersampled_indices = resample(majority_indices, 
-#                                          replace=False,  # No replacement, undersample without duplication
-#                                          n_samples=n_minority,  # Match the number of minority class samples
-#                                          random_state=42)
+# Undersample the majority class to match the number of minority class samples
+majority_undersampled_indices = resample(majority_indices, 
+                                         replace=False,  # No replacement, undersample without duplication
+                                         n_samples=n_minority,  # Match the number of minority class samples
+                                         random_state=42)
 
-# # Combine the minority and undersampled majority indices
-# balanced_indices = np.concatenate([majority_undersampled_indices, minority_indices])
+# Combine the minority and undersampled majority indices
+balanced_indices = np.concatenate([majority_undersampled_indices, minority_indices])
 
-# # Shuffle the indices to ensure randomization
-# np.random.shuffle(balanced_indices)
+# Shuffle the indices to ensure randomization
+np.random.shuffle(balanced_indices)
 
-# balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  # Convert indices to tensor if not already
+balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  # Convert indices to tensor if not already
 
-# print(f"train_visuals shape: {train_visuals.shape}")
-# print(f"train_audio shape: {train_audio.shape}")
-# print(f"train_labels shape: {train_labels.shape}")
-# print(f"balanced_indices max: {balanced_indices.max()}, length: {len(balanced_indices)}")
+print(f"train_visuals shape: {train_visuals.shape}")
+print(f"train_audio shape: {train_audio.shape}")
+print(f"train_labels shape: {train_labels.shape}")
+print(f"balanced_indices max: {balanced_indices.max()}, length: {len(balanced_indices)}")
 
-# # Index train_multimodal and train_labels using balanced_indices
-# train_visuals = train_visuals[balanced_indices]
-# train_audio = train_audio[balanced_indices]
-# train_labels = train_labels[balanced_indices]
+# Index train_multimodal and train_labels using balanced_indices
+train_visuals = train_visuals[balanced_indices]
+train_audio = train_audio[balanced_indices]
+train_labels = train_labels[balanced_indices]
 
 
 
@@ -472,11 +476,11 @@ output_dim = 512   # Reduced dimensionality (adjust based on your needs)
 reducer = FeatureReducer(input_dim, output_dim)
 
 # why no SGD?
-optimizer = optim.Adam(predictor.parameters(), lr=1e-4, weight_decay=1e-4)
-scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+optimizer = optim.Adam(predictor.parameters(), lr=1e-5, weight_decay=1e-4)
+scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=2, verbose=True)
 alpha = torch.tensor([1.0, 1.3])
 criterion = FocalLoss(alpha=alpha, gamma=1.6)
-# criterion = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss()
 
 model = train_pipeline(audio_model, visual_model, reducer, predictor, train_loader, val_loader, optimizer, scheduler, criterion, epochs=30) 
 # model = train_model(model, train_loader, val_loader, optimizer, scheduler, criterion)

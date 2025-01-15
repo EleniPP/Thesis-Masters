@@ -90,7 +90,7 @@ transcript_extension = "_TRANSCRIPT.csv"
 final_audio_extension = "_final_audio.wav"
 
 # numbers = [303, 319]
-numbers = list(range(300, 303))
+numbers = list(range(300, 491))
 # read files from all patients
 log_mels = []
 aus = []
@@ -142,13 +142,19 @@ for number in numbers:
     visual_start_idx = np.searchsorted(visual_timestamps, transcript_start_time, side='left')
     visual_end_idx = np.searchsorted(visual_timestamps, transcript_end_time, side='right') - 1
 
+
     # Check if visual_start_idx is valid and update the start time
     if visual_start_idx < len(visual_timestamps):
         visual_start_time = visual_timestamps[visual_start_idx]
         visual_end_time = visual_timestamps[visual_end_idx]
     else:
         raise ValueError("No valid start time found in visual data greater than transcript start time")
+    
+    print(f"Patient number: {number}")
+    print(f"Visual start time: {visual_start_time}")
+    print(f"Visual end time: {visual_end_time}")
 
+# -----------------------------------------------------------------------------------------------------------------------------------------------------------
     
     # Step 3: Trim the visual data to start from `visual_start_time` and end at `visual_end_time`
     visual = visual[visual_start_idx:visual_end_idx + 1]
@@ -202,14 +208,14 @@ for number in numbers:
     #     print(f"Audio saved to {final_audio_file}")
 
     # TODO: check it out
-    # preprocessed_audio = preprocess_audio(final_audio,sr)
+    preprocessed_audio = preprocess_audio(final_audio,sr)
 
     # Step 2: Calculate Mel-spectrogram for the final_audio
     n_fft = int(0.025 * sr)  # Window length: 25 ms
     hop_length = int(0.010 * sr)  # Hop length: 10 ms
     n_mels = 64  # Number of Mel bands
 
-    stft = librosa.stft(final_audio, n_fft=n_fft, hop_length=hop_length, window='hann')
+    stft = librosa.stft(preprocessed_audio, n_fft=n_fft, hop_length=hop_length, window='hann')
     S = np.abs(stft)**2
     # Convert to Mel scale
     mel_S = librosa.feature.melspectrogram(S=S, sr=sr, n_mels=n_mels)
@@ -360,13 +366,13 @@ aus = np.array(aus, dtype=object)
 # Save arrays in files
 log_mels_reliable = np.array(log_mels_reliable, dtype=object)
 
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable2.npy', log_mels_reliable)
+np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable_prep.npy', log_mels_reliable)
 # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', log_mels_reliable)
 # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
 
 aus_reliable = np.array(aus_reliable, dtype=object)
 
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable2.npy', aus_reliable)
+np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable_prep.npy', aus_reliable)
 # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
 
 # masks = np.array(masks, dtype=object)
