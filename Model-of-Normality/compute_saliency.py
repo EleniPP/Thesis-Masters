@@ -2,7 +2,6 @@ import torch
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 def entropy(probabilities):
     return -(probabilities * torch.log(probabilities)).sum(dim=-1)
 
@@ -44,18 +43,18 @@ true_labels = torch.tensor(calibration_results["true_labels"]) #true labels of e
 probability_raw = torch.tensor(calibration_results["calibrated_probs"]) #the probability distribution of the model for each segment
 probability_distributions = torch.tensor(calibration_results["calibrated_probs_platt"]) #the probability distribution of the model for each segment
 
-print('Loaded tensors shapes:')
-print(all_patient_numbers.shape)
-print(all_segment_orders.shape)
-print(predictions.shape)
-print(true_labels.shape)
-print(probability_distributions.shape)
+# print('Loaded tensors shapes:')
+# print(all_patient_numbers.shape)
+# print(all_segment_orders.shape)
+# print(predictions.shape)
+# print(true_labels.shape)
+# print(probability_distributions.shape)
 
-# # Load the tensor from the file // Previous version
-# probability_distributions2 = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/probability_distributions.pth')
+# Load the tensor from the file // Previous version
+# probability_distributions = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/probability_distributions.pth')
 # print(probability_distributions[0].type)
-# all_patient_numbers2 = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_patient_numbers.pth')
-# all_segment_orders2 = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_segment_orders.pth')
+# all_patient_numbers = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_patient_numbers.pth')
+# all_segment_orders = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_segment_orders.pth')
 
 
 # now this one has shuffled patient numbers. Each patient number appears in the torch as many times as the segments the patient video has. Each patient number
@@ -111,40 +110,44 @@ for value, count in zip(unique_values, counts):
 
 
 step = 100  # Inspect every 3rd segment
-global_threshold = 0.3178  # Set to the global 90th percentile
-# threshold = 0.8  # Set to the local threshold
+global_threshold = 0.76  # Set to the global 99th percentile
+threshold = 0.8  # Set to the local threshold
 all_normalized_saliencies = []
 # Open two files for writing salient indices and correctness
-# with open("salient_indices.txt", "w") as indices_file, open("salient_correctness.txt", "w") as correctness_file:
-all_entropies = []
-for i, probability_distribution in enumerate(grouped_probabilities):
+with open("salient_indices.txt", "w") as indices_file, open("salient_correctness.txt", "w") as correctness_file:
+    all_entropies = []
+    per_patient_saliencies = []
+    for i, probability_distribution in enumerate(grouped_probabilities):
+        # Extract the actual patient ID
+        actual_patient_id = unique_values[i].item()
+        # Compute the entropy for each probability distribution (each row in the tensor)
+        entropies = entropy(probability_distribution)
 
-    # Compute the entropy for each probability distribution (each row in the tensor)
-    entropies = entropy(probability_distribution)
+        entropies_np = entropies.numpy()
+        # Store entropies for plotting
+        all_entropies.append(entropies_np)
 
-    entropies_np = entropies.numpy()
-    # Store entropies for plotting
-    all_entropies.append(entropies_np)
+        # Compute the gradient of entropy across selected segments
+        jacobian = np.gradient(entropies_np)
 
-    # Compute the gradient of entropy across selected segments
-    jacobian = np.gradient(entropies_np)
+        # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
+        # is the square of gradient itself
+        patient_saliency = np.square(jacobian)
 
-    # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
-    # is the square of gradient itself
-    patient_saliency = np.square(jacobian)
+        # Normalize saliency
+        normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
+        all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
+        per_patient_saliencies.append(normalized_saliency.numpy()) # Collect per patient
 
-    # Normalize saliency
-    normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
-    all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
+        dynamic_threshold = torch.quantile(normalized_saliency, 0.99)
+    
+        # Apply both global and dynamic thresholds
+        final_mask = (normalized_saliency > global_threshold) & (normalized_saliency > dynamic_threshold)
+        # Extract indices of salient segments in the original array
+        salient_indices = torch.nonzero(final_mask).view(-1).tolist()
 
-    # Apply global threshold
-    filtered_saliency = normalized_saliency[normalized_saliency > global_threshold]
-
-    if filtered_saliency.size(0) > 0:
-        # Apply dynamic threshold (e.g., 99th percentile) within the filtered saliencies
-        dynamic_threshold = torch.quantile(filtered_saliency, 0.8)
-        final_saliency = filtered_saliency[filtered_saliency > dynamic_threshold]
-        salient_indices = torch.nonzero(filtered_saliency > dynamic_threshold).view(-1).tolist()
+        # Final saliency that corresponds to those indices
+        final_saliency = normalized_saliency[final_mask]
 
         # Get classification correctness for salient indices
         salient_correctness = []
@@ -158,10 +161,9 @@ for i, probability_distribution in enumerate(grouped_probabilities):
         total_segments = len(grouped_probabilities[i])  # Number of segments for this patient
 
     # Save results to files
-        # indices_file.write(f"Patient {i}: {salient_indices}, Total Segments: {total_segments}\n")
-        # indices_file.write(f"Patient {i}: {salient_indices}\n")
-        # correctness_file.write(f"Patient {i}: {salient_correctness}\n")
-        print(f"Patient {i}, Final Selected Saliencies: {salient_indices}")
+        indices_file.write(f"Patient {actual_patient_id}: {salient_indices}\n")
+        correctness_file.write(f"Patient {actual_patient_id}: {salient_correctness}\n")
+        # print(f"Patient {grouped_patients[i][0]}, Final Selected Saliencies: {salient_indices}")
         # print(f"Patient {i}, Salient Classification Correctness: {salient_correctness}")
 #  Plot entropy trends for each patient
 # plt.figure(figsize=(10, 6))
@@ -188,7 +190,7 @@ for i, probability_distribution in enumerate(grouped_probabilities):
     #     plt.savefig(f'/tudelft.net/staff-umbrella/EleniSalient/Results/Saliency_maps/patient_{grouped_patients[i][0]}_saliency.png')
 
 
-# Convert to numpy array for easier analysis
+# # Convert to numpy array for easier analysis
 # all_normalized_saliencies = np.array(all_normalized_saliencies)
 
 # # Compute global statistics
@@ -209,6 +211,34 @@ for i, probability_distribution in enumerate(grouped_probabilities):
 # plt.savefig('/tudelft.net/staff-umbrella/EleniSalient/Results/Saliency_maps/global_saliency_distribution.png')
 
 
+
+# Collect median saliencies for sorting
+patient_medians = [
+    np.median(normalize_saliency(torch.tensor(patient_saliency)).numpy())
+    for patient_saliency in grouped_probabilities
+]
+
+# Sort patients by median saliency
+sorted_indices = np.argsort(patient_medians)
+sorted_patient_ids = [unique_values[i].item() for i in sorted_indices]
+sorted_saliencies = [per_patient_saliencies[i] for i in sorted_indices]
+
+# Create box plot
+plt.figure(figsize=(20, 8))
+plt.boxplot(sorted_saliencies, showfliers=False, notch=True)
+plt.xticks(
+    ticks=range(1, len(sorted_patient_ids) + 1),
+    labels=sorted_patient_ids,
+    rotation=90,
+)
+plt.xlabel("Patient ID (Sorted by Median Saliency)")
+plt.ylabel("Normalized Saliency")
+plt.title("Saliency Distribution Across Patients (Ordered by Median)")
+plt.grid(axis="y", alpha=0.7)
+
+
+# Save and display the plot
+plt.savefig('/tudelft.net/staff-umbrella/EleniSalient/Results/Saliency_maps/saliency_distribution_pp_boxplot.png')
 
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # # Find the peak segment index (adjusted for skipping segments)

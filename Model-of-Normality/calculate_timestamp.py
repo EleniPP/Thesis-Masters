@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-
+import os
 
 def minutes_to_timestamp(minutes, seconds):
     """
@@ -220,13 +220,14 @@ def measure_au_changes(segment_array, previous_segment, au_columns):
 
 
     # Return the changes
-    return {
-        "added_change": added_change,
-        "removed_change": au_change,
-    }
+    # return {
+    #     "added_change": added_change,
+    #     "removed_change": au_change,
+    # }
+    return {"added_change": added_change}
 
 
-def visualize_au_change(visual, salient_segments, au_columns,au_names, segment_name=""):
+def visualize_au_change(patient_id ,visual, salient_segments, au_columns,au_names, segment_name=""):
     """
     Visualize the change in AU values from the previous segment to salient segments.
     
@@ -236,6 +237,11 @@ def visualize_au_change(visual, salient_segments, au_columns,au_names, segment_n
         au_columns (list): Indices of columns corresponding to AU values.
         segment_name (str): Name of the segment for labeling the plot.
     """
+    # Create a folder for the patient
+    base_path = "../../../tudelft.net/staff-umbrella/EleniSalient/Results"
+    patient_folder = os.path.join(base_path, f"Patient_{patient_id}")
+    os.makedirs(patient_folder, exist_ok=True)
+
     # Iterate over each salient segment's array for this patient
     for (start, end), segment_array in salient_segments.items():
          # Use the `get_previous_segment` function directly with timestamps
@@ -263,10 +269,69 @@ def visualize_au_change(visual, salient_segments, au_columns,au_names, segment_n
             plt.xticks(rotation=45, ha='right')
             plt.tight_layout()
 
+            # Save the plot in the patient's folder
+            file_path = os.path.join(
+                patient_folder,
+                f"AU_change_{segment_name}_{start:.1f}_{end:.1f}_{change_type}.png"
+            )
             # Save the plot
-            plt.savefig(f"../../../tudelft.net/staff-umbrella/EleniSalient/Results/AU_change_{segment_name}_{start:.1f}_{end:.1f}_{change_type}.png")
+            plt.savefig(file_path)
             plt.close()
 
+
+def visualize_au_progress(patient_id ,visual, salient_segments, au_indices, au_names,au_cluster, segment_name=""):
+
+    # Create a folder for the patient
+    base_path = "../../../tudelft.net/staff-umbrella/EleniSalient/Results"
+    patient_folder = os.path.join(base_path, f"Patient_{patient_id}")
+    os.makedirs(patient_folder, exist_ok=True)
+
+    # Iterate over each salient segment's array for this patient
+    for (start, end), segment_array in salient_segments.items():
+         # Use the `get_previous_segment` function directly with timestamps
+        previous_segment = get_previous_segment(
+            visual=visual,
+            current_segment_start_timestamp=start,  # Pass the timestamp directly
+            au_columns=au_columns
+        )
+
+        if previous_segment.size == 0:
+            print(f"Skipping segment {start}-{end}: No previous segment available.")
+            continue
+
+    # segment_array, previous_segment,au_names,au_index
+        segment_array = segment_array[:, au_indices]
+        previous_segment = previous_segment[:, au_indices]
+        added_frames = segment_array[-3:]
+        # Combine AU values: Take all frames from segment_s_minus_1 and append the last frame from segment_s
+        combined_au_values = np.concatenate([previous_segment, added_frames],axis=0)
+
+            # Create time axis for 3.6 seconds (105 frames + 1 extra frame)
+        time_axis = np.linspace(0, 3.6, len(combined_au_values))
+            # Get the name of the AU based on the index
+        
+        # Plot the combined AU progress
+        plt.figure(figsize=(10, 6))
+        for i, au_index in enumerate(au_indices):
+            plt.plot(time_axis, combined_au_values[:, i], label=au_names[au_index], marker='o', linestyle='-', alpha=0.8)
+        # plt.plot(time_axis, combined_au_values, label=f"{au_name}", marker='o', linestyle='-', alpha=0.8)
+
+        # Add labels, title, and legend
+        plt.xlabel("Time (seconds)")
+        plt.ylabel("AU Intensity")
+        plt.title(f"Progress of Selected AU Over Combined Duration")
+        plt.legend()
+        plt.grid(alpha=0.5)
+        plt.tight_layout()
+        # Save the plot in the patient's folder
+        file_path = os.path.join(
+            patient_folder,
+            f"AU_progress_{segment_name}_{start:.1f}_{end:.1f}_{au_cluster}.png"
+        )
+        # Save the plot
+        plt.savefig(file_path)
+        plt.close()
+        print(1/0)
 
 if __name__ == "__main__":
     # Example usage
@@ -326,14 +391,14 @@ if __name__ == "__main__":
             timestamps_for_audio[patient_id] = timestamps
             timestamps_for_visual[patient_id] = times   
 
-    print(timestamps_for_visual)
+    # print(timestamps_for_visual)
 
     base_path = "/tudelft.net/staff-umbrella/EleniSalient/"
     patient = "_P/"
     visual_extension = "_CLNF_AUs.txt"
 
     # numbers = list(range(300, 491))
-    numbers = [300,319]
+    numbers = [319]
 
     for number in numbers:
         file_visual = f"{base_path}{number}{patient}{number}{visual_extension}"
@@ -361,7 +426,10 @@ if __name__ == "__main__":
         # Plot each cluster
         # plot_au_clusters(extracted_au_data, au_names, segment_name=f"Patient {number}")
 
-        visualize_au_change(visual=visual, salient_segments=extracted_au_data, au_columns=au_columns, au_names=au_names, segment_name=number)
+        # Convert dictionary items to a list and access the first item
+        first_region, first_indices = list(au_clusters.items())[0]
 
+        # visualize_au_change(patient_id=number, visual=visual, salient_segments=extracted_au_data, au_columns=au_columns, au_names=au_names, segment_name=number)
+        visualize_au_progress(patient_id=number, visual=visual, salient_segments=extracted_au_data, au_indices=first_indices, au_names=au_names,au_cluster=first_region, segment_name=number)
 
     

@@ -377,55 +377,64 @@ if __name__ == "__main__":
     # print(f"Balanced class distribution: {class_distribution_balanced}")
     # # array that has the patient number for each segment in the train multimnodal
     # segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+# ---------------------------------------------------------
+    train_multimodal, train_labels, segments_per_patient_train, segments_order_train = flatten(normalized_multimodal, cleaned_labels)
+    # segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+    # Assuming train_split, test_split, and val_split are numpy arrays
+    combined_split = np.concatenate((train_split, test_split, val_split))
+
+    # Optional: Sort the combined array if needed
+    patients = np.sort(combined_split)
+
+    segments_patients_train = [patient for count, patient in zip(segments_per_patient_train, patients) for _ in range(count)]
 
 # --------------------------------------------------------- 
+# # MORE TRAINING SET
+#     # Split at the patient level for callibration set (because before I was splitting after so there were segments from the same patient that
+#     # were in calibration set and others that was in the training set /  this was bad because when i checked the entropy changes i did it for all the segments of the patient
+#     # but some of them were in the calibration set))
+#     num_patients = len(normalized_multimodal) # Total number of patients
+#     print(f"Total number of patients: {num_patients}")
+#     train_patients, calibration_patients, train_labels, calibration_labels = train_test_split(
+#         np.arange(num_patients), cleaned_labels, test_size=0.1, random_state=42, stratify=cleaned_labels
+#     )
 
-    # Split at the patient level for callibration set (because before I was splitting after so there were segments from the same patient that
-    # were in calibration set and others that was in the training set /  this was bad because when i checked the entropy changes i did it for all the segments of the patient
-    # but some of them were in the calibration set))
-    num_patients = len(normalized_multimodal) # Total number of patients
-    print(f"Total number of patients: {num_patients}")
-    train_patients, calibration_patients, train_labels, calibration_labels = train_test_split(
-        np.arange(num_patients), cleaned_labels, test_size=0.1, random_state=42, stratify=cleaned_labels
-    )
+#     # Convert train and calibration patient indices to Python lists
+#     train_patients = train_patients.tolist()
+#     calibration_patients = calibration_patients.tolist()
 
-    # Convert train and calibration patient indices to Python lists
-    train_patients = train_patients.tolist()
-    calibration_patients = calibration_patients.tolist()
-
-    # Index normalized_multimodal using list comprehension
-    train_multimodal = [normalized_multimodal[i] for i in train_patients]
-    calibration_multimodal = [normalized_multimodal[i] for i in calibration_patients]
+#     # Index normalized_multimodal using list comprehension
+#     train_multimodal = [normalized_multimodal[i] for i in train_patients]
+#     calibration_multimodal = [normalized_multimodal[i] for i in calibration_patients]
 
 # ---------------------------------------------------------
-    print('Shapes after the split')
-    # IMBALANCED DATASET
-    train_multimodal, train_labels, segments_per_patient_train, segments_order_train = flatten(train_multimodal, train_labels)
-    print(train_labels.shape)
-    print(train_multimodal.shape)
+    # print('Shapes after the split')
+    # # IMBALANCED DATASET
+    # train_multimodal, train_labels, segments_per_patient_train, segments_order_train = flatten(train_multimodal, train_labels)
+    # print(train_labels.shape)
+    # print(train_multimodal.shape)
 
 
-    # segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
-    segments_patients_train = [patient for count, patient in zip(segments_per_patient_train, train_patients) for _ in range(count)]
+    # # segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
+    # segments_patients_train = [patient for count, patient in zip(segments_per_patient_train, train_patients) for _ in range(count)]
 
 
-    calibration_multimodal, calibration_labels, segments_per_patient_calibration, segments_order_calibration = flatten(calibration_multimodal, calibration_labels)
-    print(calibration_labels.shape)
-    print(calibration_multimodal.shape)
-    segments_patients_calibration = [patient for count, patient in zip(segments_per_patient_calibration, calibration_patients) for _ in range(count)]
+    # calibration_multimodal, calibration_labels, segments_per_patient_calibration, segments_order_calibration = flatten(calibration_multimodal, calibration_labels)
+    # print(calibration_labels.shape)
+    # print(calibration_multimodal.shape)
+    # segments_patients_calibration = [patient for count, patient in zip(segments_per_patient_calibration, calibration_patients) for _ in range(count)]
 
 
     train_dataset = DepressionDataset(train_multimodal, train_labels, segments_patients_train, segments_order_train)
-    calibration_dataset = DepressionDataset(calibration_multimodal, calibration_labels, segments_patients_calibration, segments_order_calibration)
+    # calibration_dataset = DepressionDataset(calibration_multimodal, calibration_labels, segments_patients_calibration, segments_order_calibration)
 
 # -------------------------------------------------------
     # Create dataloaders
     train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-    calibration_loader = DataLoader(calibration_dataset, batch_size=64, shuffle=False)
+    calibration_loader = DataLoader(train_dataset, batch_size=128, shuffle=False)
+
+    # calibration_loader = DataLoader(calibration_dataset, batch_size=64, shuffle=False)
 # -------------------------------------------------------
-    # train_loader = DataLoader(train_dataset, batch_size=128,shuffle=True)
-    # val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
-    # test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
     model = DepressionPredictor1()
     # why no SGD?
@@ -488,11 +497,16 @@ if __name__ == "__main__":
         "calibrated_probs_platt": []
     }
 
+    scaled_model = ModelWithTemperature(model)
+    scaled_model.set_temperature(calibration_loader)
+
+    scaled_model.eval()
+
     all_probs = []
     all_patient_numbers = []
     all_segment_orders = []
     with torch.no_grad():   
-        for inputs, labels , patient_numbers,segments_order in train_loader:
+        for inputs, labels , patient_numbers,segments_order in calibration_loader:
             logits = model(inputs)  # Model logits
             probs = torch.softmax(logits, dim=1)  # Calibrated probabilities
             predictions = (probs[:, 1] > 0.5).int()  # Binary predictions for class 1
