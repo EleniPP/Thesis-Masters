@@ -1,0 +1,26 @@
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="style.css" rel="stylesheet">
+    </head>
+    <body>
+        <!--
+        <textarea id="pasteArea" rows="3">
+        </textarea>
+        <button onClick="loadDataFromPasteArea()">Load</button>
+        -->
+        <input type="range" min="0" max="60" value="0" class="slider" id="smoothingSlider">
+        <input type="checkbox" name="absoluteCheckbox" value="absolute" id="absoluteCheckbox">
+        <!-- Features file -->
+        <input type="file" name="file" id="file">
+        <!-- Audio file -->
+        <input type="file" id="audioFileInput" accept="audio/*">
+        <!-- <button id="playAudioButton" disabled>Play Audio</button> -->
+        <input type="range" min="0" max="100" value="0" class="slider" id="confidenceSlider">
+        <canvas id="canvas"></canvas>
+
+        <script src="face_vis.js"></script>
+
+    </body>
+</html>

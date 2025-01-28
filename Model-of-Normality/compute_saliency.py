@@ -114,7 +114,13 @@ global_threshold = 0.76  # Set to the global 99th percentile
 threshold = 0.8  # Set to the local threshold
 all_normalized_saliencies = []
 # Open two files for writing salient indices and correctness
-with open("salient_indices.txt", "w") as indices_file, open("salient_correctness.txt", "w") as correctness_file:
+# with open("salient_indices.txt", "w") as indices_file, open("salient_correctness.txt", "w") as correctness_file:
+# Open files for writing TP, FP, TN, and FN segments
+with open("true_positives.txt", "w") as tp_file, \
+     open("false_positives.txt", "w") as fp_file, \
+     open("true_negatives.txt", "w") as tn_file, \
+     open("false_negatives.txt", "w") as fn_file:
+    
     all_entropies = []
     per_patient_saliencies = []
     for i, probability_distribution in enumerate(grouped_probabilities):
@@ -139,30 +145,62 @@ with open("salient_indices.txt", "w") as indices_file, open("salient_correctness
         all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
         per_patient_saliencies.append(normalized_saliency.numpy()) # Collect per patient
 
-        dynamic_threshold = torch.quantile(normalized_saliency, 0.99)
-    
-        # Apply both global and dynamic thresholds
-        final_mask = (normalized_saliency > global_threshold) & (normalized_saliency > dynamic_threshold)
-        # Extract indices of salient segments in the original array
-        salient_indices = torch.nonzero(final_mask).view(-1).tolist()
+        # Top 5 salient segments for each segment
+        # Get the indices of the top 5 salient segments
+        top_k = 5
+        salient_indices = torch.topk(normalized_saliency, top_k).indices.tolist()  # Indices of top 5 saliencies
+        final_saliency = normalized_saliency[salient_indices]  # Saliency values of top 5 saliencies
 
-        # Final saliency that corresponds to those indices
-        final_saliency = normalized_saliency[final_mask]
+        # Separate the indices into TP, FP, TN, FN
+        tp_segments = []
+        fp_segments = []
+        tn_segments = []
+        fn_segments = []
 
-        # Get classification correctness for salient indices
-        salient_correctness = []
         for idx in salient_indices:
             true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
             prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
-            correctness = (true_label == prediction)  # True if correctly classified
-            salient_correctness.append(correctness)
+
+            if true_label == 1 and prediction == 1:
+                tp_segments.append(idx)  # True Positive
+            elif true_label == 0 and prediction == 1:
+                fp_segments.append(idx)  # False Positive
+            elif true_label == 0 and prediction == 0:
+                tn_segments.append(idx)  # True Negative
+            elif true_label == 1 and prediction == 0:
+                fn_segments.append(idx)  # False Negative
+
+        # Write results to files
+        tp_file.write(f"Patient {actual_patient_id}: {tp_segments}\n")
+        fp_file.write(f"Patient {actual_patient_id}: {fp_segments}\n")
+        tn_file.write(f"Patient {actual_patient_id}: {tn_segments}\n")
+        fn_file.write(f"Patient {actual_patient_id}: {fn_segments}\n")
+
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        #Dynamic and global thresholding    
+        # dynamic_threshold = torch.quantile(normalized_saliency, 0.99)
+    
+        # # Apply both global and dynamic thresholds
+        # final_mask = (normalized_saliency > global_threshold) & (normalized_saliency > dynamic_threshold)
+        # # Extract indices of salient segments in the original array
+        # salient_indices = torch.nonzero(final_mask).view(-1).tolist()
+        # # Final saliency that corresponds to those indices
+        # final_saliency = normalized_saliency[final_mask]
+
+        # # Get classification correctness for salient indices
+        # salient_correctness = []
+        # for idx in salient_indices:
+        #     true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
+        #     prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
+        #     correctness = (true_label == prediction)  # True if correctly classified
+        #     salient_correctness.append(correctness)
 
         # Get the total number of segments for the patient
         total_segments = len(grouped_probabilities[i])  # Number of segments for this patient
 
     # Save results to files
-        indices_file.write(f"Patient {actual_patient_id}: {salient_indices}\n")
-        correctness_file.write(f"Patient {actual_patient_id}: {salient_correctness}\n")
+    #     indices_file.write(f"Patient {actual_patient_id}: {salient_indices}\n")
+    #     correctness_file.write(f"Patient {actual_patient_id}: {salient_correctness}\n")
         # print(f"Patient {grouped_patients[i][0]}, Final Selected Saliencies: {salient_indices}")
         # print(f"Patient {i}, Salient Classification Correctness: {salient_correctness}")
 #  Plot entropy trends for each patient
