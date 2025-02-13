@@ -107,18 +107,19 @@ if __name__ == "__main__":
                 with torch.no_grad():
                     features = model(patient_tensor)
                     reduced_features = reducer(features)  # Shape: [num_segments, output_dim]
+                num_segments = patient_data.shape[0]  # Number of segments for this patient
+                print(f"Patient {patient_idx}: {num_segments} segments")
+                # print('Features')
+                # print(features.shape)
+                # print(features[0].shape)
+                # print(type(features[0]))
 
-                print('Features')
-                print(features.shape)
-                print(features[0].shape)
-                print(type(features[0]))
 
-
-                # Apply dimensionality reduction
-                print('Reduced Features')
-                print(reduced_features.shape)
-                print(reduced_features[0].shape)  
-                print(type(reduced_features[0]))
+                # # Apply dimensionality reduction
+                # print('Reduced Features')
+                # print(reduced_features.shape)
+                # print(reduced_features[0].shape)  
+                # print(type(reduced_features[0]))
 
                 # Collect features for this patient
                 all_extracted_features.append(features.numpy())

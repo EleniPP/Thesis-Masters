@@ -111,6 +111,11 @@ if __name__ == "__main__":
         features = torch.cat(results, dim=0)
         # Append features to the patient features list
         patient_features.append(features.numpy())
+        if isinstance(log_mel, np.ndarray):
+            num_segments = log_mel.shape[0]  # Use shape if it's a numpy array
+        else:
+            num_segments = len(log_mel)  # Use len() if it's a list
+        print(f"Patient {patient_idx}: {num_segments} segments")
 
     feature_patients = np.array(patient_features, dtype=object)
     # Save features to .npy file

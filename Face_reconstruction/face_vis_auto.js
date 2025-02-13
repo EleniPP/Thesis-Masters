@@ -1,3 +1,59 @@
+// Variables
+let canvas, stream, recorder, chunks = [];
+let recordingDuration = 3500; // 3.5 seconds
+
+
+// Function to start recording when "Absolute" checkbox is checked
+function startRecording() {
+    if (!canvas) {
+        canvas = document.querySelector("canvas");
+    }
+
+    stream = canvas.captureStream(30); // 30 FPS
+    // Capture the audio from the audio player
+    audioStream = audioPlayer.captureStream(); // Captures the currently playing audio
+    mixedStream = new MediaStream([...stream.getTracks(), ...audioStream.getTracks()]); // Combine the video and audio streams
+
+    recorder = new MediaRecorder(mixedStream, { mimeType: 'video/webm; codecs=vp9' });
+
+    chunks = []; // 🚀 Reset chunks BEFORE starting new recording
+
+    recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            chunks.push(event.data);
+        }
+    };
+
+    recorder.onstop = async () => {
+        console.log("Recording stopped, saving video...");
+        await saveVideo();
+    };
+
+    recorder.start();
+    setTimeout(() => {
+        if (recorder.state === "recording") {
+            recorder.stop();
+        }
+    }, recordingDuration);
+}
+
+// Function to save the recorded video
+function saveVideo() {
+    const blob = new Blob(chunks, { type: 'video/webm' });
+    const url = URL.createObjectURL(blob);
+
+    // Create a download link
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clip_${Date.now()}.webm`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    console.log("Video saved as .webm!");
+}
+
+
 // Audio Player
 const audioFileInput = document.getElementById('audioFileInput');
 // const absoluteCheckbox = document.getElementById("absoluteCheckbox");
@@ -38,6 +94,9 @@ document.getElementById("absoluteCheckbox").addEventListener("change", (event) =
 			audioPlayer.play()
 				.then(() => console.log("Audio playback started"))
 				.catch((error) => console.error("Audio playback failed:", error));
+
+            // Start automatic recording
+            startRecording();
         }
     }
 });

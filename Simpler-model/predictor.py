@@ -20,6 +20,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from sklearn.calibration import calibration_curve
 from sklearn.linear_model import LogisticRegression
+from collections import Counter
 
 def flatten(multimodal_features, labels):
     flattened_features = []
@@ -54,7 +55,7 @@ def get_split(split):
         for row in spamreader:
             if (row_count >= max_row) and (split == "test"):
                 break
-            if row[0] == '402' or row[0] == '420':
+            if row[0] == '422':
                 row_count += 1
                 continue
             patients_list.append(row[0])
@@ -269,6 +270,7 @@ if __name__ == "__main__":
         labels_dict = json.load(file)
     del labels_dict['492']
 
+    # Contains 402 and 420
     numbers = [int(key) for key in labels_dict.keys()]
     labels = list(labels_dict.values())
     tlabels = torch.tensor(labels)
@@ -305,12 +307,17 @@ if __name__ == "__main__":
     # Re-assign the cleaned data
     normalized_multimodal = cleaned_multimodal_features
     tlabels = torch.tensor(cleaned_labels)
-
     # Get splits
     train_split = get_split('train')
     test_split = get_split('test')
+    # print(f"Test split: {test_split}")
+    # print(test_split.shape)
     val_split = get_split('dev')
+    # print(f"Val split: {val_split}")
+    # print(val_split.shape)
     train_split = train_split[:-1]
+    # print(f"Train split: {train_split}")
+    # print(train_split.shape)
 
     # del numbers[117]
     # del numbers[99]
@@ -378,15 +385,23 @@ if __name__ == "__main__":
     # # array that has the patient number for each segment in the train multimnodal
     # segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
 # ---------------------------------------------------------
+    # Mexri tora ola mou ta features exoun to sosto number of segments!!!! Yeyyyyyyy
     train_multimodal, train_labels, segments_per_patient_train, segments_order_train = flatten(normalized_multimodal, cleaned_labels)
-    # segments_patients_train = [num for count, num in zip(segments_per_patient_train, train_split) for _ in range(count)]
-    # Assuming train_split, test_split, and val_split are numpy arrays
-    combined_split = np.concatenate((train_split, test_split, val_split))
+    # TESTED it is the correct number of segments per patient
+    # print(segments_per_patient_train)
+    # print('END')
 
+    combined_split = np.concatenate((train_split, test_split, val_split))
     # Optional: Sort the combined array if needed
     patients = np.sort(combined_split)
-
+    print(patients)
     segments_patients_train = [patient for count, patient in zip(segments_per_patient_train, patients) for _ in range(count)]
+    # Count occurrences of each patient ID in segments_patients_train
+    segment_counts = Counter(segments_patients_train)
+
+    # Print the number of segments per patient
+    for patient_id, count in segment_counts.items():
+        print(f"Patient {patient_id}: {count}")
 
 # --------------------------------------------------------- 
 # # MORE TRAINING SET

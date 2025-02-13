@@ -1,6 +1,8 @@
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
+import collections
+
 
 def entropy(probabilities):
     return -(probabilities * torch.log(probabilities)).sum(dim=-1)
@@ -43,18 +45,26 @@ true_labels = torch.tensor(calibration_results["true_labels"]) #true labels of e
 probability_raw = torch.tensor(calibration_results["calibrated_probs"]) #the probability distribution of the model for each segment
 probability_distributions = torch.tensor(calibration_results["calibrated_probs_platt"]) #the probability distribution of the model for each segment
 
-# print('Loaded tensors shapes:')
-# print(all_patient_numbers.shape)
-# print(all_segment_orders.shape)
-# print(predictions.shape)
-# print(true_labels.shape)
-# print(probability_distributions.shape)
+reliability_masks = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/reliability_masks.npy', allow_pickle=True)
 
-# Load the tensor from the file // Previous version
-# probability_distributions = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/probability_distributions.pth')
-# print(probability_distributions[0].type)
-# all_patient_numbers = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_patient_numbers.pth')
-# all_segment_orders = torch.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/all_segment_orders.pth')
+sorted_patient_ids = sorted(set(calibration_results["patient_ids"]))
+
+# for patient_id, mask in zip(sorted_patient_ids, reliability_masks):
+#     total_segments = len(mask)  # Total number of segments for this patient
+#     num_reliable_segments = np.sum(mask)  # Number of reliable segments (where mask == 1)
+#     # Double checked with the preprocessing and it is correct!! YEYYYY
+#     print(f"Patient {patient_id}: {total_segments} total segments, {num_reliable_segments} reliable segments")
+
+# Count occurrences of each patient ID
+segment_counts = collections.Counter(all_patient_numbers.tolist())
+
+
+print('Loaded tensors shapes:')
+print(all_patient_numbers.shape)
+print(all_segment_orders.shape)
+print(predictions.shape)
+print(true_labels.shape)
+print(probability_distributions.shape)
 
 
 # now this one has shuffled patient numbers. Each patient number appears in the torch as many times as the segments the patient video has. Each patient number
@@ -63,6 +73,7 @@ torch.set_printoptions(threshold=torch.inf)
 
 # So what i want is for each patient, to have a probability distribution so i can calculate the jacobian and the saliency 
 # So first we have to align again the probability distribution torch with the all patient numbers torch after we put in ascending order the all patient numbers torch.
+
 # Step 1: Sort everything by patient IDs
 sorted_patients, indices = torch.sort(all_patient_numbers)
 # Then we use the indices to sort the probability distributions in the same order as the patients were sorted so that each segment belongs to the right patient
@@ -80,6 +91,17 @@ grouped_predictions = []
 
 # get unique values and how many times they appear
 unique_values, counts = torch.unique(sorted_patients, return_counts=True)
+mapped_segment_orders = []  # Stores mapped segment indices per patient
+
+# Iterate over each patient and its corresponding reliability mask
+for mask in reliability_masks:  
+    # Get the indices where the segment is reliable
+    true_indices = np.where(mask == 1)[0]  # Get original indices of reliable segments
+    
+    # Append the correct indices
+    mapped_segment_orders.append(torch.tensor(true_indices))  # Convert to tensor if needed
+
+print(unique_values)
 
 # to keep track of where the groups start
 start_idx = 0
@@ -116,87 +138,145 @@ all_normalized_saliencies = []
 # Open two files for writing salient indices and correctness
 # with open("salient_indices.txt", "w") as indices_file, open("salient_correctness.txt", "w") as correctness_file:
 # Open files for writing TP, FP, TN, and FN segments
-with open("true_positives.txt", "w") as tp_file, \
-     open("false_positives.txt", "w") as fp_file, \
-     open("true_negatives.txt", "w") as tn_file, \
-     open("false_negatives.txt", "w") as fn_file:
+
+# Comment out because we are calculating the lowest salient segments
+# with open("true_positives.txt", "w") as tp_file, \
+#      open("false_positives.txt", "w") as fp_file, \
+#      open("true_negatives.txt", "w") as tn_file, \
+#      open("false_negatives.txt", "w") as fn_file:
     
+#     all_entropies = []
+#     per_patient_saliencies = []
+#     for i, probability_distribution in enumerate(grouped_probabilities):
+#         # Extract the actual patient ID
+#         actual_patient_id = unique_values[i].item()
+#         # Compute the entropy for each probability distribution (each row in the tensor)
+#         entropies = entropy(probability_distribution)
+
+#         entropies_np = entropies.numpy()
+#         # Store entropies for plotting
+#         all_entropies.append(entropies_np)
+
+#         # Compute the gradient of entropy across selected segments
+#         jacobian = np.gradient(entropies_np)
+
+#         # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
+#         # is the square of gradient itself
+#         patient_saliency = np.square(jacobian)
+
+#         # Normalize saliency
+#         normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
+#         all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
+#         per_patient_saliencies.append(normalized_saliency.numpy()) # Collect per patient
+
+#         # ---- **Map the segment indices correctly** ----
+#         # Take into consideration the segments that was removed in preprocessing_presegment because they are unreliable and map the indices of the segments correctly
+#         # Find the correct index of the patient in `unique_values` (which contains all patient IDs in sorted order) this is because reliability masks dont have the paatients ids integrated
+#         # so you cant do reliability_mask[actual_patient_id] because its out of bounds (there is no reliability_mask[300]) 
+
+#         original_indices = np.where(reliability_masks[i] == 1)[0]  # Get real segment indices
+
+#         if len(original_indices) != len(normalized_saliency):
+#             raise ValueError(f"Mismatch for patient {actual_patient_id}: {len(original_indices)} real vs {len(normalized_saliency)} saliencies")
+
+#         # ---- **Top 5 salient segments (CORRECT MAPPING)** ----
+#         top_k = 5  
+#         salient_indices = torch.topk(normalized_saliency, top_k).indices.tolist()  # Indices of top 5 salient segments
+#         real_salient_indices = [original_indices[idx] for idx in salient_indices]  # Map to real dataset indices
+#         final_saliency = normalized_saliency[salient_indices]  # Get corresponding saliency values
+
+#         # # Top 5 salient segments for each segment
+#         # # Get the indices of the top 5 salient segments
+#         # top_k = 5
+#         # salient_indices = torch.topk(normalized_saliency, top_k).indices.tolist()  # Indices of top 5 saliencies
+#         # final_saliency = normalized_saliency[salient_indices]  # Saliency values of top 5 saliencies
+
+#         # Separate the indices into TP, FP, TN, FN
+#         tp_segments = []
+#         fp_segments = []
+#         tn_segments = []
+#         fn_segments = []
+
+#         # for idx in salient_indices:
+#         for idx, real_idx in zip(salient_indices, real_salient_indices):
+#             # To retrieve entries from grouped_true_labels and grouped_predictions we dont use the real_idx because they only contain the reliable segments
+#             true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
+#             prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
+
+#             # The real index is only used for the mapping of the salient segments to their real index so later I can calculate their true timestamps
+#             if true_label == 1 and prediction == 1:
+#                 tp_segments.append(real_idx)  # True Positive
+#             elif true_label == 0 and prediction == 1:
+#                 fp_segments.append(real_idx)  # False Positive
+#             elif true_label == 0 and prediction == 0:
+#                 tn_segments.append(real_idx)  # True Negative
+#             elif true_label == 1 and prediction == 0:
+#                 fn_segments.append(real_idx)  # False Negative
+
+#         # Write results to files
+#         tp_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tp_segments]}\n")
+#         fp_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in fp_segments]}\n")
+#         tn_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tn_segments]}\n")
+#         fn_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in fn_segments]}\n")
+
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Calculate the lowest salient segments
+selected_patients = {325, 332, 347, 352, 359, 372, 389, 402, 414, 441, 453, 461}
+
+with open("tp_low.txt", "w") as tp_low_file:
     all_entropies = []
     per_patient_saliencies = []
+    
     for i, probability_distribution in enumerate(grouped_probabilities):
         # Extract the actual patient ID
         actual_patient_id = unique_values[i].item()
+
+        # Only process the selected patients
+        if actual_patient_id not in selected_patients:
+            continue  
+
         # Compute the entropy for each probability distribution (each row in the tensor)
         entropies = entropy(probability_distribution)
-
         entropies_np = entropies.numpy()
+
         # Store entropies for plotting
         all_entropies.append(entropies_np)
 
         # Compute the gradient of entropy across selected segments
         jacobian = np.gradient(entropies_np)
-
-        # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
-        # is the square of gradient itself
-        patient_saliency = np.square(jacobian)
+        patient_saliency = np.square(jacobian)  # Compute saliency as the squared gradient
 
         # Normalize saliency
         normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
         all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
-        per_patient_saliencies.append(normalized_saliency.numpy()) # Collect per patient
+        per_patient_saliencies.append(normalized_saliency.numpy())  # Collect per patient
 
-        # Top 5 salient segments for each segment
-        # Get the indices of the top 5 salient segments
-        top_k = 5
-        salient_indices = torch.topk(normalized_saliency, top_k).indices.tolist()  # Indices of top 5 saliencies
-        final_saliency = normalized_saliency[salient_indices]  # Saliency values of top 5 saliencies
+        # ---- **Map the segment indices correctly** ----
+        original_indices = np.where(reliability_masks[i] == 1)[0]  # Get real segment indices
 
-        # Separate the indices into TP, FP, TN, FN
+        if len(original_indices) != len(normalized_saliency):
+            raise ValueError(f"Mismatch for patient {actual_patient_id}: {len(original_indices)} real vs {len(normalized_saliency)} saliencies")
+
+        # ---- **Find the lowest 5 salient segments instead of highest** ----
+        top_k = 5  
+        salient_indices = torch.topk(normalized_saliency, top_k, largest=False).indices.tolist()  # Indices of lowest 5 salient segments
+        real_salient_indices = [original_indices[idx] for idx in salient_indices]  # Map to real dataset indices
+        final_saliency = normalized_saliency[salient_indices]  # Get corresponding saliency values
+
+        # Separate the indices into TP (since we are saving only TP)
         tp_segments = []
-        fp_segments = []
-        tn_segments = []
-        fn_segments = []
 
-        for idx in salient_indices:
+        for idx, real_idx in zip(salient_indices, real_salient_indices):
             true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
             prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
 
             if true_label == 1 and prediction == 1:
-                tp_segments.append(idx)  # True Positive
-            elif true_label == 0 and prediction == 1:
-                fp_segments.append(idx)  # False Positive
-            elif true_label == 0 and prediction == 0:
-                tn_segments.append(idx)  # True Negative
-            elif true_label == 1 and prediction == 0:
-                fn_segments.append(idx)  # False Negative
+                tp_segments.append(real_idx)  # True Positive
 
-        # Write results to files
-        tp_file.write(f"Patient {actual_patient_id}: {tp_segments}\n")
-        fp_file.write(f"Patient {actual_patient_id}: {fp_segments}\n")
-        tn_file.write(f"Patient {actual_patient_id}: {tn_segments}\n")
-        fn_file.write(f"Patient {actual_patient_id}: {fn_segments}\n")
-
+        # Write results to the `tp_low.txt` file
+        tp_low_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tp_segments]}\n")
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        #Dynamic and global thresholding    
-        # dynamic_threshold = torch.quantile(normalized_saliency, 0.99)
-    
-        # # Apply both global and dynamic thresholds
-        # final_mask = (normalized_saliency > global_threshold) & (normalized_saliency > dynamic_threshold)
-        # # Extract indices of salient segments in the original array
-        # salient_indices = torch.nonzero(final_mask).view(-1).tolist()
-        # # Final saliency that corresponds to those indices
-        # final_saliency = normalized_saliency[final_mask]
-
-        # # Get classification correctness for salient indices
-        # salient_correctness = []
-        # for idx in salient_indices:
-        #     true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
-        #     prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
-        #     correctness = (true_label == prediction)  # True if correctly classified
-        #     salient_correctness.append(correctness)
-
-        # Get the total number of segments for the patient
-        total_segments = len(grouped_probabilities[i])  # Number of segments for this patient
+        # total_segments = len(grouped_probabilities[i])  # Number of segments for this patient
 
     # Save results to files
     #     indices_file.write(f"Patient {actual_patient_id}: {salient_indices}\n")

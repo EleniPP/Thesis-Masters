@@ -25,6 +25,7 @@ def parse_patient_time_file(file_path):
             visual_start_time = float(lines[i + 1].split(':')[1].strip())
             visual_end_time = float(lines[i + 2].split(':')[1].strip())
             patient_times[patient_number] = visual_start_time
+    # print(patient_times)
     return patient_times
 
 def parse_saliency_file1(file_path):
@@ -391,55 +392,72 @@ if __name__ == "__main__":
     #         timestamps_for_audio[patient_id] = timestamps
             # timestamps_for_visual[patient_id] = times   
 
+    # participants_segments = {
+    #     "TP": {
+    #         "Participant 1": [(308, 745), (321, 4754), (337, 16174), (380, 4115)],
+    #         "Participant 2": [(308, 745), (344, 7635), (386, 4729), (440, 9279)],
+    #         "Participant 3": [(319, 2989), (483, 9016), (367, 12626), (459, 4451)],
+    #         "Participant 4": [(319, 2989), (483, 9016), (365, 7522), (386, 4729)],
+    #         "Participant 5": [(321, 4754), (459, 4451), (344, 7635), (337, 16174)],
+    #         "Participant 6": [(367, 12626), (365, 7522), (380, 4115), (440, 9279)],
+    #     },
+    #     "TN": {
+    #         "Participant 1": [(303, 3331), (315, 2570), (411, 5643), (390, 12664)],
+    #         "Participant 2": [(401, 3957), (477, 11294), (490, 4003), (323, 1978)],
+    #         "Participant 3": [(349, 3640), (303, 3331), (401, 3957), (315, 2570)],
+    #         "Participant 4": [(349, 3640), (490, 4003), (395, 4848), (323, 1978)],
+    #         "Participant 5": [(331, 6287), (390, 12664), (427, 1349), (477, 11294)],
+    #         "Participant 6": [(427, 1349), (411, 5643), (395, 4848), (331, 6287)],
+    #     },
+    #     "FP": {
+    #         "Participant 1": [(302, 5877), (307, 1869), (428, 3634), (490, 5885)],
+    #         "Participant 2": [(463, 1536), (392, 1322), (358, 1099), (472, 5990)],
+    #         "Participant 3": [(490, 5885), (358, 1099), (324, 1118), (400, 8355)],
+    #         "Participant 4": [(302, 5877), (428, 3634), (400, 8355), (314, 11706)],
+    #         "Participant 5": [(307, 1869), (463, 1536), (472, 5990), (416, 1625)],
+    #         "Participant 6": [(392, 1322), (324, 1118), (314, 11706), (416, 1625)],
+    #     },
+    #     "FN": {
+    #         "Participant 1": [(309, 211), (344, 7637), (332, 2990), (448, 8597)],
+    #         "Participant 2": [(459, 3396), (433, 4529), (388, 493), (405, 12071)],
+    #         "Participant 3": [(344, 7637), (332, 2990), (433, 4529), (376, 6756)],
+    #         "Participant 4": [(448, 8597), (459, 3396), (344, 8388), (339, 5360)],
+    #         "Participant 5": [(309, 211), (405, 12071), (376, 6756), (319, 4382)],
+    #         "Participant 6": [(388, 493), (344, 8388), (339, 5360), (319, 4382)],
+    #     },
+    # }
+    # For the replacement segments
     participants_segments = {
         "TP": {
-            "Participant 1": [(319, 1240), (353, 5942), (388, 1939), (423, 5662)],
-            "Participant 2": [(423, 3967), (454, 2528), (461, 6896), (354, 3195)],
-            "Participant 3": [(442, 3575), (362, 2739), (367, 9685), (321, 1382)],
-            "Participant 4": [(389, 4888), (380, 401), (377, 4374), (434, 5082)],
-            "Participant 5": [(338, 1655), (389, 4888), (376, 918), (359, 1619)],
-            "Participant 6": [(386, 7510), (337, 3797), (325, 2335), (330, 5699)],
-        },
-        "FP": {
-            "Participant 1": [(409, 3651), (470, 3378), (385, 2425), (379, 552)],
-            "Participant 2": [(302, 4648), (431, 3268), (387, 3777), (306, 415)],
-            "Participant 3": [(385, 4762), (472, 9630), (471, 1998), (371, 4985)],
-            "Participant 4": [(452, 349), (383, 8838), (306, 3335), (431, 3268)],
-            "Participant 5": [(387, 3777), (318, 931), (392, 1221), (447, 5012)],
-            "Participant 6": [(302, 4648), (387, 3777), (483, 4877), (431, 3268)],
-        },
-        "TN": {
-            "Participant 1": [(475, 5678), (489, 1480), (452, 48), (317, 1801)],
-            "Participant 2": [(315, 2570), (453, 932), (471, 3683), (412, 2031)],
-            "Participant 3": [(328, 6098), (371, 6273), (307, 5985), (436, 7128)],
-            "Participant 4": [(430, 2299), (475, 5678), (373, 2471), (360, 2264)],
-            "Participant 5": [(329, 2082), (305, 12201), (371, 6273), (343, 1656)],
-            "Participant 6": [(387, 3777), (431, 3268), (407, 4456), (478, 9704)],
-        },
-        "FN": {
-            "Participant 1": [(449, 9482), (389, 6178), (330, 2512), (330, 0)],
-            "Participant 2": [(434, 7259), (344, 862), (423, 7907), (325, 4861)],
-            "Participant 3": [(339, 1390), (356, 1323), (441, 7247), (389, 6178)],
-            "Participant 4": [(389, 286), (335, 7666), (449, 573), (339, 1390)],
-            "Participant 5": [(419, 2356), (344, 862), (308, 3944), (449, 9482)],
-            "Participant 6": [(431, 3268), (387, 3777), (441, 1434), (389, 6178)],
+            "Participant 1": [(332, 277), (347, 789)]
+            # "Participant 1": [(402, 1509), (414, 6268)]
         },
     }
 
-
     # Translate segment indices to timestamps
     translated_segments = {}
-
     for category, participants in participants_segments.items():
         translated_segments[category] = {}
         for participant, segments in participants.items():
             translated_segments[category][participant] = []
             for patient_id, segment_index in segments:
+                # print(patient_id)
                 if patient_id in patient_times:
+                    # Petient times contains the start time of the data based on the transcript 
                     start_timestamp = patient_times[patient_id]
+                    # print('segmet index and start time') #They are both correct
+                    # print(segment_index)
+                    # print(start_timestamp)
                     timestamp = get_timestamp(segment_index, segment_duration, stride, start_timestamp)[1]
+                    # print(timestamp)
                     translated_segments[category][participant].append((patient_id, segment_index, timestamp))
 
+        # Define the file path
+    file_path = "tp_l.txt"
+
+    # Write the translated segments as plain text, exactly as it appears in print()
+    with open(file_path, "w") as f:
+        f.write(str(translated_segments))  # or use repr(translated_segments)
     print(translated_segments)
     # print(timestamps_for_visual)
 

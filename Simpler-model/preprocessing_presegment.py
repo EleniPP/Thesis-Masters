@@ -97,6 +97,7 @@ aus = []
 masks = []
 aus_reliable = []
 log_mels_reliable = []
+reliability_masks = []
 for number in numbers:
     file_audio = f"{base_path}{number}{patient}{number}{audio_extension}"
     file_visual = f"{base_path}{number}{patient}{number}{visual_extension}"
@@ -326,21 +327,25 @@ for number in numbers:
     elif len(au_segments) > len(mel_segments):
         au_segments.pop()  # Remove the last visual segment
 
-
     # Append the segments to the lists
     aus.append(au_segments)
     log_mels.append(mel_segments)
 
+    # Initialize an array to store reliability status (1 = reliable, 0 = not reliable)
+    segment_reliability_mask = np.zeros(len(mel_segments), dtype=np.int32)
     # Now filter based on mask_segments to keep only reliable segments
-    for mel_segment, au_segment, mask_segment in zip(mel_segments, au_segments, mask_segments):
+    for idx,(mel_segment, au_segment, mask_segment) in enumerate(zip(mel_segments, au_segments, mask_segments)):
         if mask_segment.all():  # Only keep segments if all frames in the mask are reliable
             reliable_mel_segments.append(mel_segment)
             reliable_au_segments.append(au_segment)
+            segment_reliability_mask[idx] = 1  # Mark segment as reliable
+        else:
+            segment_reliability_mask[idx] = 0  # Mark segment as unreliable
 
     # Convert to numpy arrays if needed for storage
     # reliable_mel_segments = np.array(reliable_mel_segments, dtype=object)
     # reliable_au_segments = np.array(reliable_au_segments, dtype=object)
-
+    reliability_masks.append(segment_reliability_mask)
     log_mels_reliable.append(reliable_mel_segments)
     aus_reliable.append(reliable_au_segments)
     # Print counts to verify alignment
@@ -352,54 +357,29 @@ for number in numbers:
     # print(f"Shape of one AU segment: {au_segments[0].shape}")  # Should be (105, num_AUs) / it is (105,20)
     # print(f"Shape of one mask segment: {mask_segments[0].shape}")
     print(f"Patient {number}: Audio segments = {len(mel_segments)}, Visual segments = {len(au_segments)}")
-# Save arrays in files
-log_mels = np.array(log_mels, dtype=object)
 
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
+print(1/0)
+reliability_masks = np.array(reliability_masks, dtype=object)
+np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/reliability_masks.npy', reliability_masks)
+# # Save arrays in files
+# log_mels = np.array(log_mels, dtype=object)
+
+# # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
+# # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
+
+# aus = np.array(aus, dtype=object)
+
+# # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
+# # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
+
+# # Save arrays in files
+# log_mels_reliable = np.array(log_mels_reliable, dtype=object)
+
+# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable_prep.npy', log_mels_reliable)
+# # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', log_mels_reliable)
 # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
 
-aus = np.array(aus, dtype=object)
+# aus_reliable = np.array(aus_reliable, dtype=object)
 
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
-# # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
-
-# Save arrays in files
-log_mels_reliable = np.array(log_mels_reliable, dtype=object)
-
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable_prep.npy', log_mels_reliable)
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', log_mels_reliable)
-# np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
-
-aus_reliable = np.array(aus_reliable, dtype=object)
-
-np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable_prep.npy', aus_reliable)
-# # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
-
-# masks = np.array(masks, dtype=object)
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/mask_segments.npy', masks)
-# np.save('V:/staff-umbrella/EleniSalient/Preprocessing/mask_segments.npy', masks)
-
-# print('Log-mels')
-# print(log_mels.shape)
-# print(len(log_mels[0]))
-# print(len(log_mels[1]))
-
-# print('Action Units')
-# print(aus.shape)
-# print(len(aus[0]))
-# print(len(aus[1]))
-
-# print('Log-mels_reliable')
-# print(log_mels_reliable.shape)
-# print(len(log_mels_reliable[0]))
-# print(len(log_mels_reliable[1]))
-
-# print('Action Units reliable')
-# print(aus_reliable.shape)
-# print(len(aus_reliable[0]))
-# print(len(aus_reliable[1]))
-
-# print('Masks')
-# print(masks.shape)
-# print(len(masks[0]))
-# print(len(masks[1]))
+# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable_prep.npy', aus_reliable)
+# # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
