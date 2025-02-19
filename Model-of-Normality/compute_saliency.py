@@ -102,6 +102,11 @@ for mask in reliability_masks:
     mapped_segment_orders.append(torch.tensor(true_indices))  # Convert to tensor if needed
 
 print(unique_values)
+# unique_values = unique_values.numpy()
+# print(unique_values)
+# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/unique_values.npy', unique_values)
+# print(1/0)
+
 
 # to keep track of where the groups start
 start_idx = 0
@@ -140,141 +145,142 @@ all_normalized_saliencies = []
 # Open files for writing TP, FP, TN, and FN segments
 
 # Comment out because we are calculating the lowest salient segments
-# with open("true_positives.txt", "w") as tp_file, \
-#      open("false_positives.txt", "w") as fp_file, \
-#      open("true_negatives.txt", "w") as tn_file, \
-#      open("false_negatives.txt", "w") as fn_file:
+with open("true_positives.txt", "w") as tp_file, \
+     open("false_positives.txt", "w") as fp_file, \
+     open("true_negatives.txt", "w") as tn_file, \
+     open("false_negatives.txt", "w") as fn_file:
     
-#     all_entropies = []
-#     per_patient_saliencies = []
-#     for i, probability_distribution in enumerate(grouped_probabilities):
-#         # Extract the actual patient ID
-#         actual_patient_id = unique_values[i].item()
-#         # Compute the entropy for each probability distribution (each row in the tensor)
-#         entropies = entropy(probability_distribution)
-
-#         entropies_np = entropies.numpy()
-#         # Store entropies for plotting
-#         all_entropies.append(entropies_np)
-
-#         # Compute the gradient of entropy across selected segments
-#         jacobian = np.gradient(entropies_np)
-
-#         # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
-#         # is the square of gradient itself
-#         patient_saliency = np.square(jacobian)
-
-#         # Normalize saliency
-#         normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
-#         all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
-#         per_patient_saliencies.append(normalized_saliency.numpy()) # Collect per patient
-
-#         # ---- **Map the segment indices correctly** ----
-#         # Take into consideration the segments that was removed in preprocessing_presegment because they are unreliable and map the indices of the segments correctly
-#         # Find the correct index of the patient in `unique_values` (which contains all patient IDs in sorted order) this is because reliability masks dont have the paatients ids integrated
-#         # so you cant do reliability_mask[actual_patient_id] because its out of bounds (there is no reliability_mask[300]) 
-
-#         original_indices = np.where(reliability_masks[i] == 1)[0]  # Get real segment indices
-
-#         if len(original_indices) != len(normalized_saliency):
-#             raise ValueError(f"Mismatch for patient {actual_patient_id}: {len(original_indices)} real vs {len(normalized_saliency)} saliencies")
-
-#         # ---- **Top 5 salient segments (CORRECT MAPPING)** ----
-#         top_k = 5  
-#         salient_indices = torch.topk(normalized_saliency, top_k).indices.tolist()  # Indices of top 5 salient segments
-#         real_salient_indices = [original_indices[idx] for idx in salient_indices]  # Map to real dataset indices
-#         final_saliency = normalized_saliency[salient_indices]  # Get corresponding saliency values
-
-#         # # Top 5 salient segments for each segment
-#         # # Get the indices of the top 5 salient segments
-#         # top_k = 5
-#         # salient_indices = torch.topk(normalized_saliency, top_k).indices.tolist()  # Indices of top 5 saliencies
-#         # final_saliency = normalized_saliency[salient_indices]  # Saliency values of top 5 saliencies
-
-#         # Separate the indices into TP, FP, TN, FN
-#         tp_segments = []
-#         fp_segments = []
-#         tn_segments = []
-#         fn_segments = []
-
-#         # for idx in salient_indices:
-#         for idx, real_idx in zip(salient_indices, real_salient_indices):
-#             # To retrieve entries from grouped_true_labels and grouped_predictions we dont use the real_idx because they only contain the reliable segments
-#             true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
-#             prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
-
-#             # The real index is only used for the mapping of the salient segments to their real index so later I can calculate their true timestamps
-#             if true_label == 1 and prediction == 1:
-#                 tp_segments.append(real_idx)  # True Positive
-#             elif true_label == 0 and prediction == 1:
-#                 fp_segments.append(real_idx)  # False Positive
-#             elif true_label == 0 and prediction == 0:
-#                 tn_segments.append(real_idx)  # True Negative
-#             elif true_label == 1 and prediction == 0:
-#                 fn_segments.append(real_idx)  # False Negative
-
-#         # Write results to files
-#         tp_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tp_segments]}\n")
-#         fp_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in fp_segments]}\n")
-#         tn_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tn_segments]}\n")
-#         fn_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in fn_segments]}\n")
-
-# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Calculate the lowest salient segments
-selected_patients = {325, 332, 347, 352, 359, 372, 389, 402, 414, 441, 453, 461}
-
-with open("tp_low.txt", "w") as tp_low_file:
     all_entropies = []
     per_patient_saliencies = []
-    
     for i, probability_distribution in enumerate(grouped_probabilities):
         # Extract the actual patient ID
         actual_patient_id = unique_values[i].item()
 
-        # Only process the selected patients
-        if actual_patient_id not in selected_patients:
-            continue  
-
+        #     # Skip if not the target patient
+        # if actual_patient_id != 308:
+        #     continue 
         # Compute the entropy for each probability distribution (each row in the tensor)
         entropies = entropy(probability_distribution)
-        entropies_np = entropies.numpy()
 
+        entropies_np = entropies.numpy()
         # Store entropies for plotting
         all_entropies.append(entropies_np)
 
         # Compute the gradient of entropy across selected segments
         jacobian = np.gradient(entropies_np)
-        patient_saliency = np.square(jacobian)  # Compute saliency as the squared gradient
+
+        # Since this is a 1D problem, J'(x)J(x) is 1x1, therefore determinant
+        # is the square of gradient itself
+        patient_saliency = np.square(jacobian)
 
         # Normalize saliency
         normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
         all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
-        per_patient_saliencies.append(normalized_saliency.numpy())  # Collect per patient
+        per_patient_saliencies.append(normalized_saliency.numpy()) # Collect per patient
 
         # ---- **Map the segment indices correctly** ----
+        # Take into consideration the segments that were removed in preprocessing_presegment because they are unreliable and map the indices of the segments correctly
+        # Find the correct index of the patient in `unique_values` (which contains all patient IDs in sorted order) this is because reliability masks dont have the paatients ids integrated
+        # so you cant do reliability_mask[actual_patient_id] because its out of bounds (there is no reliability_mask[300]) 
+
         original_indices = np.where(reliability_masks[i] == 1)[0]  # Get real segment indices
 
         if len(original_indices) != len(normalized_saliency):
             raise ValueError(f"Mismatch for patient {actual_patient_id}: {len(original_indices)} real vs {len(normalized_saliency)} saliencies")
 
-        # ---- **Find the lowest 5 salient segments instead of highest** ----
+        # ---- **Top 5 salient segments (CORRECT MAPPING)** ----
         top_k = 5  
-        salient_indices = torch.topk(normalized_saliency, top_k, largest=False).indices.tolist()  # Indices of lowest 5 salient segments
+        salient_indices = torch.topk(normalized_saliency, top_k).indices.tolist()  # Indices of top 5 salient segments
         real_salient_indices = [original_indices[idx] for idx in salient_indices]  # Map to real dataset indices
         final_saliency = normalized_saliency[salient_indices]  # Get corresponding saliency values
 
-        # Separate the indices into TP (since we are saving only TP)
+        # Separate the indices into TP, FP, TN, FN
         tp_segments = []
+        fp_segments = []
+        tn_segments = []
+        fn_segments = []
 
-        for idx, real_idx in zip(salient_indices, real_salient_indices):
-            true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
-            prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
+        # # for idx in salient_indices:
+        # for idx, real_idx in zip(salient_indices, real_salient_indices):
+        #     # To retrieve entries from grouped_true_labels and grouped_predictions we dont use the real_idx because they only contain the reliable segments
+        #     true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
+        #     prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
 
-            if true_label == 1 and prediction == 1:
-                tp_segments.append(real_idx)  # True Positive
+        #     # The real index is only used for the mapping of the salient segments to their real index so later I can calculate their true timestamps
+        #     if true_label == 1 and prediction == 1:
+        #         tp_segments.append(real_idx)  # True Positive
+        #     elif true_label == 0 and prediction == 1:
+        #         fp_segments.append(real_idx)  # False Positive
+        #     elif true_label == 0 and prediction == 0:
+        #         tn_segments.append(real_idx)  # True Negative
+        #     elif true_label == 1 and prediction == 0:
+        #         fn_segments.append(real_idx)  # False Negative
 
-        # Write results to the `tp_low.txt` file
-        tp_low_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tp_segments]}\n")
+        # # Write results to files
+        # tp_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tp_segments]}\n")
+        # fp_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in fp_segments]}\n")
+        # tn_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tn_segments]}\n")
+        # fn_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in fn_segments]}\n")
+per_patient_saliencies = np.array(per_patient_saliencies, dtype=object)
+np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/per_patient_saliencies.npy', per_patient_saliencies)
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# # Calculate the lowest salient segments
+# selected_patients = {325, 332, 347, 352, 359, 372, 389, 402, 414, 441, 453, 461}
+
+# with open("tp_low.txt", "w") as tp_low_file:
+#     all_entropies = []
+#     per_patient_saliencies = []
+    
+#     for i, probability_distribution in enumerate(grouped_probabilities):
+#         # Extract the actual patient ID
+#         actual_patient_id = unique_values[i].item()
+
+#         # Only process the selected patients
+#         if actual_patient_id not in selected_patients:
+#             continue  
+
+#         # Compute the entropy for each probability distribution (each row in the tensor)
+#         entropies = entropy(probability_distribution)
+#         entropies_np = entropies.numpy()
+
+#         # Store entropies for plotting
+#         all_entropies.append(entropies_np)
+
+#         # Compute the gradient of entropy across selected segments
+#         jacobian = np.gradient(entropies_np)
+#         patient_saliency = np.square(jacobian)  # Compute saliency as the squared gradient
+
+#         # Normalize saliency
+#         normalized_saliency = normalize_saliency(torch.tensor(patient_saliency))
+#         all_normalized_saliencies.extend(normalized_saliency.numpy())  # Collect into the list
+#         per_patient_saliencies.append(normalized_saliency.numpy())  # Collect per patient
+
+#         # ---- **Map the segment indices correctly** ----
+#         original_indices = np.where(reliability_masks[i] == 1)[0]  # Get real segment indices
+
+#         if len(original_indices) != len(normalized_saliency):
+#             raise ValueError(f"Mismatch for patient {actual_patient_id}: {len(original_indices)} real vs {len(normalized_saliency)} saliencies")
+
+#         # ---- **Find the lowest 5 salient segments instead of highest** ----
+#         top_k = 5  
+#         salient_indices = torch.topk(normalized_saliency, top_k, largest=False).indices.tolist()  # Indices of lowest 5 salient segments
+#         real_salient_indices = [original_indices[idx] for idx in salient_indices]  # Map to real dataset indices
+#         final_saliency = normalized_saliency[salient_indices]  # Get corresponding saliency values
+
+#         # Separate the indices into TP (since we are saving only TP)
+#         tp_segments = []
+
+#         for idx, real_idx in zip(salient_indices, real_salient_indices):
+#             true_label = grouped_true_labels[i][idx].item()  # True label of the salient segment
+#             prediction = grouped_predictions[i][idx].item()  # Model's prediction for the salient segment
+
+#             if true_label == 1 and prediction == 1:
+#                 tp_segments.append(real_idx)  # True Positive
+
+#         # Write results to the `tp_low.txt` file
+#         tp_low_file.write(f"Patient {actual_patient_id}: {[int(seg) for seg in tp_segments]}\n")
 # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         # total_segments = len(grouped_probabilities[i])  # Number of segments for this patient
 

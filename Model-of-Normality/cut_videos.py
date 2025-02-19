@@ -98,18 +98,20 @@ if __name__ == "__main__":
     patient = "_P/"
     audio_extension = "_AUDIO.wav"
     features_extension = "_CLNF_features.txt"
-    clips = "Clips/"
+    clips = "Clips_new_experiment/"
     clip_extension = ".wav"
     features_clip_extension = ".txt"
 
     # numbers = list(range(300, 491))
     # numbers = [423]
-    participants = parse_participants("tp_l.txt")
+    participants = parse_participants("tp.txt")
         # Iterate over participants and their segments
     for participant, segments in participants.items():
         for segment in segments:
             number, start_time, end_time = segment
-
+            # Expand the video window
+            new_start_time = max(start_time - 1, 0)  # Prevent negative timestamps
+            new_end_time = end_time + 4  # Extend by 2.5 sec after
 
             # Construct input and output paths
             input_audio = f"{base_path}{number}{patient}{number}{audio_extension}"
@@ -118,8 +120,8 @@ if __name__ == "__main__":
             output_features_clip = f"{base_path}{clips}{number}_{start_time}_{end_time}{features_clip_extension}"
 
             # Process the files
-            cut_txt_file(input_features, output_features_clip, start_time, end_time)
-            cut_wav_file_with_wave(input_audio, output_clip, start_time, end_time)
+            cut_txt_file(input_features, output_features_clip, new_start_time, new_end_time)
+            cut_wav_file_with_wave(input_audio, output_clip, new_start_time, new_end_time)
 
     print("Processing complete!")
     # for number in numbers:

@@ -1,7 +1,15 @@
 // Variables
 let canvas, stream, recorder, chunks = [];
-let recordingDuration = 3500; // 3.5 seconds
+let recordingDuration = 8500; // 3.5 seconds
 
+// Function to extract filename without extension
+function getFileNameWithoutExtension(fileInput) {
+    if (!fileInput || fileInput.files.length === 0) {
+        return "output"; // Default name if no file is selected
+    }
+    const fileName = fileInput.files[0].name; // Get full filename (e.g., "patient_123.txt")
+    return fileName.replace(/\.[^/.]+$/, ""); // Remove the extension (".txt")
+}
 
 // Function to start recording when "Absolute" checkbox is checked
 function startRecording() {
@@ -39,20 +47,20 @@ function startRecording() {
 
 // Function to save the recorded video
 function saveVideo() {
+    const fileNameWithoutExt = getFileNameWithoutExtension(document.getElementById('file')); // Get filename from input
     const blob = new Blob(chunks, { type: 'video/webm' });
     const url = URL.createObjectURL(blob);
 
     // Create a download link
     const a = document.createElement('a');
     a.href = url;
-    a.download = `clip_${Date.now()}.webm`;
+    a.download = `${fileNameWithoutExt}.webm`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 
     console.log("Video saved as .webm!");
 }
-
 
 // Audio Player
 const audioFileInput = document.getElementById('audioFileInput');

@@ -50,6 +50,8 @@ def parse_saliency_file(file_path):
             salient_features[patient_number] = indices if isinstance(indices, list) else [indices]
     return salient_features
 
+
+
 def get_timestamp(segment_number, segment_duration, stride, start_timestamp):
     """
     Calculate the timestamp for a given segment in a sliding window setup.
@@ -429,7 +431,7 @@ if __name__ == "__main__":
     # For the replacement segments
     participants_segments = {
         "TP": {
-            "Participant 1": [(332, 277), (347, 789)]
+            "Participant 1": [(441, 9092), (418, 10398), (410, 2465)]
             # "Participant 1": [(402, 1509), (414, 6268)]
         },
     }
@@ -453,7 +455,7 @@ if __name__ == "__main__":
                     translated_segments[category][participant].append((patient_id, segment_index, timestamp))
 
         # Define the file path
-    file_path = "tp_l.txt"
+    file_path = "tp.txt"
 
     # Write the translated segments as plain text, exactly as it appears in print()
     with open(file_path, "w") as f:
