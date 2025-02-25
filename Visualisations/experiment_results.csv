@@ -1,0 +1,25 @@
+Participant ID,Clip_ID,Clip_Type,Confidence_Level,Selected_Time_Interval,Model_Salient_Interval,Influential_Features-Eyebrows,Influential_Features-Eyes,Influential_Features-Mouth,Influential_Features-Voice,Detected_Emotion,Misclassification_Type
+1,Clip1,TP,Somewhat Likely,2-3 sec,4.4-4.5 sec,Outer edges of eyebrows raised,Eyes opened wider,Smiling; Mouth open,Monotone; Slow speech; Reduced loudness,Sadness,Correct
+1,Clip2,TP,Very Unlikely,4-5 sec,5.9-6 sec,Outer edges of eyebrows raised,-,Slight smirk,Increased vocal jitter; Laughter,Engagement,Correct
+1,Clip3,TN,Very Likely,6-7 sec,7.4-7.5,-,Eyes opened wider,Lips pressed together,Speech that sounds hesitant; Monotone,Neutral,Shared Mistake
+1,Clip4,TN,Somewhat Likely,5-6 sec,5.9-6 sec,-,Repeated blinking,Lips pressed together,Monotone; Slow speech,Neutral,Divergent Mistake
+1,Clip5,FP,Somewhat Unlikely,1-2 sec,7.4-7.5,-,-,Smiling,Speech with energy; Increased speech rate,Affection,Divergent Mistake
+1,Clip6,FP,Somewhat Likely,1-2 sec,7.4-7.5,Eyebrows lifted near center,-,Smiling; Lips sucked in,Stable voice; Monotone,Fear; Sadness,Correct
+1,Clip7,FN,Very Unlikely,4-5 sec,4.4-4.5 sec,-,Repeated blinking,Mouth open; Lips sucked in,Monotone; Hesitant speech,Sadness,Correct
+1,Clip8,FN,Somewhat Unlikely,3-4 sec,4.4-4.5 sec,Eyebrows lifted near center,Eyes opened wider,-,Increased speech rate,Engagement,Shared Mistake
+2,Clip1,TP,Somewhat Likely,4-5 sec,4.4-4.5 sec,-,Eyes opened wider; Repeated blinking,Mouth open,Laughter; Monotone,Anger; Fear; Sadness,Shared Mistake
+2,Clip2,TP,Very Likely,5-6 sec,7.4-7.5,-,Repeated blinking,Lips sucked in; Mouth open,Speech with energy,Happiness; Surprise,Divergent Mistake
+2,Clip3,TN,Very Unlikely,4-5 sec,4.4-4.5 sec,Eyebrows lifted near center,Eyes opened wider; Repeated blinking,Lips pressed together,Increased speech rate; Hesitant speech,Sadness; Fear,Divergent Mistake
+2,Clip4,TN,Very Likely,6-7 sec,7.4-7.5,-,-,Smiling; Lips sucked in,Stable voice,Engagement,Divergent Mistake
+2,Clip5,FP,Very Unlikely,1-2 sec,5.9-6 sec,-,-,Smiling; Lips sucked in,Speech with energy,Affection; Warmth,Correct
+2,Clip6,FP,Somewhat Likely,5-6 sec,5.9-6 sec,Eyebrows lifted near center; Outer edges of eyebrows raised,-,Smiling,Monotone,Disgust; Sadness,Divergent Mistake
+2,Clip7,FN,Somewhat Likely,5-6 sec,4.4-4.5 sec,Eyebrows lifted near center,-,Smiling; Lips pressed together,Stable voice,Fear,Divergent Mistake
+2,Clip8,FN,Somewhat Unlikely,0-1 sec,4.4-4.5 sec,-,-,-,Hesitant speech; Stable voice,Relief; Warmth,Divergent Mistake
+3,Clip1,TP,Very Unlikely,3-4 sec,5.9-6 sec,Eyebrows lifted near center,Repeated blinking,Lips pressed together; Lips sucked in,Slow speech; Hesitant speech,Engagement; Warmth,Correct
+3,Clip2,TP,Very Unlikely,3-4 sec,7.4-7.5,-,-,-,Increased speech rate; Hesitant speech,Confusion,Shared Mistake
+3,Clip3,TN,Somewhat Likely,2-3 sec,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,Lips pressed together,Stable voice,Surprise,Divergent Mistake
+3,Clip4,TN,Very Likely,4-5 sec,7.4-7.5,Eyebrows lifted near center,-,Smiling; Lips sucked in,Stable voice,Happiness; Engagement,Shared Mistake
+3,Clip5,FP,Very Unlikely,3-4 sec,5.9-6 sec,-,Eyes opened wider; Repeated blinking,Lips pressed together; Lips sucked in,Increased speech rate; Speech with energy,Disgust; Surprise,Divergent Mistake
+3,Clip6,FP,Somewhat Likely,2-3 sec,4.4-4.5 sec,-,-,Lips pressed together; Lips sucked in,Monotone,Sadness; Anxiety,Correct
+3,Clip7,FN,Very Unlikely,0-1 sec,5.9-6 sec,Eyebrows lifted near center,-,Smiling; Lips pressed together,Stable voice,Fear; Sadness,Divergent Mistake
+3,Clip8,FN,Somewhat Unlikely,3-4 sec,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,-,Increased speech rate; Hesitant speech,Confusion; Frustration; Sadness,Divergent Mistake
