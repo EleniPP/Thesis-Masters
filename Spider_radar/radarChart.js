@@ -133,6 +133,46 @@ function RadarChart(id, data, options) {
 		.call(wrap, cfg.wrapWidth);
 
 	/////////////////////////////////////////////////////////
+	///////////////////// Add legend ////////////////////////
+	/////////////////////////////////////////////////////////
+	
+	// Suppose you have two data series, and you've already drawn the radar chart.
+	// Now, add a legend to your SVG.
+
+	var legendData = [
+		{ label: "Selected Moment Features", color: cfg.color(0) }, // e.g., pink
+		{ label: "Salient Moment Features", color: cfg.color(1) }          // e.g., yellow
+	];
+	
+	// Append a legend group (adjust x, y positions as needed)
+	var legend = svg.append("g")
+		.attr("class", "legend")
+		// .attr("transform", "translate(" + (cfg.w/2 + cfg.margin.right) + ", " + (-cfg.margin.top/2) + ")");
+		.attr("transform", "translate(" + (cfg.w/2 + cfg.margin.left + 180) + "," + (cfg.h/2 + cfg.margin.top - 330) + ")");
+	
+	legend.selectAll("g")
+		.data(legendData)
+		.enter()
+		.append("g")
+		.attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; })
+		.each(function(d) {
+			// Append color box
+			d3.select(this)
+			.append("rect")
+			.attr("width", 12)
+			.attr("height", 12)
+			.attr("fill", d.color);
+			// Append text label
+			d3.select(this)
+			.append("text")
+			.attr("x", 18)
+			.attr("y", 10)
+			.style("font-size", "12px")
+			.text(d.label);
+		});
+	
+
+	/////////////////////////////////////////////////////////
 	///////////// Draw the radar chart blobs ////////////////
 	/////////////////////////////////////////////////////////
 	
