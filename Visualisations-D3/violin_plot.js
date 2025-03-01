@@ -1,7 +1,7 @@
 // set the dimensions and margins of the graph
-var margin = {top: 60, right: 60, bottom: 60, left: 150},
-    width = 800 - margin.left - margin.right,
-    height = 600 - margin.top - margin.bottom;
+var margin = {top: 100, right: 50, bottom: 60, left: 150},
+    width = 900 - margin.left - margin.right,
+    height = 700 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
 var svg = d3.select("#my_dataviz")
@@ -12,6 +12,9 @@ var svg = d3.select("#my_dataviz")
     .attr("transform",
           "translate(" + margin.left + "," + margin.top + ")");
 
+// Create a dictionary to store the real interval per clip
+var clipIntervals = {};
+
 //Read the data
 d3.csv("experiment_results.csv", function(error, data) {
     if (error) {
@@ -19,6 +22,27 @@ d3.csv("experiment_results.csv", function(error, data) {
         return;
       }
     console.log("All data rows:", data);
+
+    // For each row, parse the numeric values of the salient interval
+    data.forEach(function(d) {
+      // Convert selected timestamp to number
+      d.Selected_Timestamp = +d.Selected_Timestamp;
+
+      // Parse something like "4.4-4.5 sec" -> [4.4, 4.5]
+      // (You only need to store it once per clip, but doing it on every row
+      //  also works if the value is always the same for that clip.)
+      if (d.Model_Salient_Interval) {
+        // Remove " sec" and split on '-'
+        var parts = d.Model_Salient_Interval.replace(" sec", "").split("-");
+        var lower = +parts[0];
+        var upper = +parts[1];
+
+        // Store it in a dictionary keyed by Clip_ID
+        clipIntervals[d.Clip_ID] = [lower, upper];
+      }
+    });
+
+
       // After reading data...
     var groupCount = d3.nest()
     .key(d => d.Clip_ID)
@@ -31,7 +55,7 @@ d3.csv("experiment_results.csv", function(error, data) {
 
       // Convert timestamps to numeric
     data.forEach(function(d) {
-        console.log("Raw Selected_Timestamp:", d.Selected_Timestamp);
+        // console.log("Raw Selected_Timestamp:", d.Selected_Timestamp);
         d.Selected_Timestamp = +d.Selected_Timestamp;
     });
 
@@ -81,25 +105,117 @@ d3.csv("experiment_results.csv", function(error, data) {
     .range([0, x.bandwidth()])
     .domain([-maxNum,maxNum])
 
-  // Add the shape to this svg!
-  svg
-    .selectAll("myViolin")
-    .data(sumstat)
-    .enter()        // So now we are working group per group
-    .append("g")
-      .attr("transform", function(d){ return("translate(" + x(d.key) +" ,0)") } ) // Translation on the right to be at the group position
-    .append("path")
-        .datum(function(d){ return(d.value)})     // So now we are working density per density
-        .style("stroke", "none")
-        .style("fill","#69b3a2")
-        .attr("d", d3.area()
-            .x0(function(d){ return(xNum(-d[1])) } )
-            .x1(function(d){ return(xNum(d[1])) } )
-            .y(function(d){ return(y(d[0])) } )
-            .curve(d3.curveCatmullRom)    // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
-        )
+  // First, create a "violin" group for each clip:
+  var violin = svg
+  .selectAll("myViolin")
+  .data(sumstat)
+  .enter()
+  .append("g")
+    .attr("transform", function(d){ 
+      return "translate(" + x(d.key) + ",0)"; 
+    });
 
-})
+  // Then, within each group, append the path (bound to the density array):
+  violin
+  .append("path")
+    .datum(function(d){ return d.value; }) // "d" is {key, value}, we pass d.value to the path
+    .style("stroke", "none")
+    .style("fill","#69b3a2")
+    .attr("d", d3.area()
+      .x0(function(d){ return xNum(-d[1]); })
+      .x1(function(d){ return xNum(d[1]); })
+      .y(function(d){ return y(d[0]); })
+      .curve(d3.curveCatmullRom)
+    );
+
+  // Finally, append the circle to the same group (NOT to the path),
+  // so it retains the group-level data with .key:
+  violin
+  .append("circle")
+    .attr("cx", xNum(0))
+    .attr("cy", function(d){
+      // Here, "d" is still {key: "Clip_1", value: [...density...]}
+      var interval = clipIntervals[d.key];
+      if (interval) {
+        var mid = (interval[0] + interval[1]) / 2;
+        return y(mid);
+      }
+      // fallback
+      return y(0);
+    })
+    .attr("r", 5)
+    .style("fill", "red");
+  })
+
+
+    //////////////////////////////////////
+  // ADD A LEGEND
+  //////////////////////////////////////
+
+  // Create a legend group near the top-right (adjust x/y to your preference)
+  var legend = svg.append("g")
+  .attr("transform", "translate(" + (width - 110) + "," + -60 + ")");
+
+  // 1) Legend item for the violin (distribution)
+  legend.append("rect")
+  .attr("x", 0)
+  .attr("y", 0)
+  .attr("width", 15)
+  .attr("height", 15)
+  .style("fill", "#69b3a2");
+
+  legend.append("text")
+  .attr("x", 25)
+  .attr("y", 12)
+  .style("font-size", "14px")
+  .text("Distribution of responses");
+
+  // 2) Legend item for the red circle (true midpoint)
+  legend.append("circle")
+  .attr("cx", 7)
+  .attr("cy", 35)
+  .attr("r", 5)
+  .style("fill", "red");
+
+  legend.append("text")
+  .attr("x", 25)
+  .attr("y", 39)
+  .style("font-size", "14px")
+  .text("True midpoint");
+  // Add the shape to this svg!
+//   svg
+//     .selectAll("myViolin")
+//     .data(sumstat)
+//     .enter()        // So now we are working group per group
+//     .append("g")
+//       .attr("transform", function(d){ return("translate(" + x(d.key) +" ,0)") } ) // Translation on the right to be at the group position
+//     .append("path")
+//         .datum(function(d){ return(d.value)})     // So now we are working density per density
+//         .style("stroke", "none")
+//         .style("fill","#69b3a2")
+//         .attr("d", d3.area()
+//             .x0(function(d){ return(xNum(-d[1])) } )
+//             .x1(function(d){ return(xNum(d[1])) } )
+//             .y(function(d){ return(y(d[0])) } )
+//             .curve(d3.curveCatmullRom)    // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
+//         )
+//     .append("circle")
+//       // Center horizontally in the violin by using xNum(0)
+//       .attr("cx", xNum(0))
+//       // Map the midpoint of the real interval to the y scale
+//       .attr("cy", function(d){
+//         var interval = clipIntervals[d.key]; // e.g. [4.4, 4.5]
+//         if (interval) {
+//           var mid = (interval[0] + interval[1]) / 2;
+//           return y(mid);
+//         }
+//         // Fallback if interval is missing:
+//         return y(0);
+//       })
+//       .attr("r", 5)
+//       .style("fill", "red");
+
+// })
 
 // 2 functions needed for kernel density estimate
 function kernelDensityEstimator(kernel, X) {

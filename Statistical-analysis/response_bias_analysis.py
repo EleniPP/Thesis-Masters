@@ -6,12 +6,33 @@ import pingouin as pg
 import scipy.stats as stats
 import numpy as np
 
-folder = os.path.join(os.path.expanduser("~"), "Downloads")
+def plot_patient_time_interval(patient_id):
+    # Filter data for the specific patient id
+    patient_data = data[data['Participant_ID'] == patient_id]
+    
+    # Check if data exists for the provided patient id
+    if patient_data.empty:
+        print(f"No data available for patient id: {patient_id}")
+        return
 
+    # Plot the count plot for the specific patient
+    plt.figure(figsize=(8, 5))
+    sns.countplot(x='Selected_Time_Interval', data=patient_data, palette='coolwarm')
+    plt.title(f'Distribution of Selected Time Intervals for Patient {patient_id}')
+    plt.xlabel('Time Interval')
+    plt.ylabel('Count of Selections')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+folder = os.path.join(os.path.expanduser("~"), "Downloads")
 # Load data from excel sheet table
 data = pd.read_excel('experiment_results.xlsx', sheet_name='table')
+
 confidence_mapping = {'Very Unlikely': 1, 'Somewhat Unlikely': 2, 'Somewhat Likely': 3, 'Very Likely': 4}
 data['Confidence'] = data['Confidence_Level'].map(confidence_mapping)
+# Example usage:
+plot_patient_time_interval(1)
 
 plt.figure(figsize=(8, 5))
 sns.countplot(x='Selected_Time_Interval', data=data, palette='coolwarm')
@@ -46,3 +67,5 @@ data['Interval_Code'] = data['Selected_Time_Interval'].map(interval_order)
 # Now run repeated measures ANOVA where each participant is measured across different Clip_IDs
 rm_results = pg.rm_anova(dv='Interval_Code', within='Clip_ID', subject='Participant_ID', data=data, detailed=True)
 print(rm_results)
+
+

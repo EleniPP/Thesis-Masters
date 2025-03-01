@@ -69,12 +69,20 @@ classification_accuracy.rename(columns={'Correct_Classification': 'Classificatio
 
 # Plot bar chart
 plt.figure(figsize=(8, 5))
-sns.barplot(data=classification_accuracy, x='Salient_Position_Type', y='Classification_Accuracy', palette='coolwarm')
+ax = sns.barplot(data=classification_accuracy, x='Salient_Position_Type', y='Classification_Accuracy', palette='coolwarm')
 plt.title('Correct Classification Rate by Salient Segment Position')
 plt.xlabel('Salient Segment Position')
 plt.ylabel('Percentage of Participants Classifying Clip Correctly')
 plt.ylim(0, 1)  # Normalize y-axis (0 = 0%, 1 = 100%)
 plt.xticks(rotation=45)
+# Make the bars thinner
+for patch in ax.patches:
+    current_width = patch.get_width()        # get current width
+    new_width = current_width * 0.5            # reduce width by 50%
+    diff = current_width - new_width           # calculate difference
+    patch.set_width(new_width)                 # set new width
+    patch.set_x(patch.get_x() + diff / 2)        # recenter the patch
+plt.tight_layout()
 plt.show()
 
 # ----------------- Miss Rate by Salient Segment Position -----------------
@@ -86,10 +94,17 @@ miss_rate_by_position.rename(columns={'Within_1s_Margin': 'Miss_Rate'}, inplace=
 
 # Plot bar chart
 plt.figure(figsize=(8, 5))
-sns.barplot(data=miss_rate_by_position, x='Salient_Position_Type', y='Miss_Rate', palette='coolwarm')
+ax = sns.barplot(data=miss_rate_by_position, x='Salient_Position_Type', y='Miss_Rate', palette='coolwarm')
 plt.title('Miss Rate by Salient Segment Position')
 plt.xlabel('Salient Segment Position')
 plt.ylabel('Percentage of Participants Missing Salient Segment')
 plt.ylim(0, 1)  # Normalize y-axis (0 = no misses, 1 = all participants missed)
 plt.xticks(rotation=45)
+for patch in ax.patches:
+    current_width = patch.get_width()        # get current width
+    new_width = current_width * 0.5            # reduce width by 50%
+    diff = current_width - new_width           # calculate difference
+    patch.set_width(new_width)                 # set new width
+    patch.set_x(patch.get_x() + diff / 2) 
+plt.tight_layout() 
 plt.show()

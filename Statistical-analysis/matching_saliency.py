@@ -69,13 +69,43 @@ within_1s_distribution.rename(columns={True: 'Within_1s', False: 'Outside_1s'}, 
 within_1s_distribution[['Within_1s', 'Outside_1s']] *= 100
 
 # Plot stacked bar chart
-within_1s_distribution.set_index('Correct_Classification').plot(kind='bar', stacked=True, figsize=(8, 6), colormap='coolwarm')
+within_1s_distribution.set_index('Correct_Classification').plot(kind='bar', stacked=True, figsize=(8, 6), color=['#ce434a', '#48a389'])
+# plt.title('Within 1s vs. Outside 1s by Classification Accuracy')
+# plt.xlabel('Clip Classified Correctly?')
+# plt.ylabel('Percentage')
+# plt.legend(
+#     title='Within 1s of Model-Salient Segment',
+#     labels=['Outside 1s', 'Within 1s'],
+#     bbox_to_anchor=(1.05, 1),  # 5% to the right of the axes, aligned at top
+#     loc='upper left',
+#     borderaxespad=0.
+# )
+# plt.xticks(ticks=[0, 1], labels=['Incorrect', 'Correct'])
+# plt.xticks(rotation=45, ha='right')  # Rotate labels 45 degrees and align them to the right
+# plt.show()
+
+ax = within_1s_distribution.set_index('Correct_Classification').plot(
+    kind='bar',
+    stacked=True,
+    figsize=(8, 6),
+    color=['#1f77b4', '#ff7f0e']
+)
+
 plt.title('Within 1s vs. Outside 1s by Classification Accuracy')
 plt.xlabel('Clip Classified Correctly?')
 plt.ylabel('Percentage')
-plt.legend(title='Within 1s of Model-Salient Segment', labels=['Outside 1s', 'Within 1s'])
-plt.xticks(ticks=[0, 1], labels=['Incorrect', 'Correct'])
-plt.xticks(rotation=45, ha='right')  # Rotate labels 45 degrees and align them to the right
+
+# Place legend outside (to the right)
+ax.legend(
+    title='Within 1s of Model-Salient Segment',
+    labels=['Outside 1s', 'Within 1s'],
+    bbox_to_anchor=(1.05, 1),
+    loc='upper left',
+    borderaxespad=0
+)
+
+plt.xticks(ticks=[0, 1], labels=['Incorrect', 'Correct'], rotation=45, ha='right')
+plt.tight_layout()  # Ensures everything fits nicely
 plt.show()
 
 
@@ -92,3 +122,22 @@ plt.xlabel('Confidence Level')
 plt.ylabel('Percentage Within 1s')
 plt.ylim(0, 100)
 plt.show()
+
+# ------------------------------------------------------------------------------------------------------
+# Suppose you already have 'within_1s_distribution' something like:
+#   Correct_Classification | Within_1s | Outside_1s
+# 0    False (Incorrect)   |   30.0    |   70.0
+# 1    True  (Correct)     |   60.0    |   40.0
+
+# 1) Set 'Correct_Classification' as index:
+df_table = within_1s_distribution.set_index('Correct_Classification')[['Within_1s', 'Outside_1s']]
+
+# 2) Rename the index from True/False to "Correct"/"Incorrect"
+df_table.index = df_table.index.map({False: 'Incorrect', True: 'Correct'})
+
+# 3) Rename the columns if you like
+df_table.columns = ['Within 1s', 'Outside 1s']
+
+# 4) Print in a simple text format with float_format for 1 decimal place
+print("=== Within 1s vs. Outside 1s by Classification Accuracy ===")
+print(df_table.to_string(float_format="%.1f"))

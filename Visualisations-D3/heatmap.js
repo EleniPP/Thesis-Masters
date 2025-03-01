@@ -17,6 +17,7 @@ var svg = d3.select("#my_dataviz")
   .attr("transform",
         "translate(" + margin.left + "," + margin.top + ")");
 
+
 //Read the data
 d3.csv("experiment_results.csv", function(error, data) {
     if (error) {

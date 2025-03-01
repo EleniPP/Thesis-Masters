@@ -21,18 +21,23 @@ def split_features(s):
 
 def calculate_radar_data(df):
     # Process each of the three feature columns separately
-    feature_columns = ['Influential_Features-Eyebrows', 
-                    'Influential_Features-Eyes', 
-                    'Influential_Features-Mouth']
+    # feature_columns = ['Influential_Features-Eyebrows', 
+    #                 'Influential_Features-Eyes', 
+    #                 'Influential_Features-Mouth']
+    feature_columns = ['Influential_Features-Voice']
 
     for col in feature_columns:
         df[col + '_list'] = df[col].apply(split_features)
 
     # Combine the lists from the three columns into one column per row
+    # df['All_Features'] = df[[col + '_list' for col in feature_columns]].apply(
+    #     lambda row: row[0] + row[1] + row[2], axis=1
+    # )
     df['All_Features'] = df[[col + '_list' for col in feature_columns]].apply(
-        lambda row: row[0] + row[1] + row[2], axis=1
+    lambda row: row[0], axis=1
     )
-    # Group by Clip_ID (assuming there's a Clip_ID column)
+
+    #  Group by Clip_ID (assuming there's a Clip_ID column)
     grouped = df.groupby('Clip_ID')
 
     # Create a dictionary to hold the radar data for each clip

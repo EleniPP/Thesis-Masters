@@ -1,65 +1,65 @@
 Participant_ID,Clip_ID,Clip_Type,Confidence_Level,Selected_Time_Interval,Selected_Timestamp,Salient_Position_Type,Model_Salient_Interval,Influential_Features-Eyebrows,Influential_Features-Eyes,Influential_Features-Mouth,Influential_Features-Voice,Detected_Emotion,Misclassification_Type
-8,Clip 1,TP,Very Unlikely,0-1 sec,1.962923783,Case 1,4.4-4.5 sec,,Eyes opened wider than usual;,Smiling;Mouth open;,Laughter or lighthearted tone;Speech that is fluid and uninterrupted;,Happiness;Affection or warmth;,Divergent Mistake
-4,Clip 1,TP,Somewhat Likely,2-3 sec,6.298779602,Case 1,4.4-4.5 sec,,Repeated blinking;,Lips sucked in;,Monotone or flat voice;Slow speech with long pauses;Speech that sounds hesitant or unsure;Reduced Loudness;,Sadness;,Correct
-5,Clip 1,TP,Somewhat Unlikely,4-5 sec,1.653899805,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised;,Eyes opened wider than usual;,Slight smirk;Mouth open;,Increased Vocal Jitter and Shimmer;Laughter or lighthearted tone;,Happiness;Engagement or interest;,Divergent Mistake
-6,Clip 1,TP,Very Likely,3-4 sec,1.396428802,Case 1,4.4-4.5 sec,,,Lips pressed together;,Monotone or flat voice;Slow speech with long pauses;Reduced Loudness;,Sadness;,Shared Mistake
-7,Clip 1,TP,Somewhat Likely,5-6 sec,4.952690991,Case 1,4.4-4.5 sec,Brow lowering;,,Lips pressed together;,Speech that sounds hesitant or unsure;Slow speech with long pauses;,Anxiety or nervousness;,Shared Mistake
-1,Clip 1,TP,Somewhat Likely,2-3 sec,5.034094135,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised,Eyes opened wider,Smiling; Mouth open,Monotone; Slow speech; Reduced loudness,Sadness,Correct
-2,Clip 1,TP,Somewhat Likely,4-5 sec,0.90420071,Case 1,4.4-4.5 sec,,Eyes opened wider; Repeated blinking,Mouth open,Laughter; Monotone,Anger; Fear; Sadness,Shared Mistake
-3,Clip 1,TP,Very Unlikely,3-4 sec,1.212486282,Case 1,4.4-4.5 sec,Eyebrows lifted near center,Repeated blinking,Lips pressed together; Lips sucked in,Slow speech; Hesitant speech,Engagement; Warmth,Correct
-4,Clip 2,TP,Somewhat Unlikely,5-6 sec,5.876072352,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised;,Eyes opened wider than usual;,Smiling;Mouth open;,Increased Vocal Jitter and Shimmer;Increased Speech Rate;,Engagement or interest;,Correct
-5,Clip 2,TP,Somewhat Unlikely,2-3 sec,6.979938617,Case 2,4.4-4.5 sec,Eyebrows lifted near the center;,,,Speech that is fluid and uninterrupted;Increased Speech Rate;,Engagement or interest;,Divergent Mistake
-6,Clip 2,TP,Somewhat Likely,4-5 sec,2.94445853,Case 2,4.4-4.5 sec,Brow lowering;,,Lips pressed together;,Speech that sounds hesitant or unsure;,Neutral or no specific emotion;,Shared Mistake
-7,Clip 2,TP,Very Likely,6-7 sec,7.054941808,Case 2,4.4-4.5 sec,,,,Monotone or flat voice;Reduced Loudness;,Neutral or no specific emotion;,Shared Mistake
-8,Clip 2,TP,Somewhat Likely,6-7 sec,4.290938548,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised;,Repeated blinking;,Lips sucked in;,Increased Speech Rate;,Anxiety or nervousness;,Divergent Mistake
-1,Clip 2,TP,Very Unlikely,4-5 sec,1.925661926,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised,,Slight smirk,Increased vocal jitter; Laughter,Engagement,Correct
-2,Clip 2,TP,Very Likely,5-6 sec,5.738811906,Case 2,4.4-4.5 sec,,Repeated blinking,Lips sucked in; Mouth open,Speech with energy,Happiness; Surprise,Divergent Mistake
-3,Clip 2,TP,Very Unlikely,3-4 sec,2.016725851,Case 2,4.4-4.5 sec,,,,Increased speech rate; Hesitant speech,Confusion,Shared Mistake
-4,Clip 3,TN,Very Unlikely,5-6 sec,0.254608847,Case 3,5.9-6 sec,,,Slight smirk;Smiling;,Laughter or lighthearted tone;,Happiness;Affection or warmth;,Divergent Mistake
-5,Clip 3,TN,Very Likely,2-3 sec,3.324231415,Case 3,5.9-6 sec,Brow lowering;,,Lips pressed together;,Reduced Loudness;Speech that sounds hesitant or unsure;,Neutral or no specific emotion;,Shared Mistake
-6,Clip 3,TN,Very Unlikely,3-4 sec,2.318380419,Case 3,5.9-6 sec,,Eyes opened wider than usual;,Smiling;,Laughter or lighthearted tone;Speech that is fluid and uninterrupted;,Happiness;Engagement or interest;,Shared Mistake
-7,Clip 3,TN,Very Unlikely,2-3 sec,5.897296805,Case 3,5.9-6 sec,,Eyes opened wider than usual;,Smiling;,Speech with energy or enthusiasm;Laughter or lighthearted tone;,Happiness;,Divergent Mistake
-8,Clip 3,TN,Very Likely,5-6 sec,6.592568779,Case 3,5.9-6 sec,,,,Monotone or flat voice;Slow speech with long pauses;Reduced Loudness;,Sadness;Frustration;,Correct
-1,Clip 3,TN,Very Likely,6-7 sec,0.738490956,Case 3,5.9-6 sec,,Eyes opened wider,Lips pressed together,Speech that sounds hesitant; Monotone,Neutral,Shared Mistake
-2,Clip 3,TN,Very Unlikely,4-5 sec,6.345137006,Case 3,5.9-6 sec,Eyebrows lifted near center,Eyes opened wider; Repeated blinking,Lips pressed together,Increased speech rate; Hesitant speech,Sadness; Fear,Divergent Mistake
-3,Clip 3,TN,Somewhat Likely,2-3 sec,2.192748908,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,Lips pressed together,Stable voice,Surprise,Divergent Mistake
-4,Clip 4,TN,Very Likely,0-1 sec,1.223543465,Case 1,7.4-7.5,,,Lips pressed together;,Monotone or flat voice;Speech that sounds hesitant or unsure;,Sadness;Anxiety or nervousness;,Divergent Mistake
-5,Clip 4,TN,Somewhat Likely,5-6 sec,1.406976709,Case 1,7.4-7.5,,,,Monotone or flat voice;,Neutral or no specific emotion;,Shared Mistake
-6,Clip 4,TN,Somewhat Unlikely,3-4 sec,6.23649161,Case 1,7.4-7.5,,Repeated blinking;,Slight smirk;,Stable Voice ;Speech with energy or enthusiasm;,Surprise;Engagement or interest;,Shared Mistake
-7,Clip 4,TN,Somewhat Unlikely,6-7 sec,3.275514563,Case 1,7.4-7.5,Outer edges of eyebrows raised;,Repeated blinking;,Mouth open;,Speech that is fluid and uninterrupted;,Neutral or no specific emotion;,Shared Mistake
-8,Clip 4,TN,Somewhat Unlikely,1-2 sec,3.798347995,Case 1,7.4-7.5,Outer edges of eyebrows raised;,,Mouth open;,Stable Voice ;Speech with energy or enthusiasm;,Relief;Affection or warmth;,Divergent Mistake
-1,Clip 4,TN,Somewhat Likely,5-6 sec,1.251358235,Case 1,7.4-7.5,,Repeated blinking,Lips pressed together,Monotone; Slow speech,Neutral,Divergent Mistake
-2,Clip 4,TN,Very Likely,6-7 sec,1.017282441,Case 1,7.4-7.5,,,Smiling; Lips sucked in,Stable voice,Engagement,Divergent Mistake
-3,Clip 4,TN,Very Likely,4-5 sec,1.144166294,Case 1,7.4-7.5,Eyebrows lifted near center,,Smiling; Lips sucked in,Stable voice,Happiness; Engagement,Shared Mistake
-4,Clip 5,FP,Somewhat Likely,6-7 sec,7.612082116,Case 2,4.4-4.5 sec,,,,Reduced Loudness;,Neutral or no specific emotion;,Correct
-5,Clip 5,FP,Somewhat Unlikely,0-1 sec,6.372090996,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised;,,,Speech with energy or enthusiasm;,Neutral or no specific emotion;,Divergent Mistake
-6,Clip 5,FP,Very Likely,7-8.5 sec,4.000519001,Case 2,4.4-4.5 sec,,,Lips sucked in;,Reduced Loudness;Speech that sounds hesitant or unsure;,Frustration;Confusion;,Shared Mistake
-7,Clip 5,FP,Very Unlikely,3-4 sec,4.311323942,Case 2,4.4-4.5 sec,,,Mouth open;,Laughter or lighthearted tone;,Engagement or interest;,Shared Mistake
-8,Clip 5,FP,Very Unlikely,3-4 sec,5.315764407,Case 2,4.4-4.5 sec,Eyebrows lifted near the center;,Eyes opened wider than usual;,Smiling;Mouth open;,Laughter or lighthearted tone;Speech with energy or enthusiasm;,Engagement or interest;Affection or warmth;,Shared Mistake
-1,Clip 5,FP,Somewhat Unlikely,1-2 sec,4.427494885,Case 2,4.4-4.5 sec,,,Smiling,Speech with energy; Increased speech rate,Affection,Divergent Mistake
-2,Clip 5,FP,Very Unlikely,1-2 sec,8.005505655,Case 2,4.4-4.5 sec,,,Smiling; Lips sucked in,Speech with energy,Affection; Warmth,Correct
-3,Clip 5,FP,Very Unlikely,3-4 sec,0.888709488,Case 2,4.4-4.5 sec,,Eyes opened wider; Repeated blinking,Lips pressed together; Lips sucked in,Increased speech rate; Speech with energy,Disgust; Surprise,Divergent Mistake
-4,Clip 6,FP,Somewhat Likely,6-7 sec,4.546536349,Case 3,5.9-6 sec,Eyebrows lifted near the center;,,Lips pressed together;,,Neutral or no specific emotion;,Divergent Mistake
-5,Clip 6,FP,Very Unlikely,2-3 sec,5.006406224,Case 3,5.9-6 sec,,,Smiling;Mouth open;,Laughter or lighthearted tone;,Happiness;Affection or warmth;,Correct
-6,Clip 6,FP,Somewhat Likely,6-7 sec,4.179172126,Case 3,5.9-6 sec,Brow lowering;,,,Stable Voice ;Monotone or flat voice;,Anxiety or nervousness;Fear;,Divergent Mistake
-7,Clip 6,FP,Somewhat Likely,4-5 sec,8.059832889,Case 3,5.9-6 sec,,Eyes opened wider than usual;,Lips pressed together;,Reduced Loudness;Monotone or flat voice;,Neutral or no specific emotion;,Shared Mistake
-8,Clip 6,FP,Very Likely,4-5 sec,7.682034822,Case 3,5.9-6 sec,Brow lowering;,,Lips sucked in;,Reduced Loudness;Monotone or flat voice;,Confusion;Frustration;Anxiety or nervousness;,Divergent Mistake
-1,Clip 6,FP,Somewhat Likely,1-2 sec,1.242022608,Case 3,5.9-6 sec,Eyebrows lifted near center,,Smiling; Lips sucked in,Stable voice; Monotone,Fear; Sadness,Correct
-2,Clip 6,FP,Somewhat Likely,5-6 sec,8.23897607,Case 3,5.9-6 sec,Eyebrows lifted near center; Outer edges of eyebrows raised,,Smiling,Monotone,Disgust; Sadness,Divergent Mistake
-3,Clip 6,FP,Somewhat Likely,2-3 sec,7.632494872,Case 3,5.9-6 sec,,,Lips pressed together; Lips sucked in,Monotone,Sadness; Anxiety,Correct
-4,Clip 7,FN,Somewhat Unlikely,5-6 sec,4.241625459,Case 1,7.4-7.5,Outer edges of eyebrows raised;,,Mouth open;,Speech with energy or enthusiasm;Increased Speech Rate;,Engagement or interest;,Divergent Mistake
-5,Clip 7,FN,Somewhat Likely,6-7 sec,7.585670663,Case 1,7.4-7.5,Brow lowering;,,Lips pressed together;,Reduced Loudness;,Sadness;Confusion;,Correct
-6,Clip 7,FN,Somewhat Likely,3-4 sec,6.355602041,Case 1,7.4-7.5,,Repeated blinking;,Lips pressed together;,Other;,Anger;Frustration;,Divergent Mistake
-7,Clip 7,FN,Somewhat Likely,5-6 sec,7.976458402,Case 1,7.4-7.5,Brow lowering;,,,Monotone or flat voice;,Neutral or no specific emotion;,Shared Mistake
-8,Clip 7,FN,Somewhat Likely,1-2 sec,7.668124946,Case 1,7.4-7.5,,,Lips pressed together;,Speech that sounds hesitant or unsure;Reduced Loudness;,Neutral or no specific emotion;Anxiety or nervousness;,Shared Mistake
-1,Clip 7,FN,Very Unlikely,4-5 sec,6.422128407,Case 1,7.4-7.5,,Repeated blinking,Mouth open; Lips sucked in,Monotone; Hesitant speech,Sadness,Correct
-2,Clip 7,FN,Somewhat Likely,5-6 sec,0.492887186,Case 1,7.4-7.5,Eyebrows lifted near center,,Smiling; Lips pressed together,Stable voice,Fear,Divergent Mistake
-3,Clip 7,FN,Very Unlikely,0-1 sec,5.991005306,Case 1,7.4-7.5,Eyebrows lifted near center,,Smiling; Lips pressed together,Stable voice,Fear; Sadness,Divergent Mistake
-4,Clip 8,FN,Somewhat Likely,5-6 sec,5.044597211,Case 2,5.9-6 sec,Brow lowering;,Repeated blinking;,,Monotone or flat voice;Slow speech with long pauses;,Anxiety or nervousness;Sadness;,Shared Mistake
-5,Clip 8,FN,Somewhat Unlikely,3-4 sec,5.192565555,Case 2,5.9-6 sec,,Repeated blinking;,Slight smirk;,Increased Speech Rate;Speech that is fluid and uninterrupted;,Surprise;Relief;,Divergent Mistake
-6,Clip 8,FN,Very Unlikely,1-2 sec,5.426682711,Case 2,5.9-6 sec,Outer edges of eyebrows raised;,Eyes opened wider than usual;,Smiling;Mouth open;,Increased Speech Rate;Speech with energy or enthusiasm;,Surprise;Engagement or interest;,Correct
-7,Clip 8,FN,Somewhat Unlikely,1-2 sec,5.828836094,Case 2,5.9-6 sec,Eyebrows lifted near the center;,,Slight smirk;,Stable Voice ;Speech that is fluid and uninterrupted;,Engagement or interest;,Divergent Mistake
-8,Clip 8,FN,Somewhat Unlikely,7-8.5 sec,4.848842504,Case 2,5.9-6 sec,,Eyes opened wider than usual;,,Speech that is fluid and uninterrupted;,Neutral or no specific emotion;,Shared Mistake
-1,Clip 8,FN,Somewhat Unlikely,3-4 sec,0.201597291,Case 2,5.9-6 sec,Eyebrows lifted near center,Eyes opened wider,,Increased speech rate,Engagement,Shared Mistake
-2,Clip 8,FN,Somewhat Unlikely,0-1 sec,7.434974538,Case 2,5.9-6 sec,,,,Hesitant speech; Stable voice,Relief; Warmth,Divergent Mistake
-3,Clip 8,FN,Somewhat Unlikely,3-4 sec,2.023454757,Case 2,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,,Increased speech rate; Hesitant speech,Confusion; Frustration; Sadness,Divergent Mistake
+8,Clip 1,TP,Very Unlikely,0-1 sec,7.203136181,Case 1,4.4-4.5 sec,,Eyes opened wider than usual;,Smiling;Mouth open;,Laughter or lighthearted tone;Speech that is fluid and uninterrupted;,Happiness;Affection or warmth;,Divergent Mistake
+4,Clip 1,TP,Somewhat Likely,2-3 sec,0.62464606,Case 1,4.4-4.5 sec,,Repeated blinking;,Lips sucked in;,Monotone or flat voice;Slow speech with long pauses;Speech that sounds hesitant or unsure;Reduced Loudness;,Sadness;,Correct
+5,Clip 1,TP,Somewhat Unlikely,4-5 sec,5.376501759,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised;,Eyes opened wider than usual;,Slight smirk;Mouth open;,Increased Vocal Jitter and Shimmer;Laughter or lighthearted tone;,Happiness;Engagement or interest;,Divergent Mistake
+6,Clip 1,TP,Very Likely,3-4 sec,7.358696919,Case 1,4.4-4.5 sec,,,Lips pressed together;,Monotone or flat voice;Slow speech with long pauses;Reduced Loudness;,Sadness;,Shared Mistake
+7,Clip 1,TP,Somewhat Likely,5-6 sec,3.914244449,Case 1,4.4-4.5 sec,Brow lowering;,,Lips pressed together;,Speech that sounds hesitant or unsure;Slow speech with long pauses;,Anxiety or nervousness;,Shared Mistake
+1,Clip 1,TP,Somewhat Likely,2-3 sec,4.746152975,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised,Eyes opened wider,Smiling; Mouth open,Monotone; Slow speech; Reduced loudness,Sadness,Correct
+2,Clip 1,TP,Somewhat Likely,4-5 sec,0.917035413,Case 1,4.4-4.5 sec,,Eyes opened wider; Repeated blinking,Mouth open,Laughter; Monotone,Anger; Fear; Sadness,Shared Mistake
+3,Clip 1,TP,Very Unlikely,3-4 sec,6.037467352,Case 1,4.4-4.5 sec,Eyebrows lifted near center,Repeated blinking,Lips pressed together; Lips sucked in,Slow speech; Hesitant speech,Engagement; Warmth,Correct
+4,Clip 2,TP,Somewhat Unlikely,5-6 sec,2.585374545,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised;,Eyes opened wider than usual;,Smiling;Mouth open;,Increased Vocal Jitter and Shimmer;Increased Speech Rate;,Engagement or interest;,Correct
+5,Clip 2,TP,Somewhat Unlikely,2-3 sec,4.859058852,Case 2,4.4-4.5 sec,Eyebrows lifted near the center;,,,Speech that is fluid and uninterrupted;Increased Speech Rate;,Engagement or interest;,Divergent Mistake
+6,Clip 2,TP,Somewhat Likely,4-5 sec,6.150448685,Case 2,4.4-4.5 sec,Brow lowering;,,Lips pressed together;,Speech that sounds hesitant or unsure;,Neutral or no specific emotion;,Shared Mistake
+7,Clip 2,TP,Very Likely,6-7 sec,1.242324873,Case 2,4.4-4.5 sec,,,,Monotone or flat voice;Reduced Loudness;,Neutral or no specific emotion;,Shared Mistake
+8,Clip 2,TP,Somewhat Likely,6-7 sec,8.487002225,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised;,Repeated blinking;,Lips sucked in;,Increased Speech Rate;,Anxiety or nervousness;,Divergent Mistake
+1,Clip 2,TP,Very Unlikely,4-5 sec,6.486806636,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised,,Slight smirk,Increased vocal jitter; Laughter,Engagement,Correct
+2,Clip 2,TP,Very Likely,5-6 sec,3.438309296,Case 2,4.4-4.5 sec,,Repeated blinking,Lips sucked in; Mouth open,Speech with energy,Happiness; Surprise,Divergent Mistake
+3,Clip 2,TP,Very Unlikely,3-4 sec,4.775062412,Case 2,4.4-4.5 sec,,,,Increased speech rate; Hesitant speech,Confusion,Shared Mistake
+4,Clip 3,TN,Very Unlikely,5-6 sec,5.852396805,Case 3,5.9-6 sec,,,Slight smirk;Smiling;,Laughter or lighthearted tone;,Happiness;Affection or warmth;,Divergent Mistake
+5,Clip 3,TN,Very Likely,2-3 sec,7.295104592,Case 3,5.9-6 sec,Brow lowering;,,Lips pressed together;,Reduced Loudness;Speech that sounds hesitant or unsure;,Neutral or no specific emotion;,Shared Mistake
+6,Clip 3,TN,Very Unlikely,3-4 sec,1.808170832,Case 3,5.9-6 sec,,Eyes opened wider than usual;,Smiling;,Laughter or lighthearted tone;Speech that is fluid and uninterrupted;,Happiness;Engagement or interest;,Shared Mistake
+7,Clip 3,TN,Very Unlikely,2-3 sec,2.960830283,Case 3,5.9-6 sec,,Eyes opened wider than usual;,Smiling;,Speech with energy or enthusiasm;Laughter or lighthearted tone;,Happiness;,Divergent Mistake
+8,Clip 3,TN,Very Likely,5-6 sec,3.28275683,Case 3,5.9-6 sec,,,,Monotone or flat voice;Slow speech with long pauses;Reduced Loudness;,Sadness;Frustration;,Correct
+1,Clip 3,TN,Very Likely,6-7 sec,7.463573399,Case 3,5.9-6 sec,,Eyes opened wider,Lips pressed together,Speech that sounds hesitant; Monotone,Neutral,Shared Mistake
+2,Clip 3,TN,Very Unlikely,4-5 sec,0.031628305,Case 3,5.9-6 sec,Eyebrows lifted near center,Eyes opened wider; Repeated blinking,Lips pressed together,Increased speech rate; Hesitant speech,Sadness; Fear,Divergent Mistake
+3,Clip 3,TN,Somewhat Likely,2-3 sec,0.476492537,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,Lips pressed together,Stable voice,Surprise,Divergent Mistake
+4,Clip 4,TN,Very Likely,0-1 sec,7.483380095,Case 1,7.4-7.5 sec,,,Lips pressed together;,Monotone or flat voice;Speech that sounds hesitant or unsure;,Sadness;Anxiety or nervousness;,Divergent Mistake
+5,Clip 4,TN,Somewhat Likely,5-6 sec,2.379506782,Case 1,7.4-7.5 sec,,,,Monotone or flat voice;,Neutral or no specific emotion;,Shared Mistake
+6,Clip 4,TN,Somewhat Unlikely,3-4 sec,4.619865523,Case 1,7.4-7.5 sec,,Repeated blinking;,Slight smirk;,Stable Voice ;Speech with energy or enthusiasm;,Surprise;Engagement or interest;,Shared Mistake
+7,Clip 4,TN,Somewhat Unlikely,6-7 sec,7.242848395,Case 1,7.4-7.5 sec,Outer edges of eyebrows raised;,Repeated blinking;,Mouth open;,Speech that is fluid and uninterrupted;,Neutral or no specific emotion;,Shared Mistake
+8,Clip 4,TN,Somewhat Unlikely,1-2 sec,8.054626564,Case 1,7.4-7.5 sec,Outer edges of eyebrows raised;,,Mouth open;,Stable Voice ;Speech with energy or enthusiasm;,Relief;Affection or warmth;,Divergent Mistake
+1,Clip 4,TN,Somewhat Likely,5-6 sec,2.766725178,Case 1,7.4-7.5 sec,,Repeated blinking,Lips pressed together,Monotone; Slow speech,Neutral,Divergent Mistake
+2,Clip 4,TN,Very Likely,6-7 sec,2.713906916,Case 1,7.4-7.5 sec,,,Smiling; Lips sucked in,Stable voice,Engagement,Divergent Mistake
+3,Clip 4,TN,Very Likely,4-5 sec,5.414872239,Case 1,7.4-7.5 sec,Eyebrows lifted near center,,Smiling; Lips sucked in,Stable voice,Happiness; Engagement,Shared Mistake
+4,Clip 5,FP,Somewhat Likely,6-7 sec,5.461135431,Case 2,4.4-4.5 sec,,,,Reduced Loudness;,Neutral or no specific emotion;,Correct
+5,Clip 5,FP,Somewhat Unlikely,0-1 sec,4.78680557,Case 2,4.4-4.5 sec,Outer edges of eyebrows raised;,,,Speech with energy or enthusiasm;,Neutral or no specific emotion;,Divergent Mistake
+6,Clip 5,FP,Very Likely,7-8.5 sec,8.432557876,Case 2,4.4-4.5 sec,,,Lips sucked in;,Reduced Loudness;Speech that sounds hesitant or unsure;,Frustration;Confusion;,Shared Mistake
+7,Clip 5,FP,Very Unlikely,3-4 sec,3.818760407,Case 2,4.4-4.5 sec,,,Mouth open;,Laughter or lighthearted tone;,Engagement or interest;,Shared Mistake
+8,Clip 5,FP,Very Unlikely,3-4 sec,2.758175798,Case 2,4.4-4.5 sec,Eyebrows lifted near the center;,Eyes opened wider than usual;,Smiling;Mouth open;,Laughter or lighthearted tone;Speech with energy or enthusiasm;,Engagement or interest;Affection or warmth;,Shared Mistake
+1,Clip 5,FP,Somewhat Unlikely,1-2 sec,1.16158145,Case 2,4.4-4.5 sec,,,Smiling,Speech with energy; Increased speech rate,Affection,Divergent Mistake
+2,Clip 5,FP,Very Unlikely,1-2 sec,5.020645882,Case 2,4.4-4.5 sec,,,Smiling; Lips sucked in,Speech with energy,Affection; Warmth,Correct
+3,Clip 5,FP,Very Unlikely,3-4 sec,1.01378358,Case 2,4.4-4.5 sec,,Eyes opened wider; Repeated blinking,Lips pressed together; Lips sucked in,Increased speech rate; Speech with energy,Disgust; Surprise,Divergent Mistake
+4,Clip 6,FP,Somewhat Likely,6-7 sec,4.143482199,Case 3,5.9-6 sec,Eyebrows lifted near the center;,,Lips pressed together;,,Neutral or no specific emotion;,Divergent Mistake
+5,Clip 6,FP,Very Unlikely,2-3 sec,6.121860503,Case 3,5.9-6 sec,,,Smiling;Mouth open;,Laughter or lighthearted tone;,Happiness;Affection or warmth;,Correct
+6,Clip 6,FP,Somewhat Likely,6-7 sec,0.174277613,Case 3,5.9-6 sec,Brow lowering;,,,Stable Voice ;Monotone or flat voice;,Anxiety or nervousness;Fear;,Divergent Mistake
+7,Clip 6,FP,Somewhat Likely,4-5 sec,5.603505383,Case 3,5.9-6 sec,,Eyes opened wider than usual;,Lips pressed together;,Reduced Loudness;Monotone or flat voice;,Neutral or no specific emotion;,Shared Mistake
+8,Clip 6,FP,Very Likely,4-5 sec,8.350008713,Case 3,5.9-6 sec,Brow lowering;,,Lips sucked in;,Reduced Loudness;Monotone or flat voice;,Confusion;Frustration;Anxiety or nervousness;,Divergent Mistake
+1,Clip 6,FP,Somewhat Likely,1-2 sec,4.837660796,Case 3,5.9-6 sec,Eyebrows lifted near center,,Smiling; Lips sucked in,Stable Voice ; Monotone,Fear; Sadness,Correct
+2,Clip 6,FP,Somewhat Likely,5-6 sec,3.563594271,Case 3,5.9-6 sec,Eyebrows lifted near center; Outer edges of eyebrows raised,,Smiling,Monotone,Disgust; Sadness,Divergent Mistake
+3,Clip 6,FP,Somewhat Likely,2-3 sec,2.502977755,Case 3,5.9-6 sec,,,Lips pressed together; Lips sucked in,Monotone,Sadness; Anxiety,Correct
+4,Clip 7,FN,Somewhat Unlikely,5-6 sec,0.291110025,Case 1,7.4-7.5 sec,Outer edges of eyebrows raised;,,Mouth open;,Speech with energy or enthusiasm;Increased Speech Rate;,Engagement or interest;,Divergent Mistake
+5,Clip 7,FN,Somewhat Likely,6-7 sec,3.131084302,Case 1,7.4-7.5 sec,Brow lowering;,,Lips pressed together;,Reduced Loudness;,Sadness;Confusion;,Correct
+6,Clip 7,FN,Somewhat Likely,3-4 sec,3.920384554,Case 1,7.4-7.5 sec,,Repeated blinking;,Lips pressed together;,Other;,Anger;Frustration;,Divergent Mistake
+7,Clip 7,FN,Somewhat Likely,5-6 sec,3.392598097,Case 1,7.4-7.5 sec,Brow lowering;,,,Monotone or flat voice;,Neutral or no specific emotion;,Shared Mistake
+8,Clip 7,FN,Somewhat Likely,1-2 sec,5.190976284,Case 1,7.4-7.5 sec,,,Lips pressed together;,Speech that sounds hesitant or unsure;Reduced Loudness;,Neutral or no specific emotion;Anxiety or nervousness;,Shared Mistake
+1,Clip 7,FN,Very Unlikely,4-5 sec,6.426271224,Case 1,7.4-7.5 sec,,Repeated blinking,Mouth open; Lips sucked in,Monotone; Hesitant speech,Sadness,Correct
+2,Clip 7,FN,Somewhat Likely,5-6 sec,5.404396792,Case 1,7.4-7.5 sec,Eyebrows lifted near center,,Smiling; Lips pressed together,Stable voice,Fear,Divergent Mistake
+3,Clip 7,FN,Very Unlikely,0-1 sec,7.043109788,Case 1,7.4-7.5 sec,Eyebrows lifted near center,,Smiling; Lips pressed together,Stable voice,Fear; Sadness,Divergent Mistake
+4,Clip 8,FN,Somewhat Likely,5-6 sec,8.262800374,Case 2,5.9-6 sec,Brow lowering;,Repeated blinking;,,Monotone or flat voice;Slow speech with long pauses;,Anxiety or nervousness;Sadness;,Shared Mistake
+5,Clip 8,FN,Somewhat Unlikely,3-4 sec,6.186889302,Case 2,5.9-6 sec,,Repeated blinking;,Slight smirk;,Increased Speech Rate;Speech that is fluid and uninterrupted;,Surprise;Relief;,Divergent Mistake
+6,Clip 8,FN,Very Unlikely,1-2 sec,3.610449919,Case 2,5.9-6 sec,Outer edges of eyebrows raised;,Eyes opened wider than usual;,Smiling;Mouth open;,Increased Speech Rate;Speech with energy or enthusiasm;,Surprise;Engagement or interest;,Correct
+7,Clip 8,FN,Somewhat Unlikely,1-2 sec,5.603761095,Case 2,5.9-6 sec,Eyebrows lifted near the center;,,Slight smirk;,Stable Voice ;Speech that is fluid and uninterrupted;,Engagement or interest;,Divergent Mistake
+8,Clip 8,FN,Somewhat Unlikely,7-8.5 sec,3.332360619,Case 2,5.9-6 sec,,Eyes opened wider than usual;,,Speech that is fluid and uninterrupted;,Neutral or no specific emotion;,Shared Mistake
+1,Clip 8,FN,Somewhat Unlikely,3-4 sec,3.610561479,Case 2,5.9-6 sec,Eyebrows lifted near center,Eyes opened wider,,Increased speech rate,Engagement,Shared Mistake
+2,Clip 8,FN,Somewhat Unlikely,0-1 sec,3.70770109,Case 2,5.9-6 sec,,,,Hesitant speech; Stable voice,Relief; Warmth,Divergent Mistake
+3,Clip 8,FN,Somewhat Unlikely,3-4 sec,7.389108458,Case 2,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,,Increased speech rate; Hesitant speech,Confusion; Frustration; Sadness,Divergent Mistake
