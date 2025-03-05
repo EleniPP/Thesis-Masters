@@ -4,19 +4,19 @@ import pandas as pd
 from collections import defaultdict
 from scipy.stats import pearsonr
 
-def parse_interval(interval_str):
-    """Parse something like '2-3 sec' into numeric floats (2.0, 3.0)."""
-    interval_str = interval_str.replace(' sec', '').strip()
-    start_str, end_str = interval_str.split('-')
-    return float(start_str), float(end_str)
+# def parse_interval(interval_str):
+#     """Parse something like '2-3 sec' into numeric floats (2.0, 3.0)."""
+#     interval_str = interval_str.replace(' sec', '').strip()
+#     start_str, end_str = interval_str.split('-')
+#     return float(start_str), float(end_str)
 
-# -------------------- LOAD PROCESSED SALIENCY DATA -------------------- #
-saliency_values = np.load('saliency_values_308.npy', allow_pickle=True)
-salient_time = np.load('salient_time_308.npy', allow_pickle=True)
-smoothed_saliencies = np.load('smoothed_saliencies_308.npy', allow_pickle=True)
+# # -------------------- LOAD PROCESSED SALIENCY DATA -------------------- #
+# saliency_values = np.load('saliency_values_308.npy', allow_pickle=True)
+# salient_time = np.load('salient_time_308.npy', allow_pickle=True)
+# smoothed_saliencies = np.load('smoothed_saliencies_308.npy', allow_pickle=True)
 
-# Create time axis from 0..8.5 seconds
-time_axis = np.linspace(0, 8.5, num=len(saliency_values))
+# # Create time axis from 0..8.5 seconds
+# time_axis = np.linspace(0, 8.5, num=len(saliency_values))
 
 # -------------------- LOAD & FILTER EXCEL DATA -------------------- #
 df = pd.read_excel('experiment_results.xlsx')
@@ -32,51 +32,51 @@ selected_timestamps = df_clip['Selected_Timestamp'].astype(float).tolist()
 print(selected_timestamps)
 selected_timestamps[0] = selected_timestamps[1]
 # -------------------- STACKED RUG LOGIC -------------------- #
-# Count how many participants share each *exact* timestamp
-time_groups = defaultdict(int)
-for ts in selected_timestamps:
-    time_groups[ts] += 1
+# # Count how many participants share each *exact* timestamp
+# time_groups = defaultdict(int)
+# for ts in selected_timestamps:
+#     time_groups[ts] += 1
 
-# We'll remove the old "density" approach entirely,
-# focusing on just the saliency + stacked rug.
+# # We'll remove the old "density" approach entirely,
+# # focusing on just the saliency + stacked rug.
 
-plt.figure(figsize=(10, 5))
-ax = plt.gca()
+# plt.figure(figsize=(10, 5))
+# ax = plt.gca()
 
-# Plot raw and smoothed saliency
-# ax.plot(time_axis, saliency_values, 'o-', alpha=0.3, label='Raw Saliency')
-ax.plot(time_axis, smoothed_saliencies, 'r-', label='Smoothed Saliency')
-ax.axvline(x=salient_time, color='maroon', linestyle='--', label='Salient Segment Start')
-ax.set_xlabel('Time (seconds)')
-ax.set_ylabel('Saliency Score')
-ax.legend(loc='upper right')
+# # Plot raw and smoothed saliency
+# # ax.plot(time_axis, saliency_values, 'o-', alpha=0.3, label='Raw Saliency')
+# ax.plot(time_axis, smoothed_saliencies, 'r-', label='Smoothed Saliency')
+# ax.axvline(x=salient_time, color='maroon', linestyle='--', label='Salient Segment Start')
+# ax.set_xlabel('Time (seconds)')
+# ax.set_ylabel('Saliency Score')
+# ax.legend(loc='upper right')
 
-# We'll place stacked markers at the bottom of the plot.
-y_min, y_max = ax.get_ylim()
+# # We'll place stacked markers at the bottom of the plot.
+# y_min, y_max = ax.get_ylim()
 
-# Decide how tall each "stack level" should be
-tick_height = 0.02 * (y_max - y_min)  # space between stacks
-marker_size = 5  # vertical marker size
+# # Decide how tall each "stack level" should be
+# tick_height = 0.02 * (y_max - y_min)  # space between stacks
+# marker_size = 5  # vertical marker size,
 
-# Make sure we have enough vertical space for the highest stack
-max_stack = max(time_groups.values()) if time_groups else 0
-extra_space = max_stack * tick_height
-if y_min + extra_space > y_max:
-    ax.set_ylim(y_min, y_min + extra_space + 0.1*(y_max - y_min))
+# # Make sure we have enough vertical space for the highest stack
+# max_stack = max(time_groups.values()) if time_groups else 0
+# extra_space = max_stack * tick_height
+# if y_min + extra_space > y_max:
+#     ax.set_ylim(y_min, y_min + extra_space + 0.1*(y_max - y_min))
 
-# For each unique time, stack the markers from bottom up
-for t in sorted(time_groups.keys()):
-    count = time_groups[t]
-    # We stack them from y_min upward
-    for level in range(count):
-        y_stack = y_min + level * tick_height
-        # Plot a small vertical marker
-        # marker='|' draws a vertical line; you could do marker='o' for dots
-        ax.plot(t, y_stack, marker='o', color='navy', markersize=marker_size)
+# # For each unique time, stack the markers from bottom up
+# for t in sorted(time_groups.keys()):
+#     count = time_groups[t]
+#     # We stack them from y_min upward
+#     for level in range(count):
+#         y_stack = y_min + level * tick_height
+#         # Plot a small vertical marker
+#         # marker='|' draws a vertical line; you could do marker='o' for dots
+#         ax.plot(t, y_stack, marker='o', color='navy', markersize=marker_size)
 
-plt.title('Saliency vs. Stacked Rug of Participant Timestamps (Clip 1)')
-plt.tight_layout()
-plt.show()
+# plt.title('Saliency vs. Stacked Rug of Participant Timestamps (Clip 1)')
+# plt.tight_layout()
+# plt.show()
 
 
 # # --------------------  -------------------- -------------------------------------------------------------------------------------------#
@@ -195,77 +195,144 @@ plt.show()
 
 
 # --------------------  -------------------- ---------------------------#
-# # Pearson Correlation and Percentage of Votes in Peak Bins
-# import numpy as np
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# from scipy.stats import pearsonr
+# Pearson Correlation and Percentage of Votes in Peak Bins
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
+from scipy.interpolate import make_interp_spline
+from scipy.signal import find_peaks
 
-# def compute_timestamp_density(timestamps, num_bins, t_min=0, t_max=8.5):
-#     """
-#     Given a list of timestamps and the desired number of bins,
-#     returns an array (of length num_bins) with vote counts per bin.
-#     """
-#     time_bins = np.linspace(t_min, t_max, num_bins + 1)
-#     density = np.zeros(num_bins)
-#     for ts in timestamps:
-#         # Find the bin index for ts
-#         for i in range(num_bins):
-#             if time_bins[i] <= ts < time_bins[i+1]:
-#                 density[i] += 1
-#                 break
-#     return density
+def compute_timestamp_density(timestamps, num_bins, t_min=0, t_max=8.5):
+    """
+    Given a list of timestamps and the desired number of bins,
+    returns an array (of length num_bins) with vote counts per bin.
+    """
+    time_bins = np.linspace(t_min, t_max, num_bins + 1)
+    density = np.zeros(num_bins)
+    for ts in timestamps:
+        # Find the bin index for ts
+        for i in range(num_bins):
+            if time_bins[i] <= ts < time_bins[i+1]:
+                density[i] += 1
+                break
+    return density
 
-# # -------------------- LOAD NP FILES (First 8 clips) -------------------- #
-# # Files have shape (12, 50); we'll use only the first 8 clips.
-# saliency_values_all = np.load('saliency_values_arr.npy', allow_pickle=True)
-# print(saliency_values_all.shape)  # (8, 50)
-# # smoothed_saliencies_all = np.load('/tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/smoothed_saliencies.npy', allow_pickle=True)
-# # salient_time_all = np.load('/tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/salient_time.npy', allow_pickle=True)
+# -------------------- LOAD NP FILES (First 8 clips) -------------------- #
+# Those come from the file clips_saliency_maps.py
+# Files have shape (12, 50); we'll use only the first 8 clips.
+saliency_values_all = np.load('saliency_values_arr.npy', allow_pickle=True)
+saliency_times_all = np.load('salient_time_arr.npy', allow_pickle=True)
+print(saliency_values_all.shape)  # (8, 50)
+# smoothed_saliencies_all = np.load('/tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/smoothed_saliencies.npy', allow_pickle=True)
+# salient_time_all = np.load('/tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/salient_time.npy', allow_pickle=True)
 
-# # Subset the first 8 clips (assuming axis 0 indexes clips)
-# saliency_values_all = saliency_values_all[:8, :]  # shape (8, 50)
-# # (We won't use smoothed_saliencies or salient_time for the correlation analysis here.)
+# Subset the first 8 clips (assuming axis 0 indexes clips) / because for the fake tests we only have fake 8 participants.
+#
+saliency_values_all = saliency_values_all[:8, :]  # shape (8, 50)
+saliency_times_all = saliency_times_all[:8]
+# (We won't use smoothed_saliencies or salient_time for the correlation analysis here.)
 
-# # Create a time axis for each clip (0 to 8.5 s over 50 points)
-# num_points = saliency_values_all.shape[1]
-# time_axis = np.linspace(0, 8.5, num_points)
+# Create a time axis for each clip (0 to 8.5 s over 50 points)
+num_points = saliency_values_all.shape[1]
+time_axis = np.linspace(0, 8.5, num_points)
 
-# # -------------------- LOAD EXCEL DATA -------------------- #
-# df = pd.read_excel('experiment_results.xlsx')
+# -------------------- LOAD EXCEL DATA -------------------- #
+df = pd.read_excel('experiment_results.xlsx')
 
-# # We assume that the Excel "Clip_ID" values are like "Clip 1", "Clip 2", ..., "Clip 8".
-# # For each clip, we will compute the vote density from the "Selected_Timestamp" column.
-# correlations = []  # to store correlation for each clip
-# clip_list = []     # to store clip IDs for reporting
+# We assume that the Excel "Clip_ID" values are like "Clip 1", "Clip 2", ..., "Clip 8".
+# For each clip, we will compute the vote density from the "Selected_Timestamp" column.
+correlations = []  # to store correlation for each clip
+clip_list = []     # to store clip IDs for reporting
 
-# for i in range(8):
-#     clip_id = f"Clip {i+1}"
-#     print(f"Processing {clip_id}...")
+for i in range(8):
+    clip_id = f"Clip {i+1}"
+    print(f"Processing {clip_id}...")
     
-#     # Get saliency vector for this clip from the npy file
-#     saliency_vec = saliency_values_all[i, :]  # vector of length 50
+    # Get saliency vector for this clip from the npy file
+    saliency_vec = saliency_values_all[i, :]  # vector of length 50
+    saliency_time_vec = saliency_times_all[i]  # single salient time
+    # Filter Excel rows for this clip
+    df_clip = df[df['Clip_ID'] == clip_id]
+    # Convert "Selected_Timestamp" to floats
+    timestamps = df_clip['Selected_Timestamp'].astype(float).tolist()
+    if len(timestamps) == 0:
+        print(f"  No participant timestamps for {clip_id}. Skipping.")
+        continue
     
-#     # Filter Excel rows for this clip
-#     df_clip = df[df['Clip_ID'] == clip_id]
-#     # Convert "Selected_Timestamp" to floats
-#     timestamps = df_clip['Selected_Timestamp'].astype(float).tolist()
-#     if len(timestamps) == 0:
-#         print(f"  No participant timestamps for {clip_id}. Skipping.")
-#         continue
+    # Compute density using the single timestamps.
+    # We use the same number of bins as saliency vector length.
+    density_vec = compute_timestamp_density(timestamps, num_bins=num_points, t_min=0, t_max=8.5)
     
-#     # Compute density using the single timestamps.
-#     # We use the same number of bins as saliency vector length.
-#     density_vec = compute_timestamp_density(timestamps, num_bins=num_points, t_min=0, t_max=8.5)
-    
-#     # Compute Pearson correlation between saliency and density
-#     if len(saliency_vec) == len(density_vec):
-#         corr, _ = pearsonr(saliency_vec, density_vec)
-#         correlations.append(corr)
-#         clip_list.append(clip_id)
-#         print(f"  {clip_id} correlation = {corr:.3f}")
-#     else:
-#         print(f"  Length mismatch for {clip_id}: {len(saliency_vec)} vs {len(density_vec)}. Skipping.")
+    # Compute Pearson correlation between saliency and density
+    if len(saliency_vec) == len(density_vec):
+        corr, _ = pearsonr(saliency_vec, density_vec)
+        correlations.append(corr)
+        clip_list.append(clip_id)
+        print(f"  {clip_id} correlation = {corr:.3f}")
+    else:
+        print(f"  Length mismatch for {clip_id}: {len(saliency_vec)} vs {len(density_vec)}. Skipping.")
+
+
+# Plot saliency map for a specific clip
+# Choose a clip index (0-based). For "Clip 3", index=2
+clip_index = 1
+clip_id = clip_index + 1  # so you can say "Clip 3" in the title
+
+# Extract saliency for this one clip
+saliency_vec = saliency_values_all[clip_index, :]  # shape (50,)
+
+# Plot the saliency map
+plt.figure(figsize=(10, 5))
+plt.plot(time_axis, saliency_vec, marker='o', color= 'darkslategrey',linestyle='-')
+plt.axvline(x=saliency_time_vec, color='maroon', linestyle='--', label="Salient Segment Start")
+plt.xlabel("Time (seconds)")
+plt.ylabel("Saliency Score")
+plt.xticks(np.arange(0, 9, 0.5))  # Set X-axis ticks every 0.5s
+plt.title(f"Saliency Map for Clip {clip_id}")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Smoothed line
+# 1) Create a new set of x-values at higher resolution
+x_new = np.linspace(time_axis[0], time_axis[-1], 200)  # 200 points
+
+# 2) Create a cubic spline of (time_axis, saliency_vec)
+spline = make_interp_spline(time_axis, saliency_vec, k=3)
+saliency_smooth = spline(x_new)
+
+# 3) Plot the smoothed curve
+plt.figure(figsize=(10, 5))
+plt.plot(time_axis, saliency_vec, 'o', color='darkslategrey', alpha=0.4, label='Original Points')
+plt.plot(x_new, saliency_smooth, color='darkslategrey', linestyle='-', label='Smoothed Saliency')
+plt.xlabel("Time (seconds)")
+plt.ylabel("Saliency Score")
+plt.title("Smoothed Saliency Map (Cubic Spline)")
+plt.grid(True)
+plt.legend()
+# Add the stacked rug of participant timestamps.
+ax = plt.gca()
+y_min, y_max = ax.get_ylim()
+tick_height = 0.02 * (y_max - y_min)  # vertical spacing for each stacked marker
+marker_size = 5
+
+# Count how many participants selected each exact timestamp.
+time_groups = defaultdict(int)
+for ts in selected_timestamps:
+    time_groups[ts] += 1
+
+# Plot the stacked markers along the bottom of the plot.
+for t in sorted(time_groups.keys()):
+    count = time_groups[t]
+    for level in range(count):
+        y_stack = y_min + level * tick_height
+        ax.plot(t, y_stack, marker='o', color='red', markersize=marker_size)
+
+plt.show()
+
+
+
 
 # # -------------------- PLOT THE CORRELATION DISTRIBUTION -------------------- #
 # # Example data

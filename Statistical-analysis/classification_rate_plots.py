@@ -67,11 +67,12 @@ confidence_map = {
     3: 'Somewhat Likely',
     4: 'Very Likely'
 }
-
+# Create a new column with more descriptive labels
+data['Classification_Label'] = data['Correct_Classification'].map({True: 'Correct', False: 'Incorrect'})
 
 plt.figure(figsize=(10, 5))
 sns.boxplot(
-    x='Correct_Classification', 
+    x='Classification_Label', 
     y='Confidence', 
     data=data, 
     width=0.3, 
@@ -147,4 +148,22 @@ centre_circle = plt.Circle((0, 0), 0.70, fc='white')
 fig.gca().add_artist(centre_circle)
 
 plt.title("Proportion of Correct vs. Incorrect Classifications")
+plt.show()
+
+# ------------------------------------Frequency of each confidence level-------------------------------------
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Assuming you already have your data loaded and processed:
+data['Classification_Label'] = data['Correct_Classification'].map({True: 'Correct', False: 'Incorrect'})
+
+# Create a count plot with confidence levels on the x-axis and different bars for Correct vs. Incorrect
+plt.figure(figsize=(10, 6))
+sns.countplot(data=data, x='Confidence_Level', hue='Classification_Label', palette='muted')
+plt.title('Frequency of Confidence Levels by Classification Outcome')
+plt.xlabel('Confidence Level')
+plt.ylabel('Number of Participants')
+plt.legend(title='Classification', loc='upper right')
+plt.tight_layout()
 plt.show()
