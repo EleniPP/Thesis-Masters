@@ -40,7 +40,7 @@ def parse_patient_time_file(file_path):
     return patient_times
 
 # Those ones are for the TPs
-downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads", "TP_4each")
+downloads_folder = os.path.join(os.path.expanduser("~"), "Downloads", "experiment-clips")
 patients_folder = os.path.join(os.path.expanduser("~"), "Downloads")
 patient_times = parse_patient_time_file(patients_folder + "/timestamps_per_patient.txt")	
 

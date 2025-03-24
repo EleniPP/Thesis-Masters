@@ -124,7 +124,7 @@ for number in numbers:
         print(f"Visual file not found for number {number}: {e}")
         continue  # Skip to the next iteration if the video file is not found
 
-        # Convert list of strings into 2D numpy array
+    # Convert list of strings into 2D numpy array
     visual_np = [np.fromstring(s, dtype=np.float32, sep=', ') for s in file_visual]
     visual = np.vstack(visual_np)
 

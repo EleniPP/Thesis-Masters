@@ -196,12 +196,12 @@ def plot_losses(train_losses):
     # plt.plot(val_losses, label='Validation Loss')
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
-    plt.title('Training and Validation Loss Over Epochs')
+    plt.title('Training Loss Over Epochs')
     plt.legend()
     plt.savefig('../../../tudelft.net/staff-umbrella/EleniSalient/loss_plot_only_train.png')
     plt.close()
 
-def train_model(model, dataloader, optimizer, scheduler, criterion, epochs=30):
+def train_model(model, dataloader, optimizer, scheduler, criterion, epochs=100):
     early_stopping_patience = 5
     best_val_loss = float('inf')
     patience_counter = 0
@@ -470,6 +470,7 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load('../../../tudelft.net/staff-umbrella/EleniSalient/final_model1.pth'))
     model.eval()  # Set the model to evaluation mode
     print("Model loaded and ready for calibration")
+
 
 # --------------------------------------------------- Try another calibration method ------------------------------------
     def platt_scaling(logits, labels):

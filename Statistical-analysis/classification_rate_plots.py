@@ -7,23 +7,7 @@ import scipy.stats as st
 import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
 from sklearn.metrics import roc_curve, roc_auc_score
-
-def parse_interval(interval_str):
-    """
-    Given a string like '2-3 sec' or '4.4-5.9 sec',
-    return a tuple (start_float, end_float).
-    """
-    # Remove the ' sec' part (if it exists)
-    interval_str = interval_str.replace(" sec", "").strip()
-    
-    # Split by the dash
-    start_str, end_str = interval_str.split("-")
-    
-    # Convert to float
-    start_val = float(start_str)
-    end_val = float(end_str)
-    
-    return start_val, end_val
+from sklearn.metrics import confusion_matrix
 
 def within_margin(sel_start, sel_end, model_start, model_end, margin=1.0):
     start_close = abs(sel_start - model_start) <= margin
@@ -33,47 +17,36 @@ def within_margin(sel_start, sel_end, model_start, model_end, margin=1.0):
 folder = os.path.join(os.path.expanduser("~"), "Downloads")
 
 # Load data from excel sheet table
-data = pd.read_excel('experiment_results.xlsx', sheet_name='table')
-confidence_mapping = {'Very Unlikely': 1, 'Somewhat Unlikely': 2, 'Somewhat Likely': 3, 'Very Likely': 4}
-data['Confidence'] = data['Confidence_Level'].map(confidence_mapping)
+data = pd.read_excel('real_experiment_results.xlsx', sheet_name='table')
 
-data[["Selected_Start", "Selected_End"]] = data["Selected_Time_Interval"].apply(
-    lambda x: pd.Series(parse_interval(x))
-)
+data['True_Label'] = data['Clip_Type'].isin(['TP','FN']).astype(int)
+data['Human_Prediction'] = (data['Confidence_Level'] > 5).astype(int)
 
-data[["Model_Start", "Model_End"]] = data["Model_Salient_Interval"].apply(
-    lambda x: pd.Series(parse_interval(x))
+# 3a. Using pandas.crosstab for a quick table:
+confusion_table = pd.crosstab(
+    data['True_Label'], 
+    data['Human_Prediction'], 
+    rownames=['Actual'], 
+    colnames=['Predicted']
 )
+print(confusion_table)
 
-data["Within_1s_Margin"] = data.apply(
-    lambda row: within_margin(
-        row["Selected_Start"], row["Selected_End"],
-        row["Model_Start"],    row["Model_End"],
-        margin=1.0
-    ),
-    axis=1
-)
+# 3b. Or using sklearn's confusion_matrix:
+cm = confusion_matrix(data['True_Label'], data['Human_Prediction'])
+print(cm)
 
 data['Correct_Classification'] = (
-    ((data['Clip_Type'].isin(['TP', 'FN'])) & (data['Confidence_Level'].isin(['Somewhat Likely', 'Very Likely']))) |
-    ((data['Clip_Type'].isin(['TN', 'FP'])) & (data['Confidence_Level'].isin(['Somewhat Unlikely', 'Very Unlikely'])))
+    ((data['Clip_Type'].isin(['TP', 'FN'])) & (data['Confidence_Level'] > 5)) |
+    ((data['Clip_Type'].isin(['TN', 'FP'])) & (data['Confidence_Level'] <= 5))
 )
 
-
-# MAYBE CONFIDENCE PER CLASSIFICATION TYPE LIKE IF THE PERSON DID TP, TN ,FP ,FN
-confidence_map = {
-    1: 'Very Unlikely',
-    2: 'Somewhat Unlikely',
-    3: 'Somewhat Likely',
-    4: 'Very Likely'
-}
 # Create a new column with more descriptive labels
 data['Classification_Label'] = data['Correct_Classification'].map({True: 'Correct', False: 'Incorrect'})
 
 plt.figure(figsize=(10, 5))
 sns.boxplot(
     x='Classification_Label', 
-    y='Confidence', 
+    y='Confidence_Level', 
     data=data, 
     width=0.3, 
     palette='muted'
@@ -81,7 +54,6 @@ sns.boxplot(
 plt.title('Confidence for Correct vs. Incorrect Classifications')
 plt.xlabel('Correct Classification?')
 plt.ylabel('Confidence Score')
-plt.yticks([1, 2, 3, 4], ['Very Unlikely','Somewhat Unlikely','Somewhat Likely','Very Likely'])
 plt.tight_layout()
 plt.show()
 

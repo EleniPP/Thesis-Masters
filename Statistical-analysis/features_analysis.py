@@ -3,9 +3,16 @@ import numpy as np
 import itertools
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.stats import chi2_contingency
+# Read each sheet into its own DataFrame
+df1 = pd.read_excel("experiment_results.xlsx", sheet_name="table")
+df2 = pd.read_excel("experiment_results.xlsx", sheet_name="salient-segments")
+
+# Concatenate the two DataFrames (stack them)
+df = pd.concat([df1, df2], ignore_index=True)
 
 # Load your DataFrame
-df = pd.read_excel("experiment_results.xlsx")
+# df = pd.read_excel("experiment_results.xlsx")
 
 # A helper to parse semicolon-separated features
 def parse_features(feature_str):
@@ -51,6 +58,7 @@ def top_cooccurrences(coocc_df, all_features, top_n=5):
     
     return coocc_list[:top_n]
 
+# Facial features
 
 # # Apply this to each row
 # df["All_Facial_Features"] = df.apply(get_all_features, axis=1)
@@ -66,11 +74,16 @@ def top_cooccurrences(coocc_df, all_features, top_n=5):
 # feature_to_idx = {feat: i for i, feat in enumerate(all_features)}
 # n = len(all_features)
 # coocc_matrix = np.zeros((n, n), dtype=int)
+# feature_count = np.zeros(n, dtype=int)
 
 # # 3) Fill the co-occurrence counts
 # for features_set in df["All_Facial_Features"]:
 #     # Convert the set to a list to iterate pairs
 #     feats_list = list(features_set)
+#     # increment the single-feature count for each feature
+#     for f in feats_list:
+#         i = feature_to_idx[f]
+#         feature_count[i] += 1
 #     # For each pair in this set, increment co-occurrence
 #     for f1, f2 in itertools.combinations(feats_list, 2):
 #         i1 = feature_to_idx[f1]
@@ -80,8 +93,8 @@ def top_cooccurrences(coocc_df, all_features, top_n=5):
 
 # # coocc_matrix[i, j] now tells you how many times feature i co-occurs with feature j
 # coocc_df = pd.DataFrame(coocc_matrix, index=all_features, columns=all_features)
-# print("=== Co-Occurrence Matrix (Raw Counts) ===")
-# print(coocc_df)
+# # print("=== Co-Occurrence Matrix (Raw Counts) ===")
+# # print(coocc_df)
 
 # # Option A: fraction of total responses
 # coocc_fraction = coocc_df / len(df) * 100
@@ -98,8 +111,6 @@ def top_cooccurrences(coocc_df, all_features, top_n=5):
 #     else:
 #         coocc_percentage.loc[fi, :] = (coocc_df.loc[fi, :] / denom) * 100
 
-
-
 # plt.figure(figsize=(14,10))
 # sns.heatmap(coocc_df, annot=True, fmt="d", cmap="Reds",
 #             xticklabels=all_features, yticklabels=all_features)
@@ -114,9 +125,77 @@ def top_cooccurrences(coocc_df, all_features, top_n=5):
 # # Example usage:
 # top_pairs = top_cooccurrences(coocc_df, all_features, top_n=5)
 
-# print("Top 5 Co-Occurring Feature Pairs:")
-# for f1, f2, count in top_pairs:
-#     print(f"{f1} & {f2} => {count} times")
+# # print("Top 5 Co-Occurring Feature Pairs:")
+# # for f1, f2, count in top_pairs:
+# #     print(f"{f1} & {f2} => {count} times")
+
+
+# # Chi-Square Test on All Pairs
+# # ======================
+# # For each pair, build a 2x2 contingency table and compute the chi-square test.
+# # Chi-Square Test on All Pairs (with zero-frequency check)
+# chi_square_results = []
+# N = len(df)  # total number of obserevations
+# M = len(all_features)
+# for i in range(M):
+#     for j in range(i+1, M):
+#         AB = coocc_matrix[i, j]  # both features present
+#         A = feature_count[i]   # total count for feature i
+#         B = feature_count[j]   # total count for feature j
+
+#         # Skip if either feature never appears (to avoid zero expected frequencies)
+#         if A == 0 or B == 0:
+#             continue
+
+#         # Compute remaining counts for the 2x2 contingency table
+#         neither = N - A - B + AB
+#         onlyA = A - AB
+#         onlyB = B - AB
+        
+#         contingency = [[AB, onlyA],
+#                        [onlyB, neither]]
+        
+#         chi2, p_value, dof, expected = chi2_contingency(contingency)
+
+#         print("Contingency Table:")
+#         print(contingency)
+#         print("Expected Frequencies:")
+#         print(expected)
+
+#         if (expected < 5).any():
+#             print("Warning: Some expected frequencies are below 5. Chi-square results may not be reliable.")
+#         else:
+#             print("All expected frequencies are 5 or above.")
+
+#         chi_square_results.append((all_features[i], all_features[j], AB, p_value, chi2))
+
+# # Filter for significant pairs (p < 0.05)
+# significant_pairs = [res for res in chi_square_results if res[3] < 0.05]
+# # Sort significant pairs by descending co-occurrence count (or by p-value)
+# significant_pairs.sort(key=lambda x: x[2], reverse=True)
+
+# print("\nSignificant Co-Occurring Feature Pairs (Chi-Square, p < 0.05):")
+# for f1, f2, count, p_value, chi2 in significant_pairs:
+#     print(f"{f1} & {f2}: Co-occurrence={count}, chi2={chi2:.2f}, p-value={p_value:.4f}")
+
+
+
+# # Convert to a DataFrame
+# df_top_pairs = pd.DataFrame(top_pairs, columns=["Feature1", "Feature2", "Count"])
+
+# # Create a single label for each pair, e.g., "Feature1 & Feature2"
+# df_top_pairs["Pair"] = df_top_pairs["Feature1"] + " & " + df_top_pairs["Feature2"]
+
+# plt.figure(figsize=(8, 6))
+# ax = sns.barplot(data=df_top_pairs, x="Count", y="Pair", color="skyblue")
+# plt.title("Top 10 Co-occurring Voice Feature Pairs")
+# plt.xlabel("Co-occurrence Count")
+# plt.ylabel("Feature Pair")
+# # Adjust the bar thickness (height) for each horizontal bar
+# for bar in ax.patches:
+#     bar.set_height(0.3)  # Adjust this value as needed
+# plt.tight_layout()
+# plt.show()
 
 
 # ----------------- Voice Features -----------------
@@ -133,11 +212,15 @@ all_voice_features = sorted(all_voice_features)  # sorted for consistency
 voice_to_idx = {feat: i for i, feat in enumerate(all_voice_features)}
 n_voice = len(all_voice_features)
 coocc_matrix_voice = np.zeros((n_voice, n_voice), dtype=int)
+feature_count = np.zeros(n_voice, dtype=int)
 
 # 3) Fill the co-occurrence counts for each response
 for feature_set in df["All_Voice_Features"]:
     # Convert the set to a list
     feats_list = list(feature_set)
+    for f in feats_list:
+        i = voice_to_idx[f]
+        feature_count[i] += 1
     # For each unique pair in the response, increment the counts
     for f1, f2 in itertools.combinations(feats_list, 2):
         i1 = voice_to_idx[f1]
@@ -185,3 +268,47 @@ top_voice_pairs = top_cooccurrences(coocc_df_voice, all_voice_features, top_n=5)
 print("Top 5 Co-Occurring Voice Feature Pairs:")
 for f1, f2, count in top_voice_pairs:
     print(f"{f1} & {f2} => {count} times")
+
+chi_square_results = []
+N = len(df)  # total number of obserevations
+M = len(all_voice_features)
+for i in range(M):
+    for j in range(i+1, M):
+        AB = coocc_matrix_voice[i, j]  # both features present
+        A = feature_count[i]   # total count for feature i
+        B = feature_count[j]   # total count for feature j
+
+        # Skip if either feature never appears (to avoid zero expected frequencies)
+        if A == 0 or B == 0:
+            continue
+
+        # Compute remaining counts for the 2x2 contingency table
+        neither = N - A - B + AB
+        onlyA = A - AB
+        onlyB = B - AB
+        
+        contingency = [[AB, onlyA],
+                       [onlyB, neither]]
+        
+        chi2, p_value, dof, expected = chi2_contingency(contingency)
+
+        print("Contingency Table:")
+        print(contingency)
+        print("Expected Frequencies:")
+        print(expected)
+
+        if (expected < 5).any():
+            print("Warning: Some expected frequencies are below 5. Chi-square results may not be reliable.")
+        else:
+            print("All expected frequencies are 5 or above.")
+
+        chi_square_results.append((all_voice_features[i], all_voice_features[j], AB, p_value, chi2))
+
+# Filter for significant pairs (p < 0.05)
+significant_pairs = [res for res in chi_square_results if res[3] < 0.05]
+# Sort significant pairs by descending co-occurrence count (or by p-value)
+significant_pairs.sort(key=lambda x: x[2], reverse=True)
+
+print("\nSignificant Co-Occurring Feature Pairs (Chi-Square, p < 0.05):")
+for f1, f2, count, p_value, chi2 in significant_pairs:
+    print(f"{f1} & {f2}: Co-occurrence={count}, chi2={chi2:.2f}, p-value={p_value:.4f}")
