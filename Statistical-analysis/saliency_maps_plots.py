@@ -222,8 +222,8 @@ def compute_timestamp_density(timestamps, num_bins, t_min=0, t_max=8.5):
 # Those come from the file clips_saliency_maps.py
 saliency_values_all = np.load('saliency_values_arr.npy', allow_pickle=True)
 saliency_times_all = np.load('salient_time_arr.npy', allow_pickle=True)
-saliency_values_all_TP = np.load('saliency_values_arr_TP.npy', allow_pickle=True)
-saliency_times_all_TP = np.load('saliency_times_arr_TP.npy', allow_pickle=True)
+saliency_values_all_TP = np.load('saliency_values_arr_TN.npy', allow_pickle=True)
+saliency_times_all_TP = np.load('saliency_times_arr_TN.npy', allow_pickle=True)
 print(saliency_values_all.shape)  # (8, 50)
 # smoothed_saliencies_all = np.load('/tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/smoothed_saliencies.npy', allow_pickle=True)
 # salient_time_all = np.load('/tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/salient_time.npy', allow_pickle=True)
@@ -262,7 +262,7 @@ def get_classification_type(row):
 df['Classification_Type'] = df.apply(get_classification_type, axis=1)
 
 # Filter the DataFrame to include only rows where participants correctly identified depression (TP)
-df_tp = df[df['Classification_Type'] == 'TP']
+df_tp = df[df['Classification_Type'] == 'TN']
 
 # Get unique clip IDs from the filtered DataFrame
 unique_clip_ids = df_tp['Clip_ID'].unique()  # e.g., array(['Clip 308', 'Clip 321', ...])
@@ -274,63 +274,11 @@ print("Patient IDs (TP only):", tp_patient_ids)
 
 # We assume that the Excel "Clip_ID" values are like "Clip 1", "Clip 2", ..., "Clip 8".
 # For each clip, we will compute the vote density from the "Selected_Timestamp" column.
-# correlations = []  # to store correlation for each clip
-# clip_list = []     # to store clip IDs for reporting
-
-# # Pearson Correlatin per Clip
-# # 1. Lets start with clips that are TP from the participant and TP salient moments map.
-
-# # Iterate over each clip using the real patient_ids list
-# for clip_id in tp_patient_ids:
-#     # Create the string as it appears in Excel (e.g., "Clip 303")
-#     clip_id_str = f"Clip {clip_id}"
-#     print(f"Processing {clip_id_str}...")
-    
-#     # Get saliency vector for this clip from saliency_values_all.
-#     # We assume that the order in saliency_values_all corresponds to the order in patient_ids.
-#     idx = patient_ids.index(clip_id)
-#     saliency_vec = saliency_values_all_TP[idx, :]  # vector of length num_points
-#     saliency_time_vec = saliency_times_all[idx]  # single salient time
-    
-#     # Filter Excel rows for this clip using the clip string
-#     df_clip = df_tp[df_tp['Clip_ID'] == clip_id_str]
-    
-#     # Convert "Selected_Timestamp" to floats
-#     timestamps = df_clip['Selected_Timestamp'].astype(float).tolist()
-#     if len(timestamps) == 0:
-#         print(f"  No participant timestamps for {clip_id_str}. Skipping.")
-#         continue
-    
-#     # Compute density using the single timestamps.
-#     # We use the same number of bins as the saliency vector length.
-#     density_vec = compute_timestamp_density(timestamps, num_bins=num_points, t_min=0, t_max=8.5)
-    
-#     # Compute Pearson correlation between saliency and density, if lengths match
-#     if len(saliency_vec) == len(density_vec):
-#         # Compute Pearson correlation between saliency and density, if lengths match
-#         # Convert saliency_vec to a float array explicitly.
-#         saliency_vec = np.array(saliency_vec, dtype=float)
-#         # First, create a mask to filter out NaN values in saliency_vec
-#         mask = ~np.isnan(saliency_vec)
-#         if np.sum(mask) < 2:
-#             print(f"Not enough valid data for {clip_id_str}. Skipping.")
-#             continue
-
-#         valid_saliency_vec = saliency_vec[mask]
-#         valid_density_vec = density_vec[mask]
-#         corr, _ = pearsonr(valid_saliency_vec, valid_density_vec)
-#         correlations.append(corr)
-#         clip_list.append(clip_id_str)
-#         print(f"  {clip_id_str} correlation = {corr:.3f}")
-#     else:
-#         print(f"  Length mismatch for {clip_id_str}: {len(saliency_vec)} vs {len(density_vec)}. Skipping.")
-
-# # Optionally, print overall results
-# print("Processed clips:", clip_list)
-# print("Correlations:", correlations)
-
-correlations = []  # to store point-biserial correlation for each clip
+correlations = []  # to store correlation for each clip
 clip_list = []     # to store clip IDs for reporting
+pvalues = []
+# Pearson Correlatin per Clip
+# 1. Lets start with clips that are TP from the participant and TP salient moments map.
 
 # Iterate over each clip using the real patient_ids list
 for clip_id in tp_patient_ids:
@@ -342,7 +290,7 @@ for clip_id in tp_patient_ids:
     # We assume that the order in saliency_values_all corresponds to the order in patient_ids.
     idx = patient_ids.index(clip_id)
     saliency_vec = saliency_values_all_TP[idx, :]  # vector of length num_points
-    saliency_time_vec = saliency_times_all[idx]     # single salient time (if needed)
+    saliency_time_vec = saliency_times_all[idx]  # single salient time
     
     # Filter Excel rows for this clip using the clip string
     df_clip = df_tp[df_tp['Clip_ID'] == clip_id_str]
@@ -357,34 +305,88 @@ for clip_id in tp_patient_ids:
     # We use the same number of bins as the saliency vector length.
     density_vec = compute_timestamp_density(timestamps, num_bins=num_points, t_min=0, t_max=8.5)
     
-    # Convert density vector to a binary vector:
-    # 1 if at least one timestamp falls in that bin, 0 otherwise.
-    binary_vec = np.array([1 if count > 0 else 0 for count in density_vec])
-    
-    # Ensure saliency_vec is a numpy array of floats.
-    saliency_vec = np.array(saliency_vec, dtype=float)
-    
-    # Create a mask for non-NaN saliency values.
-    mask = ~np.isnan(saliency_vec)
-    if np.sum(mask) < 2:
-        print(f"Not enough valid data for {clip_id_str}. Skipping.")
-        continue
+    # Compute Pearson correlation between saliency and density, if lengths match
+    if len(saliency_vec) == len(density_vec):
+        # Compute Pearson correlation between saliency and density, if lengths match
+        # Convert saliency_vec to a float array explicitly.
+        saliency_vec = np.array(saliency_vec, dtype=float)
+        # First, create a mask to filter out NaN values in saliency_vec
+        mask = ~np.isnan(saliency_vec)
+        if np.sum(mask) < 2:
+            print(f"Not enough valid data for {clip_id_str}. Skipping.")
+            continue
 
-    valid_saliency_vec = saliency_vec[mask]
-    valid_binary_vec = binary_vec[mask]
-    
-    # Compute the point-biserial correlation.
-    corr, _ = pointbiserialr(valid_binary_vec, valid_saliency_vec)
-    correlations.append(corr)
-    clip_list.append(clip_id_str)
-    print(f"  {clip_id_str} point-biserial correlation = {corr:.3f}")
+        valid_saliency_vec = saliency_vec[mask]
+        valid_density_vec = density_vec[mask]
+        corr, p_val = pearsonr(valid_saliency_vec, valid_density_vec)
+        correlations.append(corr)
+        pvalues.append(p_val)
+        clip_list.append(clip_id_str)
+        print(f"  {clip_id_str} correlation = {corr:.3f}")
+    else:
+        print(f"  Length mismatch for {clip_id_str}: {len(saliency_vec)} vs {len(density_vec)}. Skipping.")
 
 # Optionally, print overall results
 print("Processed clips:", clip_list)
-print("Point-biserial correlations:", correlations)
+print("Correlations:", correlations)
+print("P-Values:", pvalues)
+
+# correlations = []  # to store point-biserial correlation for each clip
+# clip_list = []     # to store clip IDs for reporting
+
+# # Iterate over each clip using the real patient_ids list
+# for clip_id in tp_patient_ids:
+#     # Create the string as it appears in Excel (e.g., "Clip 303")
+#     clip_id_str = f"Clip {clip_id}"
+#     print(f"Processing {clip_id_str}...")
+    
+#     # Get saliency vector for this clip from saliency_values_all.
+#     # We assume that the order in saliency_values_all corresponds to the order in patient_ids.
+#     idx = patient_ids.index(clip_id)
+#     saliency_vec = saliency_values_all_TP[idx, :]  # vector of length num_points
+#     saliency_time_vec = saliency_times_all[idx]     # single salient time (if needed)
+    
+#     # Filter Excel rows for this clip using the clip string
+#     df_clip = df_tp[df_tp['Clip_ID'] == clip_id_str]
+    
+#     # Convert "Selected_Timestamp" to floats
+#     timestamps = df_clip['Selected_Timestamp'].astype(float).tolist()
+#     if len(timestamps) == 0:
+#         print(f"  No participant timestamps for {clip_id_str}. Skipping.")
+#         continue
+    
+#     # Compute density using the single timestamps.
+#     # We use the same number of bins as the saliency vector length.
+#     density_vec = compute_timestamp_density(timestamps, num_bins=num_points, t_min=0, t_max=8.5)
+    
+#     # Convert density vector to a binary vector:
+#     # 1 if at least one timestamp falls in that bin, 0 otherwise.
+#     binary_vec = np.array([1 if count > 0 else 0 for count in density_vec])
+    
+#     # Ensure saliency_vec is a numpy array of floats.
+#     saliency_vec = np.array(saliency_vec, dtype=float)
+    
+#     # Create a mask for non-NaN saliency values.
+#     mask = ~np.isnan(saliency_vec)
+#     if np.sum(mask) < 2:
+#         print(f"Not enough valid data for {clip_id_str}. Skipping.")
+#         continue
+
+#     valid_saliency_vec = saliency_vec[mask]
+#     valid_binary_vec = binary_vec[mask]
+    
+#     # Compute the point-biserial correlation.
+#     corr, _ = pointbiserialr(valid_binary_vec, valid_saliency_vec)
+#     correlations.append(corr)
+#     clip_list.append(clip_id_str)
+#     print(f"  {clip_id_str} point-biserial correlation = {corr:.3f}")
+
+# # Optionally, print overall results
+# print("Processed clips:", clip_list)
+# print("Point-biserial correlations:", correlations)
 
 # Suppose you want to plot the saliency map for a specific clip, e.g., "Clip 303"
-target_clip_id = 344
+target_clip_id = 490
 clip_index = patient_ids.index(target_clip_id)  # Find its index in the patient_ids list
 clip_title = f"Clip {target_clip_id}"  # Title for the plot
 
@@ -425,14 +427,14 @@ x_new = np.linspace(time_axis[0], time_axis[-1], 200)  # 200 points
 spline = make_interp_spline(valid_time, valid_saliency, k=3)
 saliency_smooth = spline(x_new)
 
-df_clip = df[df['Clip_ID'] == 'Clip 344']
+df_clip = df[df['Clip_ID'] == 'Clip 490']
 print(df_clip)
 selected_timestamps = df_clip['Selected_Timestamp'].astype(float).tolist()
 print(selected_timestamps)
 # 3) Plot the smoothed curve
 plt.figure(figsize=(10, 5))
 plt.plot(time_axis, saliency_vec, 'o', color='darkslategrey', alpha=0.4, label='Original Points')
-plt.plot(x_new, saliency_smooth, color='darkslategrey', linestyle='-', label='Smoothed Saliency')
+plt.plot(x_new, saliency_smooth, color='goldenrod', linestyle='-', label='Smoothed Saliency')
 plt.xlabel("Time (seconds)")
 plt.ylabel("Saliency Score")
 plt.title("Smoothed Saliency Map (Cubic Spline)")

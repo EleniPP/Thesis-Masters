@@ -7,6 +7,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 import pickle
 from scipy.io import wavfile
+import matplotlib.pyplot as plt
+
 
 
 def preprocess_audio(audio,sr):
@@ -106,7 +108,8 @@ for number in numbers:
 
     # EXTRACT AUDIO
     try:
-        audio, sr = librosa.load(file_audio, sr=None)    
+        audio, sr = librosa.load(file_audio, sr=None)  
+
     except FileNotFoundError as e:
         print(f"Audio file not found for number {number}: {e}")
         if number in labels_dict:
@@ -165,6 +168,37 @@ for number in numbers:
     audio_start_idx = int(visual_start_time * sr)
     audio_end_idx = int(visual_end_time * sr)
     audio = audio[audio_start_idx:audio_end_idx + 1]
+    # # Create a plot with a specific size
+    # plt.figure(figsize=(12, 4))
+
+    # # Plot the waveform
+    # librosa.display.waveshow(audio, sr=sr)
+    # plt.title('Audio Signal Waveform')
+    # plt.xlabel('Time (s)')
+    # plt.ylabel('Amplitude') 
+    # plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Audio_waveform.png')
+    # plt.close() 
+    
+    # PLot another waveform more zoomed in with seconds in x axis
+    # 2. Create a time axis in seconds
+    duration = librosa.get_duration(y=audio, sr=sr)  # Total length in seconds
+    time = np.linspace(0, duration, len(audio))      # Create a time array from 0 to 'duration'
+
+    # 3. Plot the waveform using time in seconds
+    plt.figure(figsize=(10, 4))
+    plt.plot(time, audio)
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Amplitude")
+    plt.title("Signal of raw .wav audio file from patient 300")
+
+    # 4. (Optional) Zoom in on a smaller portion of the waveform, e.g., the first 1 second
+    # Comment this line out if you want the full waveform.
+    plt.xlim(213.0, 213.2)  # Adjust the range to zoom in on the first second
+
+    plt.tight_layout()
+    plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Audio_waveform_zoomed.png')
+
+    print(1/0)
 
     # Now, both `visual` and `audio` are aligned to start and end at the same timestamps
     # print(f"Trimmed visual start time: {visual[0, 1]} seconds")
@@ -210,6 +244,7 @@ for number in numbers:
 
     # TODO: check it out
     preprocessed_audio = preprocess_audio(final_audio,sr)
+    preprocessed_audio = preprocess_audio(audio,sr)
 
     # Step 2: Calculate Mel-spectrogram for the final_audio
     n_fft = int(0.025 * sr)  # Window length: 25 ms
@@ -252,12 +287,21 @@ for number in numbers:
         start_frame += frames_per_stride
 
     # Visualize the first segment
-    # plt.figure(figsize=(10, 4))
-    # librosa.display.specshow(mel_segments[620], sr=sr, hop_length=hop_length, x_axis='time', y_axis='mel')
-    # plt.colorbar(format='%+2.0f dB')
-    # plt.title('Log-Mel Spectrogram for 1st 3.5s Segment (Sliding Window)')
-    # plt.tight_layout()
-    # plt.show()
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(mel_segments[620], sr=sr, hop_length=hop_length, x_axis='time', y_axis='mel')
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Log-Mel Spectrogram for 1st 3.5s Segment (Sliding Window)')
+    plt.tight_layout()
+    plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Log_mel_segment.png')
+    plt.close()
+
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(log_mel_spectrogram, sr=sr, hop_length=hop_length, x_axis='time', y_axis='mel')
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Log-Mel Spectrogram for Patient 300')
+    plt.tight_layout()
+    plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Log_mel.png')
+    plt.close()
 
     # Step 5: Check number of segments and shapes
     # print(f"Number of segments: {len(mel_segments)}")

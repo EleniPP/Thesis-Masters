@@ -129,13 +129,27 @@ print(global_summary)
 
 
 # ----------------- Violin plot for Raw error instead of the Box plot for MAE -----------------
-tp_data = data[(data["Clip_Type"] == "TN") & (data["Classification_Type"] == "TN")]
-tp_data["RawError"] = tp_data["Selected_Timestamp"] - tp_data["Model_Mid"]
+data["RawError"] = data["Selected_Timestamp"] - data["Model_Mid"]
+
+tp_tp_data = data[(data["Clip_Type"] == "TP") & (data["Classification_Type"] == "TP")]
+tp_fn_data = data[(data["Clip_Type"] == "FN") & (data["Classification_Type"] == "TP")]
+tn_tn_data = data[(data["Clip_Type"] == "TN") & (data["Classification_Type"] == "TN")]
+tn_fp_data = data[(data["Clip_Type"] == "FP") & (data["Classification_Type"] == "TN")]
+
+# tp_data = data[(data["Clip_Type"] == "TN") & (data["Classification_Type"] == "TN")]
+
+# tp_data["RawError"] = tp_data["Selected_Timestamp"] - tp_data["Model_Mid"]
+
+# Determine the global minimum and maximum of RawError across all datasets
+global_min = min(df["RawError"].min() for df in [tp_tp_data, tp_fn_data, tn_tn_data, tn_fp_data])
+global_max = max(df["RawError"].max() for df in [tp_tp_data, tp_fn_data, tn_tn_data, tn_fp_data])
+
+print(global_min, global_max)
 
 plt.figure(figsize=(8, 6))
 # Plot a vertical violin plot: the y-axis is RawError.
-sns.violinplot(y="RawError", data=tp_data, color="skyblue")
-
+sns.violinplot(y="RawError", data=tn_fp_data, color="skyblue")
+plt.ylim(global_min-2, global_max+4)
 # Add a horizontal line at y=0 (the model’s midpoint)
 plt.axhline(y=0, color="red", linestyle="--", label="Model Midpoint")
 
@@ -145,6 +159,7 @@ plt.legend()
 plt.tight_layout()
 plt.show()
 
+# ----------------------------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------------------------
 tn_tn_data = data[
     (data["Clip_Type"] == "TN") & 
