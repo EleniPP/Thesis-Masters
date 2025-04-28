@@ -105,13 +105,16 @@ if __name__ == "__main__":
     # numbers = list(range(300, 491))
     # numbers = [423]
     participants = parse_participants("tp.txt")
-        # Iterate over participants and their segments
+    # Iterate over participants and their segments
     for participant, segments in participants.items():
         for segment in segments:
             number, start_time, end_time = segment
             # Expand the video window
             new_start_time = max(start_time - 1, 0)  # Prevent negative timestamps
             new_end_time = end_time + 4  # Extend by 2.5 sec after
+
+            new_start_time = start_time + 3.4
+            new_end_time = end_time
 
             # Construct input and output paths
             input_audio = f"{base_path}{number}{patient}{number}{audio_extension}"
