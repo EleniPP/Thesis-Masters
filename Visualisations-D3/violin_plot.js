@@ -16,7 +16,7 @@ var svg = d3.select("#my_dataviz")
 var clipIntervals = {};
 
 //Read the data
-d3.csv("experiment_results.csv", function(error, data) {
+d3.csv("real_experiment_results.csv", function(error, data) {
     if (error) {
         console.error("Error loading data: ", error);
         return;
@@ -182,40 +182,7 @@ d3.csv("experiment_results.csv", function(error, data) {
   .attr("y", 39)
   .style("font-size", "14px")
   .text("True midpoint");
-  // Add the shape to this svg!
-//   svg
-//     .selectAll("myViolin")
-//     .data(sumstat)
-//     .enter()        // So now we are working group per group
-//     .append("g")
-//       .attr("transform", function(d){ return("translate(" + x(d.key) +" ,0)") } ) // Translation on the right to be at the group position
-//     .append("path")
-//         .datum(function(d){ return(d.value)})     // So now we are working density per density
-//         .style("stroke", "none")
-//         .style("fill","#69b3a2")
-//         .attr("d", d3.area()
-//             .x0(function(d){ return(xNum(-d[1])) } )
-//             .x1(function(d){ return(xNum(d[1])) } )
-//             .y(function(d){ return(y(d[0])) } )
-//             .curve(d3.curveCatmullRom)    // This makes the line smoother to give the violin appearance. Try d3.curveStep to see the difference
-//         )
-//     .append("circle")
-//       // Center horizontally in the violin by using xNum(0)
-//       .attr("cx", xNum(0))
-//       // Map the midpoint of the real interval to the y scale
-//       .attr("cy", function(d){
-//         var interval = clipIntervals[d.key]; // e.g. [4.4, 4.5]
-//         if (interval) {
-//           var mid = (interval[0] + interval[1]) / 2;
-//           return y(mid);
-//         }
-//         // Fallback if interval is missing:
-//         return y(0);
-//       })
-//       .attr("r", 5)
-//       .style("fill", "red");
 
-// })
 
 // 2 functions needed for kernel density estimate
 function kernelDensityEstimator(kernel, X) {

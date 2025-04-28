@@ -1,0 +1,65 @@
+Participant_ID,Clip_ID,Clip_Type,Influential_Features-Eyebrows,Influential_Features-Eyes,Influential_Features-Mouth,Influential_Features-Voice,Detected_Emotion
+8,Clip 1,TP,,Repeated blinking,Mouth open,Slow speech with long pauses; Speech that sounds hesitant or unsure,Happiness; Affection or warmth
+4,Clip 1,TP,,Eyes opened wider than usual,Lips sucked in,Stable Voice; Laughter or lighthearted tone,Neutral or no specific emotion; Surprise
+5,Clip 1,TP,Outer edges of eyebrows raised;,Repeated blinking,Slight smirk; Lips pressed together,Monotone or flat voice; Reduced Loudness,Sadness; Anxiety or nervousness
+6,Clip 1,TP,,,Smiling,Increased Speech Rate; Speech with energy or enthusiasm,Engagement or interest; Fear
+7,Clip 1,TP,Brow lowering;,Eyes opened wider than usual,Mouth open; Lips pressed together,Speech that is fluid and uninterrupted,Relief; Affection or warmth
+1,Clip 1,TP,Outer edges of eyebrows raised,Repeated blinking; Eyes opened wider than usual,,Laughter or lighthearted tone; Stable Voice,Surprise; Confusion
+2,Clip 1,TP,,,Lips sucked in; Slight smirk,Increased Vocal Jitter and Shimmer; Speech that sounds hesitant or unsure,Frustration; Neutral or no specific emotion
+3,Clip 1,TP,Eyebrows lifted near center,Eyes opened wider than usual,Smiling; Lips sucked in,Speech with energy or enthusiasm; Increased Speech Rate,Happiness; Engagement or interest
+4,Clip 2,TP,Outer edges of eyebrows raised;,Repeated blinking,Smiling,Monotone or flat voice; Slow speech with long pauses,Disgust; Fear
+5,Clip 2,TP,Eyebrows lifted near the center;,,,,Sadness
+6,Clip 2,TP,Brow lowering;,,Lips pressed together;,Speech that sounds hesitant or unsure;,Neutral or no specific emotion;
+7,Clip 2,TP,,,,Monotone or flat voice;Reduced Loudness;,Neutral or no specific emotion;
+8,Clip 2,TP,Outer edges of eyebrows raised;,Repeated blinking;,Lips sucked in;,Increased Speech Rate;,Anxiety or nervousness;
+1,Clip 2,TP,Outer edges of eyebrows raised,,Slight smirk,Increased vocal jitter; Laughter,Engagement
+2,Clip 2,TP,,,Smiling; Lips sucked in,Increased Speech Rate; Speech with energy or enthusiasm,Engagement or interest; Surprise
+3,Clip 2,TP,,Eyes opened wider than usual,,Laughter or lighthearted tone; Stable Voice,Affection or warmth; Relief
+4,Clip 3,TN,,Repeated blinking,Mouth open,Speech that sounds hesitant or unsure; Reduced Loudness,Sadness; Anxiety or nervousness
+5,Clip 3,TN,Brow lowering;,,Lips pressed together,Slow speech with long pauses; Monotone or flat voice,Neutral or no specific emotion; Frustration
+6,Clip 3,TN,,Eyes opened wider than usual,Slight smirk,Increased Vocal Jitter and Shimmer; Speech that is fluid and uninterrupted,Happiness; Confusion
+7,Clip 3,TN,,Repeated blinking,Smiling; Lips pressed together,Slow speech with long pauses; Speech that sounds hesitant or unsure,Fear; Disgust
+8,Clip 3,TN,,Eyes opened wider than usual,,Stable Voice; Laughter or lighthearted tone,Surprise; Engagement or interest
+1,Clip 3,TN,,Repeated blinking,Lips sucked in,Monotone or flat voice; Reduced Loudness,Sadness; Anger
+2,Clip 3,TN,Eyebrows lifted near center,,Mouth open; Slight smirk,Speech with energy or enthusiasm; Increased Speech Rate,Happiness; Affection or warmth
+3,Clip 3,TN,Outer edges of eyebrows raised,Eyes opened wider; Repeated blinking,Lips pressed together; Lips sucked in,Slow speech with long pauses; Speech that sounds hesitant or unsure,Neutral or no specific emotion; Anxiety
+4,Clip 4,TN,,,Lips pressed together;,Monotone or flat voice;Speech that sounds hesitant or unsure;,Sadness;Anxiety or nervousness;
+5,Clip 4,TN,,,,Monotone or flat voice;,Neutral or no specific emotion;
+6,Clip 4,TN,,Repeated blinking;,Slight smirk;,Stable Voice ;Speech with energy or enthusiasm;,Surprise;Engagement or interest;
+7,Clip 4,TN,Outer edges of eyebrows raised;,Repeated blinking;,Mouth open;,Speech that is fluid and uninterrupted;,Neutral or no specific emotion;
+8,Clip 4,TN,Outer edges of eyebrows raised;,,Mouth open;,Stable Voice ;Speech with energy or enthusiasm;,Relief;Affection or warmth;
+1,Clip 4,TN,,Repeated blinking,Lips pressed together,Monotone; Slow speech,Neutral
+2,Clip 4,TN,,,Smiling; Lips sucked in,Stable voice,Engagement
+3,Clip 4,TN,Eyebrows lifted near center,,Smiling; Lips sucked in,Stable voice,Happiness; Engagement
+4,Clip 5,FP,,,,Reduced Loudness;,Neutral or no specific emotion;
+5,Clip 5,FP,Outer edges of eyebrows raised;,,,Speech with energy or enthusiasm;,Neutral or no specific emotion;
+6,Clip 5,FP,,,Lips sucked in;,Reduced Loudness;Speech that sounds hesitant or unsure;,Frustration;Confusion;
+7,Clip 5,FP,,,Mouth open;,Laughter or lighthearted tone;,Engagement or interest;
+8,Clip 5,FP,Eyebrows lifted near the center;,Eyes opened wider than usual;,Smiling;Mouth open;,Laughter or lighthearted tone;Speech with energy or enthusiasm;,Engagement or interest;Affection or warmth;
+1,Clip 5,FP,,,Smiling,Speech with energy; Increased speech rate,Affection
+2,Clip 5,FP,,,Smiling; Lips sucked in,Speech with energy,Affection; Warmth
+3,Clip 5,FP,,Eyes opened wider; Repeated blinking,Lips pressed together; Lips sucked in,Increased speech rate; Speech with energy,Disgust; Surprise
+4,Clip 6,FP,Eyebrows lifted near the center;,,Lips pressed together;,,Neutral or no specific emotion;
+5,Clip 6,FP,,,Smiling;Mouth open;,Laughter or lighthearted tone;,Happiness;Affection or warmth;
+6,Clip 6,FP,Brow lowering;,,,Stable Voice ;Monotone or flat voice;,Anxiety or nervousness;Fear;
+7,Clip 6,FP,,,Lips pressed together,Slow speech with long pauses; Reduced Loudness,Sadness; Frustration
+8,Clip 6,FP,Brow lowering;,Repeated blinking,,Laughter or lighthearted tone; Increased Speech Rate,Engagement or interest; Affection or warmth
+1,Clip 6,FP,Eyebrows lifted near center,Eyes opened wider than usual,Smiling; Lips sucked in,Speech that is fluid and uninterrupted; Stable Voice,Neutral or no specific emotion; Relief
+2,Clip 6,FP,Eyebrows lifted near center; Outer edges of eyebrows raised,Repeated blinking; Eyes opened wider,Mouth open,Monotone or flat voice; Speech that sounds hesitant or unsure,Anxiety or nervousness; Confusion
+3,Clip 6,FP,,,Slight smirk,Increased Vocal Jitter and Shimmer; Speech with energy or enthusiasm,Happiness; Surprise
+4,Clip 7,FN,Outer edges of eyebrows raised;,Eyes opened wider than usual,Lips pressed together; Lips sucked in,Slow speech with long pauses; Monotone or flat voice,Fear; Disgust
+5,Clip 7,FN,Brow lowering;,,Mouth open,Stable Voice; Reduced Loudness,Anger; Neutral or no specific emotion
+6,Clip 7,FN,,Repeated blinking,Smiling; Slight smirk,Speech that is fluid and uninterrupted; Laughter or lighthearted tone,Happiness; Engagement or interest
+7,Clip 7,FN,Brow lowering;,Eyes opened wider than usual,,Speech that sounds hesitant or unsure; Increased Speech Rate,Confusion; Relief
+8,Clip 7,FN,,Repeated blinking; Eyes opened wider than usual,Lips sucked in; Smiling,Monotone or flat voice; Slow speech with long pauses,Sadness; Affection or warmth
+1,Clip 7,FN,,Repeated blinking,Mouth open; Lips sucked in,Monotone; Hesitant speech,Sadness
+2,Clip 7,FN,Eyebrows lifted near center,,Smiling; Lips pressed together,Stable voice,Fear
+3,Clip 7,FN,Eyebrows lifted near center,,Smiling; Lips pressed together,Stable voice,Fear; Sadness
+4,Clip 8,FN,Brow lowering;,Repeated blinking;,,Monotone or flat voice;Slow speech with long pauses;,Anxiety or nervousness;Sadness;
+5,Clip 8,FN,,Repeated blinking;,Slight smirk;,Increased Speech Rate;Speech that is fluid and uninterrupted;,Surprise;Relief;
+6,Clip 8,FN,Outer edges of eyebrows raised;,Eyes opened wider than usual;,Smiling;Mouth open;,Increased Speech Rate;Speech with energy or enthusiasm;,Surprise;Engagement or interest;
+7,Clip 8,FN,Eyebrows lifted near the center;,,Slight smirk;,Stable Voice ;Speech that is fluid and uninterrupted;,Engagement or interest;
+8,Clip 8,FN,,Eyes opened wider than usual;,,Speech that is fluid and uninterrupted;,Neutral or no specific emotion;
+1,Clip 8,FN,Eyebrows lifted near center,Eyes opened wider,,Increased speech rate,Engagement
+2,Clip 8,FN,,,,Hesitant speech; Stable voice,Relief; Warmth
+3,Clip 8,FN,Outer edges of eyebrows raised,Repeated blinking,,Increased speech rate; Hesitant speech,Confusion; Frustration; Sadness

@@ -1,0 +1,103 @@
+Participant_ID,Clip_ID,Clip_Type,Confidence_Level,Selected_Timestamp,Salient_Position_Type,Model_Salient_Interval,Influential_Features-Eyebrows,Influential_Features-Eyes,Influential_Features-Mouth,Influential_Features-Voice
+1,Clip 303,TN,6,4.3,Case 1,4.4-4.5 sec,Eyebrows lifted near the center,Eyes opened wider than usual,Slight smirk,Increased Vocal Jitter and Shimmer
+1,Clip 308,TP,9,6.4,Case 3,5.9-6 sec,Brow lowering,,Mouth open,Monotone or flat voice
+1,Clip 344,TP,8,5,Case 2,7.4-7.5 sec,Outer edges of eyebrows raised,Repeated blinking,Slight smirk,Slow speech with long pauses
+1,Clip 445,TN,1,7.5,Case 3,5.9-6 sec,,Repeated blinking,Smiling; Mouth open,Stable Voice; Speech that is fluid and uninterrupted
+1,Clip 472,FP,6,0.5,Case 1,4.4-4.5 sec,Brow lowering,Repeated blinking,Lips pressed together,Speech that sounds hesitant or unsure; Increased Vocal Jitter and Shimmer
+1,Clip 352,FN,2,6.9,Case 2,7.4-7.5 sec,,,Smiling,Speech with energy or enthusiasm; Laughter or lighthearted tone
+2,Clip 411,TN,1,3.7,Case 2,7.4-7.5 sec,,Eyes opened wider than usual,Mouth open,Stable Voice; Speech with energy or enthusiasm; Speech that is fluid and uninterrupted
+2,Clip 490,TN,2,5.1,Case 3,5.9-6 sec,,,Mouth open,Slow speech with long pauses; Stable Voice
+2,Clip 483,TP,8,3,Case 1,4.4-4.5 sec,Eyebrows lifted near the center,Eye squinting,Lips sucked in,
+2,Clip 353,FN,2,5.1,Case 2,7.4-7.5 sec,,Eyes opened wider than usual,Mouth open,Stable Voice; Speech with energy or enthusiasm; Speech that is fluid and uninterrupted
+2,Clip 337,TP,8,3,Case 3,5.9-6 sec,,Repeated blinking; Eye squinting,Lips pressed together,Speech that sounds hesitant or unsure; Increased Vocal Jitter and Shimmer
+2,Clip 478,FP,2,1.5,Case 1,4.4-4.5 sec,Eyebrows lifted near the center,,Mouth open,Stable Voice; Speech with energy or enthusiasm
+3,Clip 323,TN,2,4.7,Case 1,4.4-4.5 sec,Eyebrows lifted near the center,Repeated blinking; Eye squinting,Smiling; Slight smirk; Mouth open,Monotone or flat voice; Stable Voice
+3,Clip 459,TP,8,2.1,Case 1,4.4-4.5 sec,Brow lowering,Eye squinting,Lips pressed together; Mouth open,Monotone or flat voice; Slow speech with long pauses; Speech that sounds hesitant or unsure
+3,Clip 321,TP,6,4.7,Case 3,5.9-6 sec,Eyebrows lifted near the center,Repeated blinking; Eye squinting,Slight smirk; Lips pressed together,Slow speech with long pauses; Speech that sounds hesitant or unsure; Increased Vocal Jitter and Shimmer
+3,Clip 409117,TN,3,1.9,Case 2,7.4-7.5 sec,Eyebrows lifted near the center,Repeated blinking; Eye squinting,Slight smirk; Lips pressed together,Monotone or flat voice; Speech that is fluid and uninterrupted
+3,Clip 379,FP,5,5,Case 2,7.4-7.5 sec,Eyebrows lifted near the center,Repeated blinking,Slight smirk; Lips pressed together,Monotone or flat voice; Speech that sounds hesitant or unsure; Stable Voice
+3,Clip 405,FN,7,8.2,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,Slight smirk,Laughter or lighthearted tone
+4,Clip 401,TN,4,5.2,Case 2,7.4-7.5 sec,,Repeated blinking; Eye squinting,,Monotone or flat voice
+4,Clip 440,TP,8,1.5,Case 1,4.4-4.5 sec,,Eye squinting,Lips pressed together,Monotone or flat voice; Slow speech with long pauses; Speech that sounds hesitant or unsure; Reduced Loudness
+4,Clip 365,TP,7,6,Case 2,7.4-7.5 sec,,Repeated blinking; Eye squinting,,Monotone or flat voice; Reduced Loudness
+4,Clip 477,TN,3,3.8,Case 3,5.9-6 sec,Eyebrows lifted near the center,Repeated blinking,Smiling,Stable Voice; Speech with energy or enthusiasm; Speech that is fluid and uninterrupted; Increased Speech Rate
+4,Clip 324,FP,5,6,Case 3,5.9-6 sec,Brow lowering,Eyes opened wider than usual,Slight smirk,Monotone or flat voice; Stable Voice; Speech that is fluid and uninterrupted
+4,Clip 433,FN,6,0.7,Case 1,4.4-4.5 sec,,Repeated blinking,Lips pressed together; Lips sucked in,Monotone or flat voice; Slow speech with long pauses; Reduced Loudness
+5,Clip 303,TN,1,4.1,Case 1,4.4-4.5 sec,Eyebrows lifted near the center,Repeated blinking,Smiling,Speech that is fluid and uninterrupted
+5,Clip 459,TP,8,2.1,Case 1,4.4-4.5 sec,Brow lowering,Eye squinting,Mouth open,Monotone or flat voice; Slow speech with long pauses; Speech that sounds hesitant or unsure
+5,Clip 427,TN,1,4.6,Case 2,7.4-7.5 sec,Eyebrows lifted near the center,Repeated blinking,Smiling,Speech with energy or enthusiasm; Laughter or lighthearted tone
+5,Clip 321,TP,1,2.8,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,Smiling,Slow speech with long pauses
+5,Clip 337,TP,5,5.7,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Eyes opened wider than usual,Lips pressed together,Monotone or flat voice; Speech that sounds hesitant or unsure
+5,Clip 352,FN,3,6.2,Case 2,7.4-7.5 sec,Outer edges of eyebrows raised,Repeated blinking,Smiling,Stable Voice; Speech that is fluid and uninterrupted
+6,Clip 367,TP,7,4.5,Case 2,7.4-7.5 sec,,Eye squinting,,Increased Vocal Jitter and Shimmer
+6,Clip 349,TN,9,2.2,Case 1,4.4-4.5 sec,,Repeated blinking,Lips pressed together,Monotone or flat voice; Stable Voice; Speech that is fluid and uninterrupted
+6,Clip 427,TN,1,4.5,Case 2,7.4-7.5 sec,Outer edges of eyebrows raised,,Smiling; Slight smirk,Laughter or lighthearted tone
+6,Clip 338,TP,8,4,Case 3,5.9-6 sec,,,Smiling,Stable Voice; Speech that is fluid and uninterrupted
+6,Clip 448,FN,3,5.7,Case 3,5.9-6 sec,Brow lowering,,,Monotone or flat voice; Increased Vocal Jitter and Shimmer
+6,Clip 409982,FP,1,2.2,Case 2,7.4-7.5 sec,Eyebrows lifted near the center,,Smiling; Slight smirk,Stable Voice; Speech with energy or enthusiasm; Laughter or lighthearted tone
+7,Clip 440,TP,7,3,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised,Eyes opened wider than usual; Eye squinting,Lips pressed together,Monotone or flat voice; Slow speech with long pauses
+7,Clip 478,FP,5,4.7,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised,Eye squinting,Mouth open,Speech that sounds hesitant or unsure
+7,Clip 365,TP,10,5.1,Case 2,7.4-7.5 sec,Eyebrows lifted near the center; Outer edges of eyebrows raised,Repeated blinking,Mouth open,Slow speech with long pauses; Reduced Loudness; Stable Voice; Speech with energy or enthusiasm
+7,Clip 445,TN,4,7.1,Case 3,5.9-6 sec,,,,Speech that is fluid and uninterrupted
+7,Clip 409117,TN,5,0.8,Case 2,7.4-7.5 sec,Eyebrows lifted near the center,Repeated blinking,Lips pressed together,Increased Vocal Jitter and Shimmer; Speech that is fluid and uninterrupted
+7,Clip 405,FN,3,5.6,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,Slight smirk,Increased Vocal Jitter and Shimmer; Increased Speech Rate
+8,Clip 323,TN,6,5,Case 1,4.4-4.5 sec,Brow lowering,Repeated blinking,,Slow speech with long pauses; Speech that sounds hesitant or unsure; Reduced Loudness
+8,Clip 433,FN,9,2.2,Case 1,4.4-4.5 sec,,Eyes opened wider than usual; Repeated blinking,,Monotone or flat voice; Slow speech with long pauses
+8,Clip 379,FP,2,3,Case 2,7.4-7.5 sec,,Eyes opened wider than usual,Slight smirk,Speech with energy or enthusiasm; Laughter or lighthearted tone
+8,Clip 490,TN,4,1.9,Case 3,5.9-6 sec,,Eye squinting,,Monotone or flat voice; Slow speech with long pauses; Reduced Loudness; Stable Voice
+8,Clip 344,TP,1,4.2,Case 2,7.4-7.5 sec,Eyebrows lifted near the center; Outer edges of eyebrows raised,Eyes opened wider than usual,Mouth open,Speech that is fluid and uninterrupted; Increased Speech Rate
+8,Clip 338,TP,3,6.1,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,,Stable Voice; Speech that is fluid and uninterrupted
+9,Clip 409982,FP,8,7.3,Case 2,7.4-7.5 sec,,Repeated blinking; Eye squinting,,Speech that sounds hesitant or unsure; Reduced Loudness
+9,Clip 483,TP,9,6.4,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised; Brow lowering,,,Slow speech with long pauses; Speech that sounds hesitant or unsure; Reduced Loudness
+9,Clip 401,TN,3,1.2,Case 2,7.4-7.5 sec,,Eyes opened wider than usual,Mouth open,Speech with energy or enthusiasm; Speech that is fluid and uninterrupted; Increased Speech Rate
+9,Clip 448,FN,5,7.1,Case 3,5.9-6 sec,Eyebrows lifted near the center,Eye squinting,,Speech that sounds hesitant or unsure; Reduced Loudness
+9,Clip 308,TP,10,7,Case 3,5.9-6 sec,,Repeated blinking,,Monotone or flat voice; Slow speech with long pauses; Speech that sounds hesitant or unsure; Reduced Loudness
+9,Clip 349,TN,6,1.7,Case 1,4.4-4.5 sec,,Repeated blinking,,Speech that sounds hesitant or unsure; Stable Voice
+10,Clip 349,TN,6,3.1,Case 1,4.4-4.5 sec,Brow lowering,Repeated blinking; Eye squinting,Lips pressed together,Monotone or flat voice; Speech that sounds hesitant or unsure
+10,Clip 308,TP,9,2.7,Case 3,5.9-6 sec,Eyebrows lifted near the center,Eyes opened wider than usual,Mouth open; Lips sucked in,Slow speech with long pauses; Speech that sounds hesitant or unsure; Reduced Loudness
+10,Clip 352,FN,2,3.8,Case 2,7.4-7.5 sec,,,,Stable Voice; Speech with energy or enthusiasm; Speech that is fluid and uninterrupted
+10,Clip 324,FP,4,1.9,Case 3,5.9-6 sec,Eyebrows lifted near the center,,Slight smirk; Mouth open,Monotone or flat voice; Stable Voice; Laughter or lighthearted tone
+10,Clip 472,FP,5,4.3,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised,Eyes opened wider than usual; Repeated blinking,,Speech that sounds hesitant or unsure
+10,Clip 411,TN,1,2.6,Case 2,7.4-7.5 sec,Outer edges of eyebrows raised,Eyes opened wider than usual,,Increased Vocal Jitter and Shimmer; Speech that is fluid and uninterrupted
+11,Clip 409117,TN,5,4.3,Case 2,7.4-7.5 sec,Brow lowering,Repeated blinking,Slight smirk; Mouth open,Monotone or flat voice
+11,Clip 321,TP,8,0,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,Lips pressed together,Slow speech with long pauses; Speech that sounds hesitant or unsure
+11,Clip 478,FP,3,3.3,Case 1,4.4-4.5 sec,Eyebrows lifted near the center,Eyes opened wider than usual,Slight smirk,Laughter or lighthearted tone
+11,Clip 367,TP,7,6,Case 2,7.4-7.5 sec,Brow lowering,Eye squinting,Lips pressed together; Mouth open; Lips sucked in,Monotone or flat voice; Speech that is fluid and uninterrupted
+11,Clip 445,TN,5,2.9,Case 3,5.9-6 sec,Eyebrows lifted near the center,Repeated blinking,Mouth open,Speech that is fluid and uninterrupted; Increased Speech Rate
+11,Clip 433,FN,6,2.4,Case 1,4.4-4.5 sec,Brow lowering,Repeated blinking,Mouth open,Monotone or flat voice
+12,Clip 411,TN,10,2,Case 2,7.4-7.5 sec,Brow lowering,Eye squinting,Mouth open,Monotone or flat voice; Stable Voice
+12,Clip 440,TP,10,3,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised; Brow lowering,Eye squinting,Lips pressed together,Slow speech with long pauses; Speech that sounds hesitant or unsure
+12,Clip 353,FN,1,2,Case 2,7.4-7.5 sec,Eyebrows lifted near the center,Repeated blinking,Mouth open,Speech with energy or enthusiasm
+12,Clip 477,TN,10,8,Case 3,5.9-6 sec,Brow lowering,Eye squinting,Lips pressed together; Lips sucked in,
+12,Clip 324,FP,1,1,Case 3,5.9-6 sec,Eyebrows lifted near the center,,Smiling,Stable Voice
+12,Clip 483,TP,10,1,Case 1,4.4-4.5 sec,Brow lowering,Eye squinting,Lips pressed together; Lips sucked in,Slow speech with long pauses; Speech that sounds hesitant or unsure
+13,Clip 303,TN,4,4,Case 1,4.4-4.5 sec,Eyebrows lifted near the center,Repeated blinking,Smiling; Mouth open,Speech that is fluid and uninterrupted; Increased Speech Rate
+13,Clip 338,TP,2,6,Case 3,5.9-6 sec,,Repeated blinking,Mouth open,Speech with energy or enthusiasm; Increased Speech Rate
+13,Clip 353,FN,2,1,Case 2,7.4-7.5 sec,,,Mouth open,Speech that is fluid and uninterrupted
+13,Clip 405,FN,8,1.5,Case 3,5.9-6 sec,,Eye squinting,Slight smirk; Lips pressed together,Monotone or flat voice; Speech that sounds hesitant or unsure; Reduced Loudness
+13,Clip 459,TP,10,3,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised; Brow lowering,Eye squinting,Lips pressed together; Lips sucked in,Monotone or flat voice; Slow speech with long pauses; Speech that sounds hesitant or unsure
+13,Clip 427,TN,3,2,Case 2,7.4-7.5 sec,,Eyes opened wider than usual,,Laughter or lighthearted tone
+14,Clip 344,TP,3,7,Case 2,7.4-7.5 sec,Outer edges of eyebrows raised,Eyes opened wider than usual,Smiling,Speech with energy or enthusiasm
+14,Clip 490,TN,8,5,Case 3,5.9-6 sec,,Eye squinting,,Monotone or flat voice; Slow speech with long pauses; Reduced Loudness
+14,Clip 401,TN,2,2,Case 1,4.4-4.5 sec,,Repeated blinking,,Laughter or lighthearted tone; Speech that is fluid and uninterrupted
+14,Clip 367,TP,7,7,Case 2,7.4-7.5 sec,,Eye squinting,,Monotone or flat voice; Increased Speech Rate
+14,Clip 448,FN,1,4.3,Case 3,5.9-6 sec,Eyebrows lifted near the center,Eyes opened wider than usual,,Laughter or lighthearted tone; Speech that is fluid and uninterrupted
+14,Clip 472,FP,6,2.1,Case 1,4.4-4.5 sec,,Eyes opened wider than usual; Repeated blinking,,Speech that sounds hesitant or unsure
+15,Clip 365,TP,7,6.5,Case 2,7.4-7.5 sec,Outer edges of eyebrows raised,Eyes opened wider than usual,Mouth open,Slow speech with long pauses; Increased Vocal Jitter and Shimmer
+15,Clip 477,TN,6,4.3,Case 3,5.9-6 sec,,Repeated blinking,,Speech with energy or enthusiasm; Increased Speech Rate
+15,Clip 323,TN,1,6.3,Case 1,4.4-4.5 sec,,,Lips pressed together,Monotone or flat voice; Reduced Loudness; Stable Voice
+15,Clip 379,FP,2,6.9,Case 2,7.4-7.5 sec,,Repeated blinking,Slight smirk,Increased Vocal Jitter and Shimmer; Speech with energy or enthusiasm
+15,Clip 448,FN,8,1.2,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Repeated blinking,,Speech that sounds hesitant or unsure
+15,Clip 337,TP,3,3.2,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Eyes opened wider than usual,Mouth open,Speech that sounds hesitant or unsure; Increased Vocal Jitter and Shimmer
+16,Clip 349,TN,6,1.8,Case 1,4.4-4.5 sec,,,,Speech that sounds hesitant or unsure; Increased Vocal Jitter and Shimmer
+16,Clip 321,TP,7,5.3,Case 3,5.9-6 sec,,,Slight smirk,Slow speech with long pauses; Speech that sounds hesitant or unsure
+16,Clip 367,TP,6,3.6,Case 2,7.4-7.5 sec,,,,Monotone or flat voice; Slow speech with long pauses
+16,Clip 490,TN,8,1.8,Case 3,5.9-6 sec,,,,Speech that sounds hesitant or unsure; Increased Vocal Jitter and Shimmer
+16,Clip 433,FN,4,1.8,Case 1,4.4-4.5 sec,,,Lips pressed together,
+16,Clip 409982,FP,2,4.1,Case 2,7.4-7.5 sec,,,,Stable Voice; Speech with energy or enthusiasm; Increased Speech Rate
+17,Clip 409117,TN,5,1.5,Case 2,7.4-7.5 sec,Brow lowering,Eye squinting,,Slow speech with long pauses; Speech that sounds hesitant or unsure
+17,Clip 440,TP,8,1.8,Case 1,4.4-4.5 sec,Brow lowering,Eye squinting,Lips pressed together,Monotone or flat voice; Slow speech with long pauses; Speech that sounds hesitant or unsure
+17,Clip 352,FN,2,1,Case 2,7.4-7.5 sec,Outer edges of eyebrows raised,Repeated blinking,Slight smirk,Stable Voice; Speech with energy or enthusiasm; Speech that is fluid and uninterrupted; Increased Speech Rate
+17,Clip 477,TN,3,4,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Eye squinting,Mouth open,Stable Voice
+17,Clip 324,FP,7,2.5,Case 3,5.9-6 sec,Outer edges of eyebrows raised,Eyes opened wider than usual,,Reduced Loudness
+17,Clip 459,TP,9,1,Case 1,4.4-4.5 sec,Outer edges of eyebrows raised,Eye squinting,,Monotone or flat voice; Slow speech with long pauses

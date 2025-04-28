@@ -29,8 +29,19 @@ function isCorrectClassification(clipType, confidenceLevel) {
   }
 }
 
+// Function to determine if the ground truth is depressed or not
+function getDepressionStatus(clipType) {
+    // "TP" (true positive) and "FN" (false negative) mean the person *is* depressed
+    // "TN" (true negative) and "FP" (false positive) mean the person is *not* depressed
+    if (clipType === "TP" || clipType === "FN") {
+      return "Depressed";
+    } else {
+      return "Not Depressed";
+    }
+  }
+
 // Load the CSV data
-d3.csv("experiment_results.csv", function(error, data) {
+d3.csv("experiment_results-salient_segments.csv", function(error, data) {
   if (error) {
     console.error("Error loading data:", error);
     return;
@@ -41,10 +52,11 @@ d3.csv("experiment_results.csv", function(error, data) {
   var flattenedData = [];
   data.forEach(function(d) {
     // Determine correct or incorrect classification
-    var classification = isCorrectClassification(d.Clip_Type, d.Confidence_Level);
-    
-    // for each facial feature
-//     // For each facial feature column, split the values (assuming semicolon-separated), trim them, and push into flattenedData.
+    // var classification = isCorrectClassification(d.Clip_Type, d.Confidence_Level);
+    var status = getDepressionStatus(d.Clip_Type);
+
+//     // for each facial feature
+    // For each facial feature column, split the values (assuming semicolon-separated), trim them, and push into flattenedData.
 //     var eyebrows = d["Influential_Features-Eyebrows"] ? d["Influential_Features-Eyebrows"].split(";") : [];
 //     var eyes = d["Influential_Features-Eyes"] ? d["Influential_Features-Eyes"].split(";") : [];
 //     var mouth = d["Influential_Features-Mouth"] ? d["Influential_Features-Mouth"].split(";") : [];
@@ -52,19 +64,19 @@ d3.csv("experiment_results.csv", function(error, data) {
 //     eyebrows.forEach(function(feat) {
 //       feat = feat.trim();
 //       if (feat !== "") {
-//         flattenedData.push({ classification: classification, feature: feat });
+//         flattenedData.push({ status: status, feature: feat });
 //       }
 //     });
 //     eyes.forEach(function(feat) {
 //       feat = feat.trim();
 //       if (feat !== "") {
-//         flattenedData.push({ classification: classification, feature: feat });
+//         flattenedData.push({ status: status, feature: feat });
 //       }
 //     });
 //     mouth.forEach(function(feat) {
 //       feat = feat.trim();
 //       if (feat !== "") {
-//         flattenedData.push({ classification: classification, feature: feat });
+//         flattenedData.push({ status: status, feature: feat });
 //       }
 //     });
 //   });
@@ -78,14 +90,14 @@ d3.csv("experiment_results.csv", function(error, data) {
       voiceFeatures.forEach(function(feat) {
         feat = feat.trim();
         if (feat !== "") {
-          flattenedData.push({ classification: classification, feature: feat });
+          flattenedData.push({ status: status, feature: feat });
         }
       });
     });
 
   // Group and count by classification and feature using d3.nest (D3 v4)
   var nested = d3.nest()
-    .key(function(d) { return d.classification; })
+    .key(function(d) { return d.status; })
     .key(function(d) { return d.feature; })
     .rollup(function(leaves) { return leaves.length; })
     .entries(flattenedData);
@@ -93,10 +105,10 @@ d3.csv("experiment_results.csv", function(error, data) {
   // Convert the nested structure into a flat array:
   // Each object will have { classification, feature, count }
   var counts = [];
-  nested.forEach(function(classObj) {
-    classObj.values.forEach(function(featureObj) {
+  nested.forEach(function(statusObj) {
+    statusObj.values.forEach(function(featureObj) {
       counts.push({
-        classification: classObj.key,
+        status: statusObj.key,
         feature: featureObj.key,
         count: featureObj.value
       });
@@ -104,7 +116,8 @@ d3.csv("experiment_results.csv", function(error, data) {
   });
   
   // Define the order for classification on the x-axis
-  var classifications = ["Incorrect", "Correct"];
+//   var classifications = ["Incorrect", "Correct"];
+  var statuses = ["Depressed", "Not Depressed"];
   
   // Create a sorted list of all unique features (y-axis)
   var allFeatures = d3.set(counts.map(function(d) { return d.feature; })).values();
@@ -113,7 +126,7 @@ d3.csv("experiment_results.csv", function(error, data) {
   // Build the X scale for classification (band scale)
   var x = d3.scaleBand()
     .range([0, width])
-    .domain(classifications)
+    .domain(statuses)
     .padding(0.05);
   
   svg.append("g")
@@ -173,7 +186,7 @@ d3.csv("experiment_results.csv", function(error, data) {
     .enter()
     .append("rect")
       .attr("class", "cell")
-      .attr("x", function(d) { return x(d.classification); })
+      .attr("x", function(d) { return x(d.status); })
       .attr("y", function(d) { return y(d.feature); })
       .attr("width", x.bandwidth())
       .attr("height", y.bandwidth())
@@ -203,7 +216,7 @@ d3.csv("experiment_results.csv", function(error, data) {
       .attr("x2", "100%")
       .attr("y2", "0%");
   
-  // Set the gradient stops to match your color scale
+//   Set the gradient stops to match your color scale
 //   linearGradient.append("stop")
 //       .attr("offset", "0%")
 //       .attr("stop-color", "#ffffe0");
