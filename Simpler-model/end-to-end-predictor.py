@@ -32,29 +32,13 @@ labels = list(labels_dict.values())
 tlabels = torch.tensor(labels)
 
 # Load the audio and visual
-
 visuals = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable.npy', allow_pickle=True)
-# print(visuals.shape)
-# print(len(visuals[0]))
-# print(type(visuals[0][0]))
-# print(visuals[0][0].shape)
-# visuals = np.load('D:/Data/Preprocessing/aus_reliable2.npy', allow_pickle=True)
 log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', allow_pickle=True)
-# log_mel_data = np.load('D:/Data/Preprocessing/log_mels_reliable2.npy', allow_pickle=True)
 
-    # Convert audio and visual features to torch tensors
+
+# Convert audio and visual features to torch tensors
 log_mels_data = [torch.tensor(patient, dtype=torch.float32) for patient in log_mel_data]
 visuals = [torch.tensor(patient, dtype=torch.float32) for patient in visuals]
-# visuals = [
-#     torch.stack([torch.tensor(segment, dtype=torch.float32) for segment in patient])
-#     for patient in visuals
-# ]
-# print('Visuals')
-# print(len(visuals))
-# print(type(visuals[0]))
-# print(visuals[0].shape)
-# print(type(visuals[0][0]))
-# print(visuals[0][0].shape)
 
 
 def flatten(multimodal_features, labels):
@@ -194,7 +178,7 @@ def validate_model(audio_model, visual_model, reducer, predictor, val_loader, cr
             outputs = predictor(normalized_multimodal)  # Shape: [batch_size, num_classes]
 
             # Compute Loss
-            loss = criterion(outputs.view(-1, 2), batch_labels.view(-1))  # Match output and label shapes
+            loss = criterion(outputs.view(-1, 2), batch_labels.view(-1))  
             val_loss += loss.item()
 
     # Return average validation loss
@@ -307,7 +291,7 @@ def train_pipeline(audio_model, visual_model, reducer, predictor, dataloader, va
     val_losses = []
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # Move models to device
+
     audio_model, visual_model, reducer, predictor = (
         audio_model.to(device),
         visual_model.to(device),
@@ -384,23 +368,13 @@ def train_pipeline(audio_model, visual_model, reducer, predictor, dataloader, va
 
 
 # Split the data
-# Audio is [num_patients,num_segments,64,351]
-# Visual is [num_patients,num_segments,105,20]
+
 train_visuals, train_labels = filter_by_patient_numbers(visuals, labels, train_split)
-# print(f"train_visuals size after filtering: {len(train_visuals)}")
-# print(f"train_labels size after filtering: {len(train_labels)}")
-# print(train_visuals[0].shape)
-# print(train_visuals[1].shape)
+
 train_visuals, flatlabels = flatten(train_visuals, train_labels)
-# print('Train Visual')
-# print(train_visuals.shape)
-# print('Train Visual Labels')
-# print(flatlabels.shape)
 
 train_audio, train_labels = filter_by_patient_numbers(log_mel_data, labels, train_split)
 train_audio, train_labels = flatten(train_audio, train_labels)
-# print('Train Audio Labels')
-# print(train_labels.shape)
 
 assert len(train_visuals) == len(train_labels), "Mismatch between visuals and labels after flattening."
 assert len(train_audio) == len(train_labels), "Mismatch between audio and labels after flattening."
@@ -424,7 +398,7 @@ n_minority = len(minority_indices)
 
 # Undersample the majority class to match the number of minority class samples
 majority_undersampled_indices = resample(majority_indices, 
-                                         replace=False,  # No replacement, undersample without duplication
+                                         replace=False,  
                                          n_samples=n_minority,  # Match the number of minority class samples
                                          random_state=42)
 
@@ -434,7 +408,7 @@ balanced_indices = np.concatenate([majority_undersampled_indices, minority_indic
 # Shuffle the indices to ensure randomization
 np.random.shuffle(balanced_indices)
 
-balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  # Convert indices to tensor if not already
+balanced_indices = torch.tensor(balanced_indices, dtype=torch.long)  
 
 print(f"train_visuals shape: {train_visuals.shape}")
 print(f"train_audio shape: {train_audio.shape}")
@@ -472,10 +446,10 @@ audio_model = modifiedAlexNet(pretrained=False)
 visual_model = AU1DCNN()
 
 input_dim = 13312  # Size of extracted features
-output_dim = 512   # Reduced dimensionality (adjust based on your needs)
+output_dim = 512  
 reducer = FeatureReducer(input_dim, output_dim)
 
-# why no SGD?
+
 optimizer = optim.Adam(predictor.parameters(), lr=1e-5, weight_decay=1e-4)
 scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=2, verbose=True)
 alpha = torch.tensor([1.0, 1.3])
@@ -483,7 +457,6 @@ criterion = FocalLoss(alpha=alpha, gamma=1.6)
 criterion = nn.CrossEntropyLoss()
 
 model = train_pipeline(audio_model, visual_model, reducer, predictor, train_loader, val_loader, optimizer, scheduler, criterion, epochs=30) 
-# model = train_model(model, train_loader, val_loader, optimizer, scheduler, criterion)
 
 # Evaluate on the validation set
 val_loss, accuracy, _, _ = evaluate_model(audio_model, visual_model, reducer, predictor, test_loader, criterion)

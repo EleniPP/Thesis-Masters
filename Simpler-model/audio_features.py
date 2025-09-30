@@ -82,14 +82,7 @@ def get_3d_spec(Sxx_in, moments=None):
 
 if __name__ == "__main__":
     # Load logmel data
-    # log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', allow_pickle=True)
-    # log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', allow_pickle=True)
     log_mel_data = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable_prep.npy', allow_pickle=True)
-    
-
-
-    # original_model = alexnet(pretrained=True)
-    # original_dict = original_model.state_dict()
     modified_model = modifiedAlexNet(pretrained=False)
     modified_model_dict = modified_model.state_dict()
     # pretrained_modified_model_dict = {k: v for k, v in original_dict.items() if k in modified_model_dict}

@@ -1,23 +1,11 @@
 import os
 
 def get_segment_index(timestamp, segment_duration, stride, start_timestamp):
-    """
-    Calculate the segment index for a given timestamp in a sliding window setup.
 
-    Args:
-        timestamp: The timestamp (in seconds) for which we want to find the segment index.
-        segment_duration: Duration of each segment (in seconds).
-        stride: Stride between consecutive segments (in seconds).
-        start_timestamp: The timestamp at which segment 0 starts (in seconds).
-
-    Returns:
-        The segment index (starting from 1) and the start and end timestamps of the corresponding segment.
-    """
     if timestamp < start_timestamp:
         return None, "Timestamp is before the first segment starts."
 
     # Calculate the segment index (starting from 1)
-    # segment_number = int((timestamp - start_timestamp) // stride) + 1
     segment_number = round((timestamp - start_timestamp) / stride) + 1
 
 
@@ -69,8 +57,3 @@ for patient in patients:
         segment = get_segment_index(float(timestamp), 3.5, 0.1, start_timestamp)
         print('Segment:', segment[0])
         segments.append(segment[0])
-
-print(len(patient_ids))
-print(len(segments))        
-print(patient_ids)
-print(segments)

@@ -249,11 +249,7 @@ class DepressionPredictor1(nn.Module):
         # Classify each segment
         logits = self.classifier2(attended_segments)  # [batch_size, 2]
         return logits, attention_scores, attention_entropy
-    # def forward(self, x):
-    #     x = self.classifier(x)
-    #     if torch.isnan(x).any() or torch.isinf(x).any():
-    #         print("Found nan or inf in model output")
-    #     return x
+
 
 def plot_losses(train_losses, val_losses):
     plt.figure(figsize=(10, 5))

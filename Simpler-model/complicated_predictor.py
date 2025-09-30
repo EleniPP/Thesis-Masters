@@ -15,13 +15,11 @@ import matplotlib.pyplot as plt
 import torch.optim.lr_scheduler as lr_scheduler
 
 # Load the audio tensor
-# audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features.npy', allow_pickle=True)
 audio_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/audio_features_reduced_reliable.npy', allow_pickle=True)
 print(f"Audio features shape: {audio_features.shape}")
 print(f"Audio feature sample shape: {audio_features[0].shape}")
 
 # Load the visual tensor
-# visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features.npy', allow_pickle=True)
 visual_features = np.load('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/extracted_visual_features_reduced_reliable.npy', allow_pickle=True)
 print(f"Visual features shape: {visual_features.shape}")
 print(f"Visual feature sample shape: {visual_features[0].shape}")
@@ -120,7 +118,7 @@ def evaluate_model(model, dataloader, criterion):
             loss = criterion(outputs, labels)
             test_loss += loss.item()
 
-            probs = torch.softmax(outputs, dim=1)[:, 1]  # Probability of class 1
+            probs = torch.softmax(outputs, dim=1)[:, 1]
             predicted = (probs > threshold).int()
             all_predictions.append(predicted)
             all_labels.append(labels)
@@ -260,16 +258,11 @@ def evaluate_model_final(model, dataloader, criterion):
                 continue
             outputs = model(features)
             loss = criterion(outputs, labels)
-            # loss = xon(outputs.view(-1, 2), labels.view(-1))
             test_loss += loss.item()
 
-            # Calculate accuracy for this batch
-            # Convert logits to probabilities and predictions
             probs = torch.softmax(outputs, dim=1)[:,1]  # Probability of class 1 
-            # _, predicted = torch.max(outputs, -1)
             predicted = (probs > threshold).int()
-            # Append predictions and labels for later evaluation
-            all_predictions.append(predicted)  # Move to CPU if using GPU
+            all_predictions.append(predicted)
             all_labels.append(labels)
 
             correct += (predicted == labels).sum().item()
@@ -493,7 +486,6 @@ model = DepressionPredictor1()
 
 
 # Final training of the model in the whole training set
-# Assuming you have your full training data in train_loader
 final_model = DepressionPredictor1()  # Initialize your model architecture
 
 # Define optimizer and criterion

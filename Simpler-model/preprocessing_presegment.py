@@ -76,22 +76,17 @@ for row in labels_array:
     labels_dict[key] = value
 
 
-# # This has all the labels in the order of the patients
-# np.save('V:/staff-umbrella/EleniSalient/Data/labels.npy', labels_array)
-
-
 # Read the files
-# base_path = "C:/Users/eleni/Data/"
+
 base_path = "/tudelft.net/staff-umbrella/EleniSalient/"
 final_audio_folder = "/tudelft.net/staff-umbrella/EleniSalient/Final_audio/"
-# base_path = "V:/staff-umbrella/EleniSalient/"
+
 patient = "_P/"
 audio_extension = "_AUDIO.wav"
 visual_extension = "_CLNF_AUs.txt"
 transcript_extension = "_TRANSCRIPT.csv"
 final_audio_extension = "_final_audio.wav"
 
-# numbers = [303, 319]
 numbers = list(range(300, 491))
 # read files from all patients
 log_mels = []
@@ -135,12 +130,12 @@ for number in numbers:
     transcript_df = pd.read_csv(transcript_file, sep='\t')
 
     # Align audio and visual data
-    # Step 1: Find the first start time in the transcript
+    # Find the first start time in the transcript
     transcript_start_time = transcript_df['start_time'].iloc[0]
     # Get the ending timestamp from the transcript
     transcript_end_time = transcript_df['stop_time'].iloc[-1]  # Last timestamp in the transcript data
 
-    # Step 2: Find the closest, greater or equal timestamp in the visual data
+    # Find the closest, greater or equal timestamp in the visual data
     # Extract the visual timestamps from the second column (I have double checked that it works steps 2,3,4)
     visual_timestamps = visual[:, 1]
     visual_start_idx = np.searchsorted(visual_timestamps, transcript_start_time, side='left')
@@ -160,16 +155,14 @@ for number in numbers:
 
 # -----------------------------------------------------------------------------------------------------------------------------------------------------------
     
-    # Step 3: Trim the visual data to start from `visual_start_time` and end at `visual_end_time`
+    #Trim the visual data to start from `visual_start_time` and end at `visual_end_time`
     visual = visual[visual_start_idx:visual_end_idx + 1]
 
-    # Step 4: Calculate the corresponding start and end index for the audio data
+    # Calculate the corresponding start and end index for the audio data
     # Convert the visual start time to audio samples
     audio_start_idx = int(visual_start_time * sr)
     audio_end_idx = int(visual_end_time * sr)
     audio = audio[audio_start_idx:audio_end_idx + 1]
-    # # Create a plot with a specific size
-    # plt.figure(figsize=(12, 4))
 
     # # Plot the waveform
     # librosa.display.waveshow(audio, sr=sr)
@@ -179,34 +172,22 @@ for number in numbers:
     # plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Audio_waveform.png')
     # plt.close() 
     
-    # PLot another waveform more zoomed in with seconds in x axis
-    # 2. Create a time axis in seconds
+
+    # Create a time axis in seconds
     duration = librosa.get_duration(y=audio, sr=sr)  # Total length in seconds
     time = np.linspace(0, duration, len(audio))      # Create a time array from 0 to 'duration'
 
-    # 3. Plot the waveform using time in seconds
+    # Plot the waveform using time in seconds
     plt.figure(figsize=(10, 4))
     plt.plot(time, audio)
     plt.xlabel("Time (seconds)")
     plt.ylabel("Amplitude")
     plt.title("Signal of raw .wav audio file from patient 300")
 
-    # 4. (Optional) Zoom in on a smaller portion of the waveform, e.g., the first 1 second
-    # Comment this line out if you want the full waveform.
     plt.xlim(213.0, 213.2)  # Adjust the range to zoom in on the first second
 
     plt.tight_layout()
     plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Audio_waveform_zoomed.png')
-
-    print(1/0)
-
-    # Now, both `visual` and `audio` are aligned to start and end at the same timestamps
-    # print(f"Trimmed visual start time: {visual[0, 1]} seconds")
-    # print(f"Trimmed audio start time: {audio_start_idx / sr} seconds")
-
-    # print(f"Trimmed visual end time: {visual[-1, 1]} seconds")
-    # print(f"Trimmed audio end time: {audio_end_idx / sr} seconds")
-
 
     # Create an array of zeros (silence) the same size as the full audio
     final_audio = np.zeros_like(audio)
@@ -235,14 +216,6 @@ for number in numbers:
             # Copy the participant's speech into the final audio array
             final_audio[start_sample:stop_sample] = audio_segment
 
-    # Save new audios
-
-    # # Save the audio file
-    # if(number==300):
-    #     wavfile.write(final_audio_file, sr, final_audio.astype(np.float32))
-    #     print(f"Audio saved to {final_audio_file}")
-
-    # TODO: check it out
     preprocessed_audio = preprocess_audio(final_audio,sr)
     preprocessed_audio = preprocess_audio(audio,sr)
 
@@ -303,21 +276,14 @@ for number in numbers:
     plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Log_mel.png')
     plt.close()
 
-    # Step 5: Check number of segments and shapes
-    # print(f"Number of segments: {len(mel_segments)}")
-    # print(f"Shape of one Mel-spectrogram segment: {mel_segments[0].shape}")  # Should be (n_mels, frames_per_segment) / it is (64,350)
-
     # PROCESS VISUAL
     fps_au = 30  # 30 AU frames per second
     frames_per_segment_au = int(segment_duration * fps_au)  # 3.5 seconds worth of AU frames (105 frames)
     frames_per_stride_au = int(stride_duration * fps_au)    # 0.1 seconds worth of AU frames (3 frames)
 
-    #  Step 1: Extract the AU features (ignoring metadata like frame, timestamp, confidence, success)
-
     # Extract regression and binary AUs
     r_indices = list(range(4, 18))  # Columns 4 to 17 correspond to AU*_r features
     c_indices = list(range(18, 24))  # Columns 18 to 23 correspond to AU*_c features
-    # au_features_r = au_features.filter(regex='_r$')  # Select only regression outputs (continuous values)
 
     # Separate regression and binary features
     au_features_r = visual[:, r_indices]
@@ -334,12 +300,9 @@ for number in numbers:
     combined_au_features = np.concatenate([au_features_r_normalized, au_features_c], axis=1)
 
     # Print total number of frames and number of unreliable frames
-    # (Checked and it matches)
     total_frames = len(reliability_mask)
     unreliable_frames = np.sum(~reliability_mask)  # Count frames where reliability is False
 
-    # print(f"Total number of frames: {total_frames}")
-    # print(f"Number of unreliable frames: {unreliable_frames}")
     # Filter out the unreliable rows using the reliability mask
     unreliable_rows = visual[~reliability_mask]
 
@@ -362,10 +325,6 @@ for number in numbers:
         # Move the window by the stride (0.1 seconds worth of frames)
         start_frame += frames_per_stride_au
 
-    # print("Length of mask_segments:", len(mask_segments))
-    # print("Length of au_segments:", len(au_segments))
-    # print("Length of mel_segments:", len(mel_segments))
-
     if len(mel_segments) > len(au_segments):
         mel_segments.pop()  # Remove the last audio segment
     elif len(au_segments) > len(mel_segments):
@@ -387,43 +346,15 @@ for number in numbers:
             segment_reliability_mask[idx] = 0  # Mark segment as unreliable
 
     # Convert to numpy arrays if needed for storage
-    # reliable_mel_segments = np.array(reliable_mel_segments, dtype=object)
-    # reliable_au_segments = np.array(reliable_au_segments, dtype=object)
+
     reliability_masks.append(segment_reliability_mask)
     log_mels_reliable.append(reliable_mel_segments)
     aus_reliable.append(reliable_au_segments)
     # Print counts to verify alignment
     print(f"Number of reliable audio segments: {len(reliable_mel_segments)}")
     print(f"Number of reliable visual segments: {len(reliable_au_segments)}")
-
-    # Step 3: Check number of AU segments and shapes
-    # print(f"Number of AU segments: {len(au_segments)}")
-    # print(f"Shape of one AU segment: {au_segments[0].shape}")  # Should be (105, num_AUs) / it is (105,20)
-    # print(f"Shape of one mask segment: {mask_segments[0].shape}")
     print(f"Patient {number}: Audio segments = {len(mel_segments)}, Visual segments = {len(au_segments)}")
 
-print(1/0)
+
 reliability_masks = np.array(reliability_masks, dtype=object)
 np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/reliability_masks.npy', reliability_masks)
-# # Save arrays in files
-# log_mels = np.array(log_mels, dtype=object)
-
-# # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
-# # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
-
-# aus = np.array(aus, dtype=object)
-
-# # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
-# # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)
-
-# # Save arrays in files
-# log_mels_reliable = np.array(log_mels_reliable, dtype=object)
-
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable_prep.npy', log_mels_reliable)
-# # np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/log_mels_reliable.npy', log_mels_reliable)
-# # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/log_mels.npy', log_mels)
-
-# aus_reliable = np.array(aus_reliable, dtype=object)
-
-# np.save('/tudelft.net/staff-umbrella/EleniSalient/Preprocessing/aus_reliable_prep.npy', aus_reliable)
-# # # np.save('V:/staff-umbrella/EleniSalient/Preprocessing/aus.npy', aus)

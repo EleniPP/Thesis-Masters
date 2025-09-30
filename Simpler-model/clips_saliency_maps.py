@@ -101,17 +101,17 @@ saliency_times_arr_TN = []
 saliency_times_arr_FP = []
 saliency_times_arr_FN = []
 for i in range (len(patient_ids)):
-    # Step 1: Find the patient index
+    #Find the patient index
     patient_index = torch.where(unique_values == patient_ids[i])[0].item()
     patient_index2 = patient_id_to_group_index[patient_ids[i]]
 
-    # Step 2: Retrieve saliencies for that patient
+    #Retrieve saliencies for that patient
     patient_saliencies = per_patient_saliencies[patient_index]
 
-    # Step 3: Get the real segment indices (only reliable ones)
+    #Get the real segment indices (only reliable ones)
     original_indices = np.where(reliability_masks[patient_index] == 1)[0] 
 
-    # Step 4: Find where segment 745 is in the original indices so I can take the index that it had when there were only reliable
+    #Find where segment 745 is in the original indices so I can take the index that it had when there were only reliable
     segment_index = np.where(original_indices == segment_ids[i])[0]
 
     if len(segment_index) == 0:
@@ -125,8 +125,7 @@ for i in range (len(patient_ids)):
     # Use the specific context window for this sample
     left = left_contexts[i]
     right = right_contexts[i]
-    # print(f"Saliency for segment {segment_ids[i]} of patient {patient_ids[i]}: {saliency}")
-    # Step 5: Get the 51 segments for plotting
+
     start_idx = max(segment_index - left, 0)  # Ensure it doesn't go out of bounds
     end_idx = min(segment_index + right, len(patient_saliencies))  # Ensure it doesn't exceed bounds
 
@@ -139,9 +138,7 @@ for i in range (len(patient_ids)):
     # Suppose saliency_values is your 1D NumPy array of saliencies
     smoothed_saliencies = rolling_mean(saliency_values, window_size=5)
 
-    # # Create x-axis labels (time relative to the salient segment)
-    # time_axis = np.arange(start_idx - segment_index, end_idx - segment_index) * 0.1  # Convert index to seconds
-    # **Create the time axis from 0 to 8.5 seconds**
+    # Create x-axis labels (time relative to the salient segment)
     time_axis = np.linspace(0, 8.5, num=len(saliency_values))  
 
     # Find the correct X position for the vertical line
@@ -151,47 +148,7 @@ for i in range (len(patient_ids)):
     saliency_values_arr.append(saliency_values)
 
 
-    # Instead of appending each segment individually, create sub-arrays for each category:
-    # window_TP_sal = []
-    # window_TP_times = []
-    # window_TN_sal = []
-    # window_TN_times = []
-    # window_FP_sal = []
-    # window_FP_times = []
-    # window_FN_sal = []
-    # window_FN_times = []
-
-
-    # for j in range(start_idx, end_idx):
-    #     seg_saliency = patient_saliencies[j]  # Or smoothed_saliencies[j - start_idx] if desired
-    #     seg_time = time_axis[j - start_idx]
-    #     seg_prediction = grouped_predictions[patient_index][j]
-    #     seg_true = grouped_true_labels[patient_index][j]
-        
-    #     if seg_prediction == 1 and seg_true == 1:
-    #         window_TP_sal.append(seg_saliency)
-    #         window_TP_times.append(seg_time)
-    #     elif seg_prediction == 0 and seg_true == 0:
-    #         window_TN_sal.append(seg_saliency)
-    #         window_TN_times.append(seg_time)
-    #     elif seg_prediction == 1 and seg_true == 0:
-    #         window_FP_sal.append(seg_saliency)
-    #         window_FP_times.append(seg_time)
-    #     elif seg_prediction == 0 and seg_true == 1:
-    #         window_FN_sal.append(seg_saliency)
-    #         window_FN_times.append(seg_time)
-
-    # # Append the entire window sub-array for this clip to the corresponding lists:
-    # saliency_values_arr_TP.append(np.array(window_TP_sal))
-    # saliency_times_arr_TP.append(np.array(window_TP_times))
-    # saliency_values_arr_TN.append(np.array(window_TN_sal))
-    # saliency_times_arr_TN.append(np.array(window_TN_times))
-    # saliency_values_arr_FP.append(np.array(window_FP_sal))
-    # saliency_times_arr_FP.append(np.array(window_FP_times))
-    # saliency_values_arr_FN.append(np.array(window_FN_sal))
-    # saliency_times_arr_FN.append(np.array(window_FN_times))
-
-        # --- Create fixed-size arrays (with NaNs) for each category ---
+    # Create fixed-size arrays (with NaNs) for each category
     window_length = end_idx - start_idx
     window_TP_sal = np.full(window_length, np.nan, dtype=float)
     window_TN_sal = np.full(window_length, np.nan, dtype=float)
@@ -256,25 +213,4 @@ np.save('/tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/salie
 
 
 print('DONE')
-    # plt.figure(figsize=(10, 5))
-    # plt.plot(time_axis, saliency_values, 'o-', label='Raw Saliency', alpha=0.3)
-    # plt.plot(time_axis, smoothed_saliencies, 'r-', label='Smoothed Saliency')
-    # plt.axvline(x=salient_time, color='maroon', linestyle='--', label='Salient Segment Start')
-    # plt.title(f'Saliency Map for Patient {patient_ids[i]}, Segment {segment_ids[i]} (Smoothed)')
-    # plt.xlabel('Time (seconds)')
-    # plt.ylabel('Saliency Score')
-    # plt.legend()
-    # plt.show()
-
-    # Plot the saliency map
-    # plt.figure(figsize=(10, 5))
-    # plt.plot(time_axis, saliency_values, marker='o', color= 'darkslategrey',linestyle='-')
-    # plt.axvline(x=salient_time, color='maroon', linestyle='--', label="Salient Segment Start")
-    # plt.xlabel("Time (seconds)")
-    # plt.ylabel("Saliency Score")
-    # plt.xticks(np.arange(0, 9, 0.5))  # Set X-axis ticks every 0.5s
-    # plt.title(f"Saliency Map for Patient {patient_ids[i]}, Segment {segment_ids[i]}")
-    # plt.legend()
-    # plt.grid(True)
-    # plt.savefig(f'../../../tudelft.net/staff-umbrella/EleniSalient/Saliency_graphs_per_clip/Clip_smooth_{patient_ids[i]}.png')
-    # plt.close()
+ 
