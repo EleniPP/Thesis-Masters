@@ -4,6 +4,12 @@ import itertools
 import seaborn as sns
 import matplotlib.pyplot as plt
 import scipy.stats as stats
+import pandas as pd
+import numpy as np
+import itertools
+import seaborn as sns
+import matplotlib.pyplot as plt
+import scipy.stats as stats
 
 # Load your DataFrame
 df = pd.read_excel("experiment_results.xlsx")
@@ -96,13 +102,6 @@ print(significant_features_sorted.drop(columns=["Contingency_Table"]).to_string(
 
 
 # -------------------- Vocal features -------------------- #
-import pandas as pd
-import numpy as np
-import itertools
-import seaborn as sns
-import matplotlib.pyplot as plt
-import scipy.stats as stats
-
 # Load your DataFrame
 df = pd.read_excel("experiment_results.xlsx")
 
@@ -123,13 +122,13 @@ def parse_voice_features(feature_str):
 # Create a column that contains the list of voice features per response
 df["All_Voice_Features"] = df["Influential_Features-Voice"].apply(parse_voice_features)
 
-# 1) Gather all unique voice features
+# Gather all unique voice features
 all_voice_features = set()
 for features in df["All_Voice_Features"]:
     all_voice_features.update(features)
 all_voice_features = sorted(all_voice_features)
 
-# 2) Run Chi-square tests for each voice feature
+# Run Chi-square tests for each voice feature
 voice_results = []  # list to store (feature, chi2, p-value, dof, contingency table)
 for feat in all_voice_features:
     # Create a binary indicator: 1 if the feature is present in the voice features, else 0

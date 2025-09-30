@@ -28,32 +28,6 @@ def get_classification_type(row):
 
 # Apply the classification function to label each row
 data['Classification_Type'] = data.apply(get_classification_type, axis=1)
-#------------------ Compute correct classification rate per salient segment position------------------------------
-# classification_accuracy = data.groupby('Salient_Position_Type')['Correct_Classification'].mean().reset_index()
-
-# # Rename column for clarity
-# classification_accuracy.rename(columns={'Correct_Classification': 'Classification_Accuracy'}, inplace=True)
-
-# # Plot bar chart
-# plt.figure(figsize=(8, 5))
-# ax = sns.barplot(data=classification_accuracy, x='Salient_Position_Type', y='Classification_Accuracy', palette='coolwarm')
-# plt.title('Correct Classification Rate by Salient Segment Position')
-# plt.xlabel('Salient Segment Position')
-# plt.ylabel('Percentage of Participants Classifying Clip Correctly')
-# plt.ylim(0, 1)  # Normalize y-axis (0 = 0%, 1 = 100%)
-# plt.xticks(rotation=45)
-# # Make the bars thinner
-# for patch in ax.patches:
-#     current_width = patch.get_width()        # get current width
-#     new_width = current_width * 0.5            # reduce width by 50%
-#     diff = current_width - new_width           # calculate difference
-#     patch.set_width(new_width)                 # set new width
-#     patch.set_x(patch.get_x() + diff / 2)        # recenter the patch
-# plt.tight_layout()
-# plt.show()
-
-
-
 
 
 # ----------------- True Positive Rate by Salient Segment Position -----------------
@@ -86,31 +60,26 @@ plt.show()
 
 
 
+# ----------------- Miss Rate by Salient Segment Position -----------------
+# Group data by Salient Segment Position Type and calculate miss rate
+miss_rate_by_position = data.groupby('Salient_Position_Type')['Within_1s_Margin'].apply(lambda x: (x == False).mean()).reset_index()
 
+# Rename column for clarity
+miss_rate_by_position.rename(columns={'Within_1s_Margin': 'Miss_Rate'}, inplace=True)
 
-
-
-
-# # ----------------- Miss Rate by Salient Segment Position -----------------
-# # Group data by Salient Segment Position Type and calculate miss rate
-# miss_rate_by_position = data.groupby('Salient_Position_Type')['Within_1s_Margin'].apply(lambda x: (x == False).mean()).reset_index()
-
-# # Rename column for clarity
-# miss_rate_by_position.rename(columns={'Within_1s_Margin': 'Miss_Rate'}, inplace=True)
-
-# # Plot bar chart
-# plt.figure(figsize=(8, 5))
-# ax = sns.barplot(data=miss_rate_by_position, x='Salient_Position_Type', y='Miss_Rate', palette='coolwarm')
-# plt.title('Miss Rate by Salient Segment Position')
-# plt.xlabel('Salient Segment Position')
-# plt.ylabel('Percentage of Participants Missing Salient Segment')
-# plt.ylim(0, 1)  # Normalize y-axis (0 = no misses, 1 = all participants missed)
-# plt.xticks(rotation=45)
-# for patch in ax.patches:
-#     current_width = patch.get_width()        # get current width
-#     new_width = current_width * 0.5            # reduce width by 50%
-#     diff = current_width - new_width           # calculate difference
-#     patch.set_width(new_width)                 # set new width
-#     patch.set_x(patch.get_x() + diff / 2) 
-# plt.tight_layout() 
-# plt.show()
+# Plot bar chart
+plt.figure(figsize=(8, 5))
+ax = sns.barplot(data=miss_rate_by_position, x='Salient_Position_Type', y='Miss_Rate', palette='coolwarm')
+plt.title('Miss Rate by Salient Segment Position')
+plt.xlabel('Salient Segment Position')
+plt.ylabel('Percentage of Participants Missing Salient Segment')
+plt.ylim(0, 1)  # Normalize y-axis (0 = no misses, 1 = all participants missed)
+plt.xticks(rotation=45)
+for patch in ax.patches:
+    current_width = patch.get_width()        # get current width
+    new_width = current_width * 0.5            # reduce width by 50%
+    diff = current_width - new_width           # calculate difference
+    patch.set_width(new_width)                 # set new width
+    patch.set_x(patch.get_x() + diff / 2) 
+plt.tight_layout() 
+plt.show()

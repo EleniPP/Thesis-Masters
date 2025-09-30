@@ -8,134 +8,66 @@ import numpy as np
 from sklearn.metrics import precision_recall_curve, auc
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.metrics import confusion_matrix
+import krippendorff
 
 def within_margin(sel_start, sel_end, model_start, model_end, margin=1.0):
     start_close = abs(sel_start - model_start) <= margin
     end_close = abs(sel_end - model_end) <= margin
     return start_close and end_close
 
+def gwet_ac1(ratings_df: pd.DataFrame) -> float:
+    """
+    Compute Gwet’s AC1 for nominal ratings (0/1, etc.), allowing NaNs.
+    Each row = one item (clip), each column = one rater’s label.
+    """
+    data = ratings_df.values
+    n_items, m = data.shape
+
+    # Observed agreement Ao
+    agree_sum = 0
+    total_pairs = 0
+    for row in data:
+        # ignore NaNs when counting
+        vals, counts = np.unique(row[~np.isnan(row)], return_counts=True)
+        agree_sum   += sum(c * (c - 1) for c in counts)
+        valid_m     = len(row[~np.isnan(row)])
+        total_pairs += valid_m * (valid_m - 1)
+
+    Ao = agree_sum / total_pairs
+
+    # Expected agreement Ae
+    flat          = data[~np.isnan(data)].flatten()
+    vals, counts  = np.unique(flat, return_counts=True)
+    p             = counts / flat.size
+    Ae            = sum(p_j * (1 - p_j) for p_j in p)
+
+    return (Ao - Ae) / (1 - Ae)
+
 folder = os.path.join(os.path.expanduser("~"), "Downloads")
 
 # Load data from excel sheet table
 data = pd.read_excel('real_experiment_results.xlsx', sheet_name='table')
 
-data['True_Label'] = data['Clip_Type'].isin(['TP','FN']).astype(int)
 data['Human_Prediction'] = (data['Confidence_Level'] > 5).astype(int)
-
-# 3a. Using pandas.crosstab for a quick table:
-confusion_table = pd.crosstab(
-    data['True_Label'], 
-    data['Human_Prediction'], 
-    rownames=['Actual'], 
-    colnames=['Predicted']
-)
-print(confusion_table)
-
-# 3b. Or using sklearn's confusion_matrix:
-cm = confusion_matrix(data['True_Label'], data['Human_Prediction'])
-print(cm)
-
-data['Correct_Classification'] = (
-    ((data['Clip_Type'].isin(['TP', 'FN'])) & (data['Confidence_Level'] > 5)) |
-    ((data['Clip_Type'].isin(['TN', 'FP'])) & (data['Confidence_Level'] <= 5))
-)
-
-# Create a new column with more descriptive labels
-data['Classification_Label'] = data['Correct_Classification'].map({True: 'Correct', False: 'Incorrect'})
-
-plt.figure(figsize=(10, 5))
-sns.boxplot(
-    x='Classification_Label', 
-    y='Confidence_Level', 
-    data=data, 
-    width=0.3, 
-    palette='muted'
-)
-plt.title('Confidence for Correct vs. Incorrect Classifications')
-plt.xlabel('Correct Classification?')
-plt.ylabel('Confidence Score')
-plt.tight_layout()
-plt.show()
-
-# ------------------------------------------------------------------------------------------------------
-# # If Clip_Type in ['TP','FN'], treat it as depressed (1)
-# # If Clip_Type in ['FP','TN'], treat it as not depressed (0)
-# data['IsDepressed'] = data['Clip_Type'].isin(['TP','FN']).astype(int)
-
-# # y_true = ground truth (0 or 1 for depressed/not depressed)
-# y_true = data['IsDepressed'].values  
-
-# # y_score = your numeric confidence
-# y_score = data['Confidence'].values
-
-# # Compute ROC curve
-# fpr, tpr, thresholds = roc_curve(y_true, y_score)
-
-# # Compute AUC (Area Under the Curve)
-# roc_auc = roc_auc_score(y_true, y_score)
-
-# # Plot
-# plt.figure(figsize=(6, 6))
-# plt.plot(fpr, tpr, color='darkorange',
-#          label='ROC curve (area = %0.2f)' % roc_auc)
-# plt.plot([0, 1], [0, 1], color='navy', linestyle='--')  # diagonal line
-# plt.xlim([0.0, 1.0])
-# plt.ylim([0.0, 1.05])
-# plt.xlabel('False Positive Rate')
-# plt.ylabel('True Positive Rate')
-# plt.title('Receiver Operating Characteristic (ROC)')
-# plt.legend(loc="lower right")
-# plt.show()
+data['True_Label'] = data['Clip_Type'].isin(['TP','FN']).astype(int)
+grouped = data.groupby('Clip_ID')['Human_Prediction'].apply(list).reset_index(name='Ratings')
 
 
-# precision, recall, pr_thresholds = precision_recall_curve(y_true, y_score)
-# pr_auc = auc(recall, precision)
 
-# plt.figure(figsize=(6, 6))
-# plt.plot(recall, precision, color='blue',
-#          label='Precision-Recall curve (area = %0.2f)' % pr_auc)
-# plt.xlim([0.0, 1.0])
-# plt.ylim([0.0, 1.05])
-# plt.xlabel('Recall')
-# plt.ylabel('Precision')
-# plt.title('Precision-Recall Curve')
-# plt.legend(loc="best")
-# plt.show()
+# Find the maximum number of raters per clip
+max_raters = grouped['Ratings'].apply(len).max()
 
-# ------------------------------------------------------------------------------------------------------
-# Count how many True vs. False
-# Data for the pie
-num_total = len(data)
-num_correct = data['Correct_Classification'].sum()
+# Build a rectangular array with np.nan for missing
+matrix = np.full((len(grouped), max_raters), np.nan, dtype=float)
 
-labels = ['Correct', 'Incorrect']
-sizes = [num_correct, num_total - num_correct]
+for i, ratings in enumerate(grouped['Ratings']):
+    matrix[i, :len(ratings)] = ratings
 
-fig, ax = plt.subplots()
-wedges, texts, autotexts = ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=['lightgreen', 'lightcoral'])
-ax.axis('equal')
+# Convert to DataFrame (one column per “rater slot”)
+col_names    = [f"rater_{j+1}" for j in range(max_raters)]
+clip_ratings = pd.DataFrame(matrix, columns=col_names)
 
-# Draw a white circle at the center
-centre_circle = plt.Circle((0, 0), 0.70, fc='white')
-fig.gca().add_artist(centre_circle)
+# Compute and print Gwet’s AC1
+ac1_value = gwet_ac1(clip_ratings)
+print(f"Gwet’s AC1 = {ac1_value:.3f}")
 
-plt.title("Proportion of Correct vs. Incorrect Classifications")
-plt.show()
-
-# ------------------------------------Frequency of each confidence level-------------------------------------
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-# Assuming you already have your data loaded and processed:
-data['Classification_Label'] = data['Correct_Classification'].map({True: 'Correct', False: 'Incorrect'})
-
-# Create a count plot with confidence levels on the x-axis and different bars for Correct vs. Incorrect
-plt.figure(figsize=(10, 6))
-sns.countplot(data=data, x='Confidence_Level', hue='Classification_Label', palette='muted')
-plt.title('Frequency of Confidence Levels by Classification Outcome')
-plt.xlabel('Confidence Level')
-plt.ylabel('Number of Participants')
-plt.legend(title='Classification', loc='upper right')
-plt.tight_layout()
-plt.show()

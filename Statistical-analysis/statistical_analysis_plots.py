@@ -52,18 +52,11 @@ data["Within_1s_Margin"] = data.apply(
     axis=1
 )
 
-# ----------------- 1. Comparison of Human-Selected Salient Intervals vs. Model-Salient Segments -----------------
-# A bit useless
-# sns.histplot(data, x='Selected_Time_Interval', hue='Model_Salient_Interval', multiple='stack', palette='coolwarm')
-# plt.title('Human vs. Model Salient Segment Selection')
-# plt.xlabel('Selected Time Interval (Seconds)')
-# plt.ylabel('Count')
-# plt.show()
 
-# ----------------- 2. Analysis of Influential Features by Clip Type (TP, TN, FP, FN) -----------------
+
+# ----------------- Analysis of Influential Features by Clip Type (TP, TN, FP, FN) -----------------
 # Good graph but maybe not with TP TN FP FN because it is a bit useless if they havent found the salient segment. Maybe we should do it with
 # wether its classifies correctly or not
-
 
 # Melt the DataFrame to gather all influential features into one column
 data_filtered = data[data["Within_1s_Margin"] == True]
@@ -81,8 +74,6 @@ data_melted = data_melted[data_melted['Influential_Feature'] != '-']
 
 # Rename 'Feature_Type' values for better readability
 data_melted['Feature_Type'] = data_melted['Feature_Type'].str.replace('Influential_Features-', '')
-
-# **NEW STEP: Split multi-feature selections into separate rows**
 data_melted = data_melted.assign(Influential_Feature=data_melted['Influential_Feature'].str.split('; '))
 data_melted = data_melted.explode('Influential_Feature')
 
@@ -123,176 +114,42 @@ plt.show()
 
 # ----------------- 3. Confidence Level Distribution per Clip Type -----------------
 # The confidence level depending on the category (TP,TN,FP,FN)
-# plt.figure(figsize=(8, 5))
-# sns.boxplot(x='Clip_Type', y='Confidence', data=data, palette='Set2')
-# plt.title('Confidence Level by Clip Classification')
-# plt.xlabel('Clip Classification')
-# plt.ylabel('Confidence Score')
-# plt.show()
+plt.figure(figsize=(8, 5))
+sns.boxplot(x='Clip_Type', y='Confidence', data=data, palette='Set2')
+plt.title('Confidence Level by Clip Classification')
+plt.xlabel('Clip Classification')
+plt.ylabel('Confidence Score')
+plt.show()
 
-# # The confidence level depending on the Misclassification Type (Correct, Shared Mistake, Divergent Mistake)
-# # Reverse confidence mapping for better readability
-# confidence_map = {
-#     1: 'Very Unlikely',
-#     2: 'Somewhat Unlikely',
-#     3: 'Somewhat Likely',
-#     4: 'Very Likely'
-# }
+# The confidence level depending on the Misclassification Type (Correct, Shared Mistake, Divergent Mistake)
+# Reverse confidence mapping for better readability
+confidence_map = {
+    1: 'Very Unlikely',
+    2: 'Somewhat Unlikely',
+    3: 'Somewhat Likely',
+    4: 'Very Likely'
+}
 
-# plt.figure(figsize=(10, 6))  # Larger figure for better visibility
-# ax = sns.boxplot(
-#     x='Misclassification_Type', 
-#     y='Confidence', 
-#     data=data, 
-#     width=0.3,
-#     palette='Set2'
-# )
+plt.figure(figsize=(10, 6))  # Larger figure for better visibility
+ax = sns.boxplot(
+    x='Misclassification_Type', 
+    y='Confidence', 
+    data=data, 
+    width=0.3,
+    palette='Set2'
+)
 
-# plt.title('Confidence Level by Misclassification Type', fontsize=14)
-# plt.xlabel('Misclassification Type', fontsize=12)
-# plt.ylabel('Confidence Level', fontsize=12)
+plt.title('Confidence Level by Misclassification Type', fontsize=14)
+plt.xlabel('Misclassification Type', fontsize=12)
+plt.ylabel('Confidence Level', fontsize=12)
 
-# # Set custom ticks & labels
-# ax.set_yticks([1,2,3,4])
-# ax.set_yticklabels([confidence_map[i] for i in range(1, 5)], fontsize=12)
+# Set custom ticks & labels
+ax.set_yticks([1,2,3,4])
+ax.set_yticklabels([confidence_map[i] for i in range(1, 5)], fontsize=12)
 
-# # Optional: Give a little vertical padding so nothing gets cut off
-# plt.ylim(0.8, 4.3)
+plt.ylim(0.8, 4.3)
 
-# # Ensure everything fits in the figure
-# plt.tight_layout()
-# plt.show()
+# Ensure everything fits in the figure
+plt.tight_layout()
+plt.show()
 
-# ----------------- 6. Misclassification & Confidence Analysis -----------------
-# TO INVESTIGATE
-# MAYBE CONFIDENCE PER CLASSIFICATION TYPE LIKE IF THE PERSON DID TP, TN ,FP ,FN
-# confidence_map = {
-#     1: 'Very Unlikely',
-#     2: 'Somewhat Unlikely',
-#     3: 'Somewhat Likely',
-#     4: 'Very Likely'
-# }
-
-# plt.figure(figsize=(10, 5))
-# sns.boxplot(x='Misclassification_Type', y='Confidence', data=data, width=0.3,palette='muted')
-# plt.title('Confidence Level in Misclassified Cases')
-# plt.xlabel('Misclassification Type (Shared/Divergent)')
-# plt.ylabel('Confidence Score')
-# plt.yticks([1, 2, 3, 4],
-#            [confidence_map[1], confidence_map[2], confidence_map[3], confidence_map[4]])
-# plt.tight_layout()
-# plt.show()
-
-
-
-# -----------------------Lets see if I can have slider so Ill have points --------------------
-# # Example: selected time intervals (in seconds)
-# selected_times = np.array([1.2, 1.5, 1.7, 2.0, 2.1, 2.3, 2.4, 2.3, 1.9, 2.0, 1.8, 2.2])
-
-# # Compute the KDE of the selected time intervals
-# kde = st.gaussian_kde(selected_times)
-
-# # Create an array of time values over the range of your data
-# x_vals = np.linspace(selected_times.min(), selected_times.max(), 200)
-# density = kde(x_vals)
-
-# # Find the mode: the x value corresponding to the maximum density
-# mode_index = np.argmax(density)
-# mode_value = x_vals[mode_index]
-
-# # Alternatively, you can compute the weighted mean (expected value)
-# weighted_mean = np.sum(x_vals * density) / np.sum(density)
-
-# # Plot the density and the representative point(s)
-# plt.figure(figsize=(10,5))
-# sns.kdeplot(selected_times, shade=True, label="Density")
-# plt.plot(mode_value, density[mode_index], 'ro', label=f'Mode: {mode_value:.2f}s')
-# plt.plot(weighted_mean, kde(weighted_mean), 'go', label=f'Weighted Mean: {weighted_mean:.2f}s')
-# plt.xlabel("Time Interval (s)")
-# plt.ylabel("Density")
-# plt.legend()
-# plt.title("Density of Selected Time Intervals with Representative Points")
-# plt.show()
-
-# ----------------- Random but its the training loss in the final run -----------------
-# losses = [
-#     0.2926458000741994,
-#     0.2743494115595969,
-#     0.2639775844904349,
-#     0.2563856609774633,
-#     0.2502011940214906,
-#     0.2451521453287426,
-#     0.2407373493898019,
-#     0.2366191045227293,
-#     0.23362763501845404,
-#     0.2304643115299483,
-#     0.22800213583280365,
-#     0.22565840763573905,
-#     0.22376067434880953,
-#     0.22202685685767734,
-#     0.2201857603143075,
-#     0.2186396135849986,
-#     0.21762811369650792,
-#     0.21617758288177874,
-#     0.21534885124756514,
-#     0.21441180242271352,
-#     0.2134273900884846,
-#     0.21265532253609698,
-#     0.21162983254128623,
-#     0.21134096703368652,
-#     0.21046173437990734,
-#     0.20986428085673958,
-#     0.20928652222934066,
-#     0.20893149894857832,
-#     0.20825088368435857,
-#     0.2079418288328803
-# ]
-
-# # Create the plot
-# plt.figure(figsize=(8, 5))
-# plt.plot(losses, marker='o', linestyle='-', color='olivedrab')
-# plt.title("Training Losses per Epoch")
-# plt.xlabel("Epoch")
-# plt.ylabel("Loss")
-# plt.grid(True)
-# plt.tight_layout()
-# plt.show()
-
-
-
-
-
-
-
-
-
-# # 0.2926458000741994
-# # 0.2743494115595969
-# # 0.2639775844904349
-# # 0.2563856609774633
-# # 0.2502011940214906
-# # 0.2451521453287426
-# # 0.2407373493898019
-# # 0.2366191045227293
-# # 0.23362763501845404
-# # 0.2304643115299483
-# # 0.22800213583280365
-# # 0.22565840763573905
-# # 0.22376067434880953
-# # 0.22202685685767734
-# # 0.2201857603143075
-# # 0.2186396135849986
-# # 0.21762811369650792
-# # 0.21617758288177874
-# # 0.21534885124756514
-# # 0.21441180242271352
-# # 0.2134273900884846
-# # 0.21265532253609698
-# # 0.21162983254128623
-# # 0.21134096703368652
-# # 0.21046173437990734
-# # 0.20986428085673958
-# # 0.20928652222934066
-# # 0.20893149894857832
-# # 0.20825088368435857
-# # 0.2079418288328803

@@ -18,9 +18,6 @@ data['Correct_Classification'] = (
 correct_conf = data.loc[data['Correct_Classification'], 'Confidence']
 incorrect_conf = data.loc[~data['Correct_Classification'], 'Confidence']
 
-# 1) Check normality (optional):
-#   e.g., stats.shapiro, stats.normaltest, or visualize histograms/QQ-plots.
-#   If both groups appear normal, do a t-test; if not, do Mann–Whitney.
 
 # Example: Let's do a t-test
 t_stat, p_val = stats.ttest_ind(correct_conf, incorrect_conf, equal_var=False)
